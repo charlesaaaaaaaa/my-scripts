@@ -1,9 +1,0 @@
-host=192.168.0.132
-port=5401
-db=tpcc
-user=abc
-pwds=abc
-table=10
-wh=100
-thread=30
-time=15
