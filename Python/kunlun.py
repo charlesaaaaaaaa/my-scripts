@@ -4,7 +4,7 @@
 import psycopg2
 import random
 
-con = psycopg2.connect(database="test", user="abc", password="abc", host="192.168.0.113", port="8821")
+con = psycopg2.connect(database="t1", user="abc", password="abc", host="192.168.0.113", port="8882")
 kunlun=con.cursor()
 
 #create table t1(id int primary key, name text not null, age int) no-partition
@@ -13,7 +13,7 @@ kunlun=con.cursor()
 #create table t1_pt1 partition of t1_pt for values from (1) to (501);
 #create table t1_pt2 partition of t1_pt for values from (501) to (1001);
 
-kunlun.execute("delete from t1_pt")
+#kunlun.execute("delete from t1_pt")
 
 for i in range(1,1001):
     agee = random.randint(18,113)
