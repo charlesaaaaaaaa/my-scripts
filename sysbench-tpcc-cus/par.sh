@@ -1,9 +1,0 @@
-host=192.168.0.126
-port=7777
-db=t3
-user=abc
-pwds=abc
-table=2
-wh=2
-thread=1
-time=15
