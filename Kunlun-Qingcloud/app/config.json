@@ -1,0 +1,235 @@
+{
+	"type":"array",
+	"properties":[{
+		"key":"cluster",
+		"description":"kunlun-cluster properties",
+		"type":"array",
+		"properties":[{
+			"key":"name",
+			"label":"Name",
+			"description":"the name of Kunlun_Cluster",
+			"type":"string",
+			"default":"Kunlun Cluster",
+			"required":"no"
+		},{
+			"key":"description",
+			"label":"Description",
+			"description":"the description of Kunlun_Cluster",
+			"type":"string",
+			"default":" ",
+			"required":"yes"
+		},{
+			"key":"vxnet",
+			"label":"Vxnet",
+			"description":"choose a Vxnet to join",
+			"type":"string",
+			"default":" ",
+			"required":"yes"
+		},{
+			"key":"computing_node",
+			"label":"Computing_Node",
+			"description":"the Computing_Node of Kunlun_Cluster",
+			"type":"array",
+			"properties":[{
+				"key":"instance_class",
+				"label":"Instance_class",
+				"description":" ",
+				"type":"integer",
+				"default":202,
+				"range":[101,202,301],
+				"required":"yes"
+			},{
+				"key":"cpu",
+                	        "label":"Cpu",
+      	         		"description":"Cpus of each Computing_Node",
+                        	"type":"integer",
+                        	"default":2,
+                        	"range":[1,2,4,8,12,16,24,32,64],
+                        	"required":"yes"
+			},{
+				"key":"memory",
+                        	"label":"Memory",
+                        	"description":"Memory of each Computing_Node",
+                        	"type":"integer",
+                        	"default":2048,
+                        	"range":[2048,4096,6144,8192,12288,16384,24576,32768,40960,49152,65536,81920,98304,114688,131072],
+                        	"required":"yes"
+			},{
+				"key":"count",
+				"label":"Count",
+				"description":"Number of Computing Node, ideally, 3 or more",
+				"type":"integer",
+				"default":3,
+				"range":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+				"required":"yes"
+			},{
+				"key":"volume_size",
+				"label":"Volume Size",
+				"description":"Volume Size of computing node",
+				"type":"integer",
+				"default":10,
+				"min":10,
+				"required":"yes"
+			}]
+		},{
+			"key":"meta_data_node",
+			"label":"Meta_data Node",
+			"description":"Meta_data Node of Kunlun_Cluster",
+			"type":"array",
+			"properties":[{
+				"key":"instance_class",
+                        	"label":"Instance_class",
+                        	"description":" ",
+                        	"type":"integer",
+                        	"default":202,
+                        	"range":[101,202,301],
+                        	"required":"yes"
+                        },{
+                        	"key":"cpu",
+                        	"label":"Cpu",
+                        	"description":"Cpus of each Computing_Node",
+                        	"type":"integer",
+                        	"default":2,
+                        	"range":[1,2,4,8,12,16,24,32,64],
+                        	"required":"yes"
+                        },{
+                        	"key":"memory",
+                        	"label":"Memory",
+                        	"description":"Memory of each Computing_Node",
+                       		"type":"integer",
+                        	"default":2048,
+                        	"range":[2048,4096,6144,8192,12288,16384,24576,32768,40960,49152,65536,81920,98304,114688,131072],
+                        	"required":"yes"
+                        },{
+                        	"key":"count",
+                        	"label":"Count",
+                        	"description":"Number of Meta_Data Node, ideally, 3 or more",
+                        	"type":"integer",
+                        	"default":1,
+                        	"range":[1],
+                        	"required":"yes"
+                        },{
+				"key":"replica",
+                                "label":"Replica",
+                                "description":"The Replica of each Meta-Data Master Node, it is best of 2 or more",
+                                "type":"integer",
+                                "default":2,
+                                "range":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+                                "required":"yes"
+			},{
+                        	"key":"volume_size",
+                        	"label":"Volume Size",
+                        	"description":"Volume Size of computing node",
+                        	"type":"integer",
+                        	"default":10,
+                        	"min":10,
+                        	"required":"yes"
+			}]
+		},{
+			"key":"data_node",
+			"label":"Data Node",
+			"description":"Data Node of Kunlun_Cluster",
+			"type":"array",
+			"properties":[{
+				"key":"instance_class",
+                        	"label":"Instance_class",
+                        	"description":" ",
+                        	"type":"integer",
+                        	"default":202,
+                        	"range":[101,202,301],
+                        	"required":"yes"
+                        },{
+                        	"key":"cpu",
+                        	"label":"Cpu",
+                        	"description":"Cpus of each Computing_Node",
+                        	"type":"integer",
+                        	"default":2,
+                        	"range":[1,2,4,8,12,16,24,32,64],
+                        	"required":"yes"
+                        },{
+                        	"key":"memory",
+                        	"label":"Memory",
+                        	"description":"Memory of each Computing_Node",
+                        	"type":"integer",
+                        	"default":2048,
+                        	"range":[2048,4096,6144,8192,12288,16384,24576,32768,40960,49152,65536,81920,98304,114688,131072],
+                        	"required":"yes"
+                        },{
+                        	"key":"count",
+                        	"label":"Count",
+                        	"description":"Number of Data Master Node, it is best of 3 or more",
+                        	"type":"integer",
+                        	"default":3,
+                        	"range":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+                        	"required":"yes"
+			},{
+				"key":"replica",
+				"label":"Replica",
+				"description":"The Replica of each Data Master Node, it is best of 2 or more",
+				"type":"integer",
+				"default":2,
+				"range":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+				"required":"yes"
+			},{
+                        	"key":"volume_size",
+                        	"label":"Volume Size",
+                        	"description":"Volume Size of computing node",
+                        	"type":"integer",
+                        	"default":10,
+                        	"min":10,
+                        	"required":"yes"
+			}]
+		},{
+			"key":"cluster_mgr_node",
+			"label":"Cluster_mgr Node",
+			"description":"Cluster_mgr Node of Kunlun_Cluster",
+			"type":"array",
+			"properties":[{
+				"key":"instance_class",
+                        	"label":"Instance_class",
+                        	"description":" ",
+                        	"type":"integer",
+                        	"default":202,
+                        	"range":[101,202,301],
+                        	"required":"yes"
+                        },{
+                        	"key":"cpu",
+                        	"label":"Cpu",
+                        	"description":"Cpus of each Computing_Node",
+                        	"type":"integer",
+                        	"default":2,
+                        	"range":[1,2,4,8],
+                        	"required":"yes"
+                        },{
+                        	"key":"memory",
+                        	"label":"Memory",
+                        	"description":"Memory of each Computing_Node",
+                        	"type":"integer",
+                        	"default":2048,
+                        	"range":[1024,2048,4096,6144,8192],
+                        	"required":"yes"
+                        },{
+				"key":"count",
+                                "label":"Count",
+                                "description":"Number of Data Master Node, it is best of 3 or more",
+                                "type":"integer",
+                                "default":1,
+                                "range":[1],
+                                "required":"yes"	
+
+			},{
+                        	"key":"volume_size",
+                        	"label":"Volume Size",
+                        	"description":"Volume Size of computing node",
+                        	"type":"integer",
+                        	"default":10,
+                        	"min":10,
+                        	"required":"yes"
+		
+			}]
+		}]	
+	
+	}]
+
+
+}

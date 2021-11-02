@@ -1,0 +1,100 @@
+{
+	"name": {{cluster.name}},
+    	"description": {{cluster.description}},
+    	"multi_zone_policy": "round_robin",
+    	"vxnet": {{cluster.vxnet}},
+	"advanced_actions": ["change_vxnet"],
+	"backup_policy": "device",
+	"upgrade_policy":[],
+	"nodes":[{
+		"role":"computing_node",
+		"container":{
+			"type":"kvm",
+			"image":"img-zfvabyle",
+			"zone":"sh1a"
+		},
+		"instance_class":{{cluster.computing_node.instance_class}},
+		"count":{{cluster.computing_node.count}},
+		"cpu": {{cluster.computing_node.cpu}},
+		"memory":{{cluster.computing_node.memory}},
+		"volume":{
+			"size":{{cluster.computing_node.volume_size}},
+			"mount_point":"/data",
+			"filesystem":"xfs"
+		},
+		"user_access": true,
+		"services":{
+			"init":{
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-init.sh"
+			}
+		}
+	},{
+		"role":"meta_data_node",
+		"container":{
+			"type":"kvm",
+			"image":"img-zfvabyle",
+			"zone":"sh1a"
+		},
+		"instance_class":{{cluster.meta_data_node.instance_class}},
+		"count":{{cluster.meta_data_node.count}},
+		"cpu": {{cluster.meta_data_node.cpu}},
+		"memory":{{cluster.meta_data_node.memory}},
+		"volume":{
+                        "size":{{cluster.meta_data_node.volume_size}},
+			"mount_point":"/data",
+			"filesystem":"xfs"
+                },
+		"replica":{{cluster.meta_data_node.replica}},
+		"user_access": true,
+		"services":{
+			"init":{
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/meta-init.sh"
+			}
+		}
+	},{
+		"role":"data_node",
+		"container":{
+                        "type":"kvm",
+                        "image":"img-zfvabyle",
+                        "zone":"sh1a"
+                },
+                "instance_class":{{cluster.data_node.instance_class}},
+                "count":{{cluster.data_node.count}},
+                "cpu": {{cluster.data_node.cpu}},
+                "memory":{{cluster.data_node.memory}},
+                "volume":{
+                        "size":{{cluster.data_node.volume_size}},
+                        "mount_point":"/data",
+                        "filesystem":"xfs"
+                },
+		"replica":{{cluster.data_node.replica}},
+		"user_access": true,
+		"services":{
+			"init":{
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-init.sh"
+			}
+		}
+	},{
+		"role":"cluster_mgr_node",
+                "container":{
+                        "type":"kvm",
+                        "image":"img-2xoy286k",
+                        "zone":"sh1a"
+                },
+                "instance_class":{{cluster.cluster_mgr_node.instance_class}},
+                "cpu": {{cluster.cluster_mgr_node.cpu}},
+                "memory":{{cluster.cluster_mgr_node.memory}},
+                "count":{{cluster.cluster_mgr_node.count}},
+		"volume":{
+                        "size":{{cluster.cluster_mgr_node.volume_size}},
+                        "mount_point":"/data",
+                        "filesystem":"xfs"
+                },
+		"user_access": true,
+		"services":{
+			"init":{
+				"cmd":"bash /home/ubuntu/kunlun/cluster_mgr_rel/resources/cluster-init.sh"
+			}
+		}
+	}]
+}
