@@ -28,7 +28,7 @@ if [ $self_ip != $master_ip ] ; then
 	
 	echo this is salve_node instance! wait 150s
 	
-	sleep 150
+	sleep 135
 
 	sudo sed -i "0,/127.0.0.1/s/127.0.0.1/${master_ip}/" /home/ubuntu/kunlun/kunlun-storage/dba_tools/mgr_config.json
 

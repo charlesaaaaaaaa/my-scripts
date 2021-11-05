@@ -10,7 +10,7 @@
 		"role":"computing_node",
 		"container":{
 			"type":"kvm",
-			"image":"img-zfvabyle",
+			"image":"img-tgtb6aa1",
 			"zone":"sh1a"
 		},
 		"instance_class":{{cluster.computing_node.instance_class}},
@@ -32,7 +32,7 @@
 		"role":"meta_data_node",
 		"container":{
 			"type":"kvm",
-			"image":"img-zfvabyle",
+			"image":"img-tgtb6aa1",
 			"zone":"sh1a"
 		},
 		"instance_class":{{cluster.meta_data_node.instance_class}},
@@ -55,7 +55,7 @@
 		"role":"data_node",
 		"container":{
                         "type":"kvm",
-                        "image":"img-zfvabyle",
+                        "image":"img-tgtb6aa1",
                         "zone":"sh1a"
                 },
                 "instance_class":{{cluster.data_node.instance_class}},
@@ -93,6 +93,7 @@
 		"user_access": true,
 		"services":{
 			"init":{
+				"order":1,
 				"cmd":"bash /home/ubuntu/kunlun/cluster_mgr_rel/resources/cluster-init.sh"
 			}
 		}

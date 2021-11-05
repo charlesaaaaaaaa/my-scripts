@@ -179,8 +179,9 @@ if [ $self_gid = 1 ] ; then
 		done
 	done
 	#---------------------------------------------------
-	#python2 bootstrap.py --config=/home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json --bootstrap_sql=/home/ubuntu/kunlun/kunlun-computing/scripts/meta_inuse.sql
-	#python2 create_cluster.py --shards_config /home/ubuntu/kunlun/kunlun-computing/scripts/data-shard.json --comps_config /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json --meta_config /home/ubuntu/kunlun/kunlun-computing/scripts/meta-datas.json --cluster_name clust1 --cluster_owner abc --cluster_biz test
+	sleep 270
+	python2 bootstrap.py --config=/home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json --bootstrap_sql=/home/ubuntu/kunlun/kunlun-computing/scripts/meta_inuse.sql
+	python2 create_cluster.py --shards_config /home/ubuntu/kunlun/kunlun-computing/scripts/data-shard.json --comps_config /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json --meta_config /home/ubuntu/kunlun/kunlun-computing/scripts/meta-datas.json --cluster_name clust1 --cluster_owner abc --cluster_biz test
 else 
 	echo replica-node,pass
 fi
