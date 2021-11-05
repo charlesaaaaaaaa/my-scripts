@@ -129,7 +129,7 @@ if [ $self_gid = 1 ] ; then
 	sed -i "0,/127.0.0.1/s/127.0.0.1/${meta_master}/" /home/ubuntu/kunlun/kunlun-computing/scripts/meta-datas.json
 	for i in `seq 1 ${metare_num}`
 	do	
-		a=`sed -n "$ip" /home/ubuntu/tmp/meta-replica.txt`
+		a=`sed -n "${i}p" /home/ubuntu/tmp/meta-replica.txt`
 		sed -i "0,/127.0.0.1/s/127.0.0.1/${a}/" /home/ubuntu/kunlun/kunlun-computing/scripts/meta-datas.json
 	done
 	#--------------------------------------------------
