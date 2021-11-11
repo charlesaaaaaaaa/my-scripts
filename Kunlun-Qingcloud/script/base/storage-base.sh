@@ -1,4 +1,4 @@
-/home/ubuntu/kunlun/kunlun-storage/dba_tools
+cd /home/ubuntu/kunlun/kunlun-storage/dba_tools
 
 if [ $1 = start ] ; then
 	su ubuntu -c "/home/ubuntu/kunlun/kunlun-storage/dba_tools/startmysql.sh 6001"
