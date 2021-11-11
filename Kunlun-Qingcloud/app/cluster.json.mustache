@@ -10,7 +10,7 @@
 		"role":"computing_node",
 		"container":{
 			"type":"kvm",
-			"image":"img-prlivsh9",
+			"image":"img-xzwor2jz",
 			"zone":"sh1a"
 		},
 		"instance_class":{{cluster.computing_node.instance_class}},
@@ -26,13 +26,24 @@
 		"services":{
 			"init":{
 				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-init.sh"
-			}
+			},
+			"start":{
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh start"
+			},
+			"stop":{
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh stop"
+			},
+			"restart":{
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh restart"
+			},
+			"destroy":{
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh destory"}
 		}
 	},{
 		"role":"meta_data_node",
 		"container":{
 			"type":"kvm",
-			"image":"img-prlivsh9",
+			"image":"img-xzwor2jz",
 			"zone":"sh1a"
 		},
 		"instance_class":{{cluster.meta_data_node.instance_class}},
@@ -49,13 +60,19 @@
 		"services":{
 			"init":{
 				"cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/meta-init.sh"
+			},
+			"start":{
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh start"
+			},
+			"stop":{
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh stop"
 			}
 		}
 	},{
 		"role":"data_node",
 		"container":{
                         "type":"kvm",
-                        "image":"img-prlivsh9",
+                        "image":"img-xzwor2jz",
                         "zone":"sh1a"
                 },
                 "instance_class":{{cluster.data_node.instance_class}},
@@ -72,7 +89,13 @@
 		"services":{
 			"init":{
 				"cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-init.sh"
-			}
+			},
+			"start":{
+                                "cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh start"
+                        },
+                        "stop":{
+                                "cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh stop"
+                        }
 		}
 	},{
 		"role":"cluster_mgr_node",

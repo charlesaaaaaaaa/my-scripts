@@ -79,10 +79,16 @@ if [ $self_gid = 1 ] ; then
 	#------------------------------------------------------------------
 
 	#-----------------获取data-shard的数量及master节点的ip-------------
+	
+	cat /home/ubuntu/tmp/a.txt | grep /data_node/ | grep /ip | grep self | awk '{print $2}' > /home/ubuntu/tmp/datashard_num.txt
 
-	cat /home/ubuntu/tmp/a.txt | grep /data_node/ | grep /ip | grep self | awk '{print $2}' > /home/ubuntu/tmp/datashards_num.txt
+	datasha_num=`cat /home/ubuntu/tmp/datashard_num.txt | wc -l` 
 
-	datasha_num=`cat /home/ubuntu/tmp/datashards_num.txt | wc -l` 
+	for i in `seq 1 $datasha_num`
+	do
+		mas=`cat /home/ubuntu/tmp/a.txt | grep self/hosts/data_node/ | grep gid | grep ${i}$ | awk '{print $1}' | sed 's/...$//'`
+		cat /home/ubuntu/tmp/a.txt | grep "$mas" | grep /ip | awk '{print $2}' >> /home/ubuntu/tmp/datashards_num.txt
+	done
 
 	#------------------------------------------------------------------
 
@@ -146,7 +152,7 @@ if [ $self_gid = 1 ] ; then
 		echo "	[" >> /home/ubuntu/kunlun/kunlun-computing/scripts/data-shard.json
 		echo "		{" >> /home/ubuntu/kunlun/kunlun-computing/scripts/data-shard.json
 		echo "		  \"ip\":\"127.0.0.1\"," >> /home/ubuntu/kunlun/kunlun-computing/scripts/data-shard.json
-		echo "		  \"port\":5401," >> /home/ubuntu/kunlun/kunlun-computing/scripts/data-shard.json
+		echo "		  \"port\":6001," >> /home/ubuntu/kunlun/kunlun-computing/scripts/data-shard.json
 		echo "		  \"user\":\"pgx\"," >> /home/ubuntu/kunlun/kunlun-computing/scripts/data-shard.json
 		echo "		  \"password\":\"pgx_pwd\"" >> /home/ubuntu/kunlun/kunlun-computing/scripts/data-shard.json
 		for times_num in `seq 1 ${n}`
@@ -154,7 +160,7 @@ if [ $self_gid = 1 ] ; then
 			echo '		},' >> /home/ubuntu/kunlun/kunlun-computing/scripts/data-shard.json
 			echo '		{' >> /home/ubuntu/kunlun/kunlun-computing/scripts/data-shard.json
 			echo '		  "ip":"127.0.0.1",' >> /home/ubuntu/kunlun/kunlun-computing/scripts/data-shard.json
-			echo "		  \"port\":5401," >> /home/ubuntu/kunlun/kunlun-computing/scripts/data-shard.json
+			echo "		  \"port\":6001," >> /home/ubuntu/kunlun/kunlun-computing/scripts/data-shard.json
 			echo "		  \"user\":\"pgx\"," >> /home/ubuntu/kunlun/kunlun-computing/scripts/data-shard.json
 			echo "		  \"password\":\"pgx_pwd\"" >> /home/ubuntu/kunlun/kunlun-computing/scripts/data-shard.json
 		done
@@ -179,9 +185,10 @@ if [ $self_gid = 1 ] ; then
 		done
 	done
 	#---------------------------------------------------
-	sleep 270
-	python2 bootstrap.py --config=/home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json --bootstrap_sql=/home/ubuntu/kunlun/kunlun-computing/scripts/meta_inuse.sql
-	python2 create_cluster.py --shards_config /home/ubuntu/kunlun/kunlun-computing/scripts/data-shard.json --comps_config /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json --meta_config /home/ubuntu/kunlun/kunlun-computing/scripts/meta-datas.json --cluster_name clust1 --cluster_owner abc --cluster_biz test
+	sleep 330
+	python2 /home/ubuntu/kunlun/kunlun-computing/scripts/bootstrap.py --config=/home/ubuntu/kunlun/kunlun-computing/scripts/meta-datas.json --bootstrap_sql=/home/ubuntu/kunlun/kunlun-computing/scripts/meta_inuse.sql
+	sleep 10
+	python2 /home/ubuntu/kunlun/kunlun-computing/scripts/create_cluster.py --shards_config /home/ubuntu/kunlun/kunlun-computing/scripts/data-shard.json --comps_config /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json --meta_config /home/ubuntu/kunlun/kunlun-computing/scripts/meta-datas.json --cluster_name clust1 --cluster_owner abc --cluster_biz test
 else 
 	echo replica-node,pass
 fi
