@@ -1,6 +1,8 @@
 source /etc/profile
 
-comp_path=`ps -ef |  grep 'postgres -D' | grep 11.5 | awk '{print $10}'`
+cd python2 /home/ubuntu/kunlun/kunlun-computing/scripts
+
+comp_path=`ps -ef |  grep 'postgres -D' | grep home | awk '{print $10}'`
 
 if [ $1 = start ] ; then
 
