@@ -28,6 +28,7 @@
 				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-init.sh"
 			},
 			"start":{
+				"order":3,
 				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh start"
 			},
 			"stop":{
@@ -65,6 +66,7 @@
 				"cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh start"
 			},
 			"stop":{
+				"order":3
 				"cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh stop"
 			}
 		}
@@ -91,10 +93,11 @@
 				"cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-init.sh"
 			},
 			"start":{
-				"order":1
+				"order":1,
                                 "cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh start"
                         },
                         "stop":{
+				"order":2,
                                 "cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh stop"
                         }
 		}
@@ -125,6 +128,7 @@
 				"cmd":"bash /home/ubuntu/kunlun/cluster_mgr_rel/cluster-init.sh start"
 			}
 			"stop":{
+				"order":1,
 				"cmd":"bash /home/ubuntu/kunlun/cluster_mgr_rel/cluster-init.sh stop"
 			}
 		}
