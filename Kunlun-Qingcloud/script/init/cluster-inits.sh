@@ -12,4 +12,4 @@ sed -i 's/user = abc/user = pgx/' /home/ubuntu/kunlun/cluster_mgr_rel/resources/
 
 sed -i 's/pwd = abc/pwd = pgx_pwd/' /home/ubuntu/kunlun/cluster_mgr_rel/resources/cluster_mgr.cnf
 
-/home/ubuntu/kunlun/cluster_mgr_rel/bin/cluster_mgr /home/ubuntu/kunlun/cluster_mgr_rel/resources/cluster_mgr.cnf &
+bash -x /home/ubuntu/kunlun/cluster_mgr_rel/bin/cluster_mgr_safe --debug --pidfile=run.pid /home/ubuntu/kunlun/cluster_mgr_rel/resources/cluster_mgr.cnf >& /home/ubuntu/kunlun/cluster_mgr_rel/run.log </dev/null &
