@@ -238,7 +238,7 @@
 		}]	
 	
 	}]
-{
+},{
 	"key":"env",
 	"description":"Kunlun-Cluster service properties",
 	"type":"array",
