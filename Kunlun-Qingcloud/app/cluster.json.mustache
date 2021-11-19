@@ -11,7 +11,7 @@
 		"loadbalancer": {{cluster.computing_node.loadbalancer}},
 		"container":{
 			"type":"kvm",
-			"image":"img-p59gvq30",
+			"image":"img-3j2zxcbm",
 			"zone":"sh1a"
 		},
 		"instance_class":{{cluster.computing_node.instance_class}},
@@ -30,10 +30,10 @@
 			},
 			"start":{
 				"order":3,
-				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh start >> /home/ubuntu/start.log"
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh start"
 			},
 			"stop":{
-				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh stop >> /home/ubuntu/stop.log"
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh stop"
 			},
 			"restart":{
 				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh restart"
@@ -45,7 +45,7 @@
 		"role":"meta_data_node",
 		"container":{
 			"type":"kvm",
-			"image":"img-p59gvq30",
+			"image":"img-3j2zxcbm",
 			"zone":"sh1a"
 		},
 		"instance_class":{{cluster.meta_data_node.instance_class}},
@@ -75,7 +75,7 @@
 		"role":"data_node",
 		"container":{
                         "type":"kvm",
-                        "image":"img-p59gvq30",
+                        "image":"img-3j2zxcbm",
                         "zone":"sh1a"
                 },
                 "instance_class":{{cluster.data_node.instance_class}},

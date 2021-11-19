@@ -192,3 +192,24 @@ if [ $self_gid = 1 ] ; then
 else 
 	echo replica-node,pass
 fi
+sleep 3
+bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh stop
+logmds=`cat /home/ubuntu/tmp/a.txt | grep computing_node/log_min_duration_statement | awk '{print $2}'`
+lockt=`cat /home/ubuntu/tmp/a.txt | grep computing_node/lock_timeout | awk '{print $2}'`
+statet=`cat /home/ubuntu/tmp/a.txt | grep computing_node/statement_timeout | awk '{print $2}'`
+maxconn=`cat /home/ubuntu/tmp/a.txt | grep computing_node/max_connections | awk '{print $2}'`
+myconnt=`cat /home/ubuntu/tmp/a.txt | grep computing_node/mysql_connect_timeout | awk '{print$2}'`
+myret=`cat /home/ubuntu/tmp/a.txt | grep computing_node/mysql_read_timeout | awk '{print$2}'`
+mywrt=`cat /home/ubuntu/tmp/a.txt | grep computing_node/mysql_write_timeout | awk '{print $2}'`
+shabuf=`cat /home/ubuntu/tmp/a.txt | grep computing_node/shared_buffers | awk '{print $2}'`
+tembuf=`cat /home/ubuntu/tmp/a.txt | grep computing_node/temp_buffers | awk '{print $2}'`
+sed -i "s/max_connections = 1000/max_connections = $maxconn/" /home/ubuntu/kunlun/data/pg_data_dir1/postgresql.conf
+sed -i "s/shared_buffers = 4MB/shared_buffers = $shabuf" /home/ubuntu/kunlun/data/pg_data_dir1/postgresql.conf
+sed -i "s/temp_buffers = 32MB/temp_buffers = $tembuf" /home/ubuntu/kunlun/data/pg_data_dir1/postgresql.conf
+sed -i "s/log_min_duration_statement = 10000/log_min_duration_statement = $logmds" /home/ubuntu/kunlun/data/pg_data_dir1/postgresql.conf
+sed -i "s/statement_timeout = 100000/statement_timeout = $statet" /home/ubuntu/kunlun/data/pg_data_dir1/postgresql.conf
+sed -i "s/lock_timeout = 100000/lock_timeout = $lockt" /home/ubuntu/kunlun/data/pg_data_dir1/postgresql.conf
+sed -i "s/mysql_connect_timeout = 50/mysql_connect_timeout = $myconnt" /home/ubuntu/kunlun/data/pg_data_dir1/postgresql.conf
+sed -i "s/mysql_read_timeout = 50/mysql_read_timeout = $myret" /home/ubuntu/kunlun/data/pg_data_dir1/postgresql.conf
+sed -i "s/mysql_write_timeout = 50/mysql_write_timeout = $mywrt" /home/ubuntu/kunlun/data/pg_data_dir1/postgresql.conf
+bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh start
