@@ -37,7 +37,7 @@
                 		"type": "loadbalancer",
                 		"port": 80,
                 		"default": [],
-                		"required": "yes"
+                		"required": "no"
 			},{
 				"key":"instance_class",
 				"label":"Instance_class",
