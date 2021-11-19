@@ -133,8 +133,7 @@
 				"cmd":"bash /home/ubuntu/kunlun/cluster_mgr_rel/cluster-base.sh stop >> /home/ubuntu/stop.log"
 			}
 		}
-	}]
-},{
+	}
 	"env":{
 		"max_connections": {{env.max_connections}},
 		"shared_buffers":{{env.shared_buffers}},
@@ -147,6 +146,5 @@
                 "mysql_write_timeout":{{mysql_write_timeout}},
                 "innodb_lock_wait_timeout":{{innodb_lock_wait_timeout}},
 		"lock_wait_timeout":{{lock_wait_timeout}}
-}
-	
+	}]
 }
