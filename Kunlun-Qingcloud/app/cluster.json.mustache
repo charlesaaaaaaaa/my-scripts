@@ -134,4 +134,19 @@
 			}
 		}
 	}]
+},{
+	"env":{
+		"max_connections": {{env.max_connections}},
+		"shared_buffers":{{env.shared_buffers}},
+		"temp_buffers":{{env.temp_buffers}},
+                "log_min_duration_statement":{{env.log_min_duration_statement}},
+                "statement_timeout":{{env.statement_timeout}},
+                "lock_timeout":{{env.lock_timeout}},
+                "mysql_connect_timeout":{{mysql_connect_timeout}},
+                "mysql_read_timeout":{{mysql_read_timeout}},
+                "mysql_write_timeout":{{mysql_write_timeout}},
+                "innodb_lock_wait_timeout":{{innodb_lock_wait_timeout}},
+		"lock_wait_timeout":{{lock_wait_timeout}}
+}
+	
 }
