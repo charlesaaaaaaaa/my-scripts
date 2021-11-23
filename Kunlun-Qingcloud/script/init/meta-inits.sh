@@ -66,8 +66,8 @@ elif [ $self_ip = $master_ip ] ; then
 
 fi
 bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh start
-innolwt=`cat /home/ubuntu/tmp/a.txt | grep data_node/innodb_lock_wait_timeout | awk '{print $2}'`
-lockt=`cat /home/ubuntu/tmp/a.txt | grep data_node/lock_wait_timeout | awk '{print $2}'`
+innolwt=`cat /home/ubuntu/tmp/a.txt | grep data_node/innodb_lock_wait_timeout | awk '{print $2}' | sed -n '1p'`
+lockt=`cat /home/ubuntu/tmp/a.txt | grep data_node/lock_wait_timeout | awk '{print $2}' | sed -n '1p'`
 sed -i "s/innodb_lock_wait_timeout = 20/innodb_lock_wait_timeout = $innolwt/" /home/ubuntu/kunlun/data/data/6001/my_6001.cnf
 sed -i "s/lock_wait_timeout   =   5/lock_wait_timeout   =   $lockt/" /home/ubuntu/kunlun/data/data/6001/my_6001.cnf
 bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh stop
