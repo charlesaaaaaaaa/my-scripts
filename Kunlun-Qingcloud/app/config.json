@@ -35,7 +35,7 @@
 				"label":"Loadbalabcer Services",
 				"description": "Choose a loadbalancer service to use",
                 		"type": "loadbalancer",
-                		"port": 80,
+                		"port": 5401,
                 		"default": [],
                 		"required": "no"
 			},{
