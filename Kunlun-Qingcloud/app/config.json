@@ -95,7 +95,7 @@
                         },{
                         	"key":"cpu",
                         	"label":"Cpu",
-                        	"description":"Cpus of each Computing_Node",
+                        	"description":"Cpus of each Meta_data Node",
                         	"type":"integer",
                         	"default":2,
                         	"range":[1,2,4,8,12,16,24,32,64],
@@ -103,7 +103,7 @@
                         },{
                         	"key":"memory",
                         	"label":"Memory",
-                        	"description":"Memory of each Computing_Node",
+                        	"description":"Memory of each Meta_data Node",
                        		"type":"integer",
                         	"default":2048,
                         	"range":[2048,4096,6144,8192,12288,16384,24576,32768,40960,49152,65536,81920,98304,114688,131072],
@@ -111,7 +111,7 @@
                         },{
                         	"key":"count",
                         	"label":"Count",
-                        	"description":"Number of Meta_Data Node, ideally, 3 or more",
+                        	"description":"Number of Meta_Data Node, only one",
                         	"type":"integer",
                         	"default":1,
                         	"range":[1],
@@ -127,7 +127,7 @@
 			},{
                         	"key":"volume_size",
                         	"label":"Volume Size",
-                        	"description":"Volume Size of computing node",
+                        	"description":"Volume Size of Meta_data Node",
                         	"type":"integer",
                         	"default":10,
                         	"min":10,
