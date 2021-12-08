@@ -25,16 +25,6 @@ echo times = ${tim}
 echo ================ parameters ================
 echo 
 
-#sysbench oltp_point_select        \
-#      --tables=${table}                   \
-#      --table-size=${tb_size}           \
-#      --db-driver=pgsql             \
-#      --pgsql-host=${host}        \
-#      --pgsql-port=${port}             \
-#      --pgsql-user=${user}         \
-#      --pgsql-password=abc \
-#      --pgsql-db=${db}           \
-#      prepare
 
 for i in point_select insert write_only read_only read_write update_index update_non_index
 do
@@ -44,14 +34,4 @@ do
 	echo test done, waiting 5s
 done
 
-#sysbench oltp_delete        \
-#      --tables=${table}                   \
-#      --table-size=${tb_size}           \
-#      --db-driver=pgsql             \
-#      --pgsql-host=${host}        \
-#      --pgsql-port=${port}             \
-#      --pgsql-user=${user}         \
-#      --pgsql-password=abc \
-#      --pgsql-db=${db}           \
-#      cleanup
 
