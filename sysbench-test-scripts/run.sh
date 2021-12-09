@@ -1,8 +1,8 @@
 if [ $# -lt 7 ] ; then
        echo	
        echo get me 7 parameters,runing like	
-	echo ./loop_test.sh host port dbname user table_num table_size test_runtime       
-	echo ./loop_test.sh 192.168.0.134 38701 postgres abc 10 100000 120
+	echo ./run.sh host port dbname user table_num table_size test_runtime       
+	echo ./run.sh 192.168.0.134 38701 postgres abc 10 100000 120
 	echo
 	exit 1
 fi
@@ -36,8 +36,8 @@ do
 	echo run threads ${li}
 	echo
 	./test.sh $1 $2 $3 $4 $li $5 $6 $7 
-	# like : ./loop_test.sh 192.168.0.134 38701 postgres abc  10        100000     120
-	#        ./loop_test.sh host          port  dbname   user table_num table_size test_time
+	# like : ./run.sh 192.168.0.134 38701 postgres abc  10        100000     120
+	#        ./run.sh host          port  dbname   user table_num table_size test_time
 done
 
 sysbench oltp_delete        \
