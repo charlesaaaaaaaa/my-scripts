@@ -29,7 +29,7 @@ do
 	fi
 done
 
-for i in `seq 4 10` # run sysbench test 100 to 1000 threads
+for i in `seq 1 10` # run sysbench test 100 to 1000 threads
 do
 	li=` expr ${i} \* 100 `
 	echo
@@ -51,5 +51,8 @@ sysbench oltp_delete        \
       --pgsql-db=$3           \
       cleanup
 
+#sysbench oltp_delete --tables=10 --db-driver=pgsql --pgsql-host=192.168.0.134 --pgsql-port=38701 --pgsql-user=abc --pgsql-password=abc --pgsql-db=postgres cleanup
+
+#sysbench oltp_delete --tables=10 --db-driver=pgsql --pgsql-host=192.168.0.134 --pgsql-port=5433 --pgsql-user=postgres --pgsql-password=postgres --pgsql-db=postgres cleanup
 
 bash ./resault.sh
