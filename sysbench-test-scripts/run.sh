@@ -18,7 +18,7 @@ sysbench oltp_point_select        \
       --pgsql-user=$4         \
       --pgsql-password=abc \
       --pgsql-db=$3           \
-      prepare
+      prepare > prepare.log
 
 
 for i in point_select delete insert read_only read_write write_only update_index update_non_index
@@ -29,13 +29,15 @@ do
 	fi
 done
 
+echo > run.log
+
 for i in `seq 1 10` # run sysbench test 100 to 1000 threads
 do
 	li=` expr ${i} \* 100 `
 	echo
 	echo run threads ${li}
 	echo
-	./test.sh $1 $2 $3 $4 $li $5 $6 $7 
+	./test.sh $1 $2 $3 $4 $li $5 $6 $7 >> run.log
 	# like : ./run.sh 192.168.0.134 38701 postgres abc  10        100000     120
 	#        ./run.sh host          port  dbname   user table_num table_size test_time
 done

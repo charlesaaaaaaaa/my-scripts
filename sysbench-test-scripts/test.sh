@@ -28,9 +28,9 @@ echo
 
 for i in point_select insert write_only read_only read_write update_index update_non_index
 do
-	echo testing ${i} ... please wait ${tim}s
+	echo wtesting ${i} ... please wait ${tim}s `date`
 	sysbench oltp_${i} --tables=${table} --table-size=${tb_size} --db-driver=pgsql --pgsql-host=${host} --report-interval=10 --pgsql-port=${port} --pgsql-user=${user} --pgsql-password=abc --pgsql-db=${db} --threads=${threads} --time=${tim} --rand-type=uniform run > ./${i}/${threads}_${i} 2>&1
-	echo test done, waiting 5s
+	echo test done, waiting 5s `date`
 	echo ------------------------
 done
 
