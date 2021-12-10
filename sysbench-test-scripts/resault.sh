@@ -8,7 +8,7 @@ do
 		la=`expr $a \* 100`
 		wcl=`cat ${list}/${la}_${list} | grep tps | wc -l`
 		tps=`cat ${list}/${la}_${list} | awk '{print $7}' | awk '{sum+=$1}END{print sum}'`
-		tpa=`echo ${tps}/${wcl} | bc -l`
+		tpa=`echo "scale=2;${tps}/${wcl}" | bc -l`
 		rea=`cat ${list}/${la}_${list} | grep read: | awk '{print $2}'`
 		wri=`cat ${list}/${la}_${list} | grep write: | awk '{print $2}'`
 		txn=`cat ${list}/${la}_${list} | grep transactions: |  awk '{print $2}'`
