@@ -108,9 +108,9 @@ for i in CompIp:
             SCompIp = ''.join(CompIp[CIPN])
             
             of=open('config.sh','a')
-            AddLine = "line=`cat -n %s/postgresql.conf | grep '\\'%s =\\'' | awk '\\'{print $1}\\''` && " % (SCompDir,SCompkeys)
+            AddLine = "line=`cat %s/postgresql.conf | grep -n '\\'^%s =\\'' | awk -F: '\\'{print \\$1}\\''` && " % (SCompDir,SCompkeys)
             SedDel = 'sed -i "${line}d" ' + SCompDir +'/postgresql.conf && '
-            SedAdd = 'sed -i "${line}i ' + SCompkeys + ' = ' + SCompvalues + '"' + SCompDir +'/postgresql.conf'
+            SedAdd = 'sed -i "${line}i ' + SCompkeys + ' = ' + SCompvalues + '" ' + SCompDir +'/postgresql.conf'
             BashStmt = AddLine + SedDel + SedAdd
             of.write("bash remote_run.sh --user=%s %s '%s'\n" %(defuser, SCompIp, BashStmt))
             of.close()
@@ -130,7 +130,7 @@ for i in MetaIp:
             SMetaDir = ''.join(MetaDir[MIPN])
             print(SMetaIp,SMetaPort,SMetaDir)
             of=open('config.sh','a')
-            AddLine = "line=`cat -n %s/%s/my_%s.cnf | grep '\\'%s =\\'' | awk '\\'{print $1}\\''` && " % (SMetaDir, SMetaPort, SMetaPort, SMedakeys)
+            AddLine = "line=`cat %s/%s/my_%s.cnf | grep -n '\\'^%s =\\'' | awk -F: '\\'{print \\$1}\\''` && " % (SMetaDir, SMetaPort, SMetaPort, SMedakeys)
             SedDel = 'sed -i "${line}d" ' + SMetaDir +'/' + SMetaPort + '/my_' + SMetaPort +'.cnf && '
             SedAdd = 'sed -i "${line}i ' + SMedakeys + ' = ' + SMedavalues + '" ' + SMetaDir +'/' + SMetaPort + '/my_' + SMetaPort +'.cnf '
             BashStmt = AddLine + SedDel + SedAdd
@@ -153,7 +153,7 @@ for i in DataIp:
             SDataDir = ''.join(DataDir[DIPN])
 
             of=open('config.sh','a')
-            AddLine = "line=`cat -n %s/%s/my_%s.cnf | grep '\\'%s =\\'' | awk '\\'{print $1}\\''` && " % (SDataDir, SDataPort, SDataPort, SMedakeys)
+            AddLine = "line=`cat  %s/%s/my_%s.cnf | grep -n '\\'^%s =\\'' | awk -F: '\\'{print \\$1}\\''` && " % (SDataDir, SDataPort, SDataPort, SMedakeys)
             SedDel = 'sed -i "${line}d" ' + SDataDir +'/' + SDataPort + '/my_' + SDataPort +'.cnf && '
             SedAdd = 'sed -i "${line}i ' + SMedakeys + ' = ' + SMedavalues + '" ' + SDataDir +'/' + SDataPort + '/my_' + SDataPort +'.cnf '
             BashStmt = AddLine + SedDel + SedAdd
