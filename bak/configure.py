@@ -175,7 +175,7 @@ for i in DataIp:
     DIPN+=1
 
 of=open('config.sh','a')
-stmt = "python2 generate_scripts.py --action=stop --config=%s --defbase=%s \n\ntime bash clean/commands.sh \n\npython2 generate_scripts.py --action=start --config=%s \n\ntime bash install/commands.sh" % (install, defbase, install)
+stmt = "python2 generate_scripts.py --action=stop --config=%s --defbase=%s \n\ntime bash stop/commands.sh \n\npython2 generate_scripts.py --action=start --config=%s \n\ntime bash start/commands.sh" % (install, defbase, install)
 of.write(stmt)
 of.close()
 
