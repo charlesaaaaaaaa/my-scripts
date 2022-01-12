@@ -112,11 +112,19 @@ for i in CompIp:
             SedDel = 'sed -i "${line}d" ' + SCompDir +'/postgresql.conf && '
             SedAdd = 'sed -i "${line}i ' + SCompkeys + ' = ' + SCompvalues + '" ' + SCompDir +'/postgresql.conf'
             BashStmt = AddLine + SedDel + SedAdd
-            of.write("bash remote_run.sh --user=%s %s '%s'\n" %(defuser, SCompIp, BashStmt))
+            of.write("bash remote_run.sh --user=%s %s '%s'\n\n" %(defuser, SCompIp, BashStmt))
             of.close()
+            #of=open('config.sh','a')
+            #of.write("bash remote_run.sh --user=%s %s %s/bin/pg_ctl reload -D %s\n\n" % (defuser, SCompIp, SCompDir, SCompDir))
+           # of.close()
         else:
             err = 'Computing node' + CompId + ':' + CompPort + 'parameter :"' + Compkeys[ini] + '" not found'
             print(err)
+
+    of=open('config.sh','a')
+    of.write("bash remote_run.sh --user=%s %s %s/bin/pg_ctl reload -D %s\n\n" % (defuser, SCompIp, defbase, SCompDir))
+    of.close()
+
     CIPN+=1
 
 MIPN = 0
@@ -134,11 +142,12 @@ for i in MetaIp:
             SedDel = 'sed -i "${line}d" ' + SMetaDir +'/' + SMetaPort + '/my_' + SMetaPort +'.cnf && '
             SedAdd = 'sed -i "${line}i ' + SMedakeys + ' = ' + SMedavalues + '" ' + SMetaDir +'/' + SMetaPort + '/my_' + SMetaPort +'.cnf '
             BashStmt = AddLine + SedDel + SedAdd
-            of.write("bash remote_run.sh --user=%s %s '%s'\n" %(defuser, SMetaIp, BashStmt))
+            of.write("bash remote_run.sh --user=%s %s '%s'\n\n" %(defuser, SMetaIp, BashStmt))
             of.close()
         else:
             err = 'Computing node' + CompId + ':' + CompPort + 'parameter :"' + Compkeys[ini] + '" not found'
             print(err)
+
 
     MIPN+=1
 
@@ -157,7 +166,7 @@ for i in DataIp:
             SedDel = 'sed -i "${line}d" ' + SDataDir +'/' + SDataPort + '/my_' + SDataPort +'.cnf && '
             SedAdd = 'sed -i "${line}i ' + SMedakeys + ' = ' + SMedavalues + '" ' + SDataDir +'/' + SDataPort + '/my_' + SDataPort +'.cnf '
             BashStmt = AddLine + SedDel + SedAdd
-            of.write("bash remote_run.sh --user=%s %s '%s'\n" %(defuser, SDataIp, BashStmt))
+            of.write("bash remote_run.sh --user=%s %s '%s'\n\n" %(defuser, SDataIp, BashStmt))
             of.close()
         else:
             err = 'Computing node' + CompId + ':' + CompPort + 'parameter :"' + Compkeys[ini] + '" not found'
@@ -165,7 +174,13 @@ for i in DataIp:
 
     DIPN+=1
 
+of=open('config.sh','a')
+stmt = "python2 generate_scripts.py --action=stop --config=%s --defbase=%s \n\ntime bash clean/commands.sh \n\npython2 generate_scripts.py --action=start --config=%s \n\ntime bash install/commands.sh" % (install, defbase, install)
+of.write(stmt)
+of.close()
+
 subprocess.run("bash ./config.sh",shell=True)
+
 
 if __name__ == '__main__':
     print('[' + '--defuser = ' + defuser + ', --defbase = ' + defbase + ', --install = ' + install + ', --config = ' + config + ']')
