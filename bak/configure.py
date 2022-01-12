@@ -122,7 +122,7 @@ for i in CompIp:
             print(err)
 
     of=open('config.sh','a')
-    of.write("bash remote_run.sh --user=%s %s %s/bin/pg_ctl reload -D %s\n\n" % (defuser, SCompIp, defbase, SCompDir))
+    of.write("bash remote_run.sh --user=%s %s %s/postgresql-11.5-rel/bin/pg_ctl reload -D %s\n\n" % (defuser, SCompIp, defbase, SCompDir))
     of.close()
 
     CIPN+=1
