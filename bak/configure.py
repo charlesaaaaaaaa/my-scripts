@@ -1,8 +1,23 @@
 import subprocess
 from time import sleep
 import json
+import argparse
+import os
 
-OpenCluster=open('install_nomgr.json', encoding='utf-8')
+parser = argparse.ArgumentParser(description='Configure')
+parser.add_argument('--defuser', type=str, default='kunlun', help='User')
+parser.add_argument('--defbase', type=str, default='/kunlun', help='basedir')
+parser.add_argument('--install', type=str, default='./install.json', help='The original configuration file for the Kunlun_cluster')
+parser.add_argument('--config', type=str, default='./configure.json', help='the configuration file')
+
+args = parser.parse_args()
+
+defuser=args.defuser
+defbase=args.defbase
+install=args.install
+config=args.config
+
+OpenCluster=open(install, encoding='utf-8')
 ReadCluster=json.loads(OpenCluster.read())
 
 MetaTotal=ReadCluster['cluster']['meta']['nodes']
@@ -58,7 +73,7 @@ for i in DataTotal: # get data node info
 
 print('Meta:', MetaIp, MetaPort, MetaDir, MetaUser, '\n','Comp:', CompIp, CompPort, CompDir, CompUser, '\n','Data:', DataIp, DataPort, DataDir, DataUser)
 
-OpenConf=open("confs.json",encoding='utf-8') # get computing conf info
+OpenConf=open(config,encoding='utf-8') # get computing conf info
 ReadConf=json.loads(OpenConf.read())
 
 CompConf=ReadConf['comp'][0] # get data&metadata conf info
@@ -72,11 +87,19 @@ Medavalues=list(MedaConf.values())
 CompNum=len(Compkeys)
 sCompNum = str(CompNum)
 MedaNum=len(Medakeys)
-print('CompNum=',CompNum,'\n',Compkeys,'\n', Compvalues, '\n', 'Medanum=', MedaNum, '\n', Medakeys, '\n', Medavalues)
+#print('CompNum=',CompNum,'\n',Compkeys,'\n', Compvalues, '\n', 'Medanum=', MedaNum, '\n', Medakeys, '\n', Medavalues)
 
-CIPN=0
+CIPN = 0 #generate bash file
+
+try:
+    os.remove('config.sh')
+except:
+    pass
+finally:
+    pass
+
 for i in CompIp:
-    for a in range(0,CompNum):
+    for a in range(0, CompNum):
         if Compvalues[a] :
             SCompkeys = ''.join(Compkeys[a])
             SCompDir = ''.join(CompDir[CIPN])
@@ -85,13 +108,64 @@ for i in CompIp:
             SCompIp = ''.join(CompIp[CIPN])
             
             of=open('config.sh','a')
-            AddLine = "line=`cat %s/postgresql.conf | grep '%s =' | awk '{print $1}'` && " % (SCompDir,SCompkeys)
+            AddLine = "line=`cat %s/postgresql.conf | grep '\\'%s =\\'' | awk '\\'{print $1}\\''` && " % (SCompDir,SCompkeys)
             SedDel = 'sed -i "${line}d" ' + SCompDir +'/postgresql.conf && '
-            SedAdd = 'sed -i "${line}i ' + SCompkeys + ' = ' + SCompvalues + '"'
+            SedAdd = 'sed -i "${line}i ' + SCompkeys + ' = ' + SCompvalues + '"' + SCompDir +'/postgresql.conf'
             BashStmt = AddLine + SedDel + SedAdd
-            of.write("bash remote_run.sh --user=%s %s '%s'\n" %(SCompUser, SCompIp, BashStmt))
+            of.write("bash remote_run.sh --user=%s %s '%s'\n" %(defuser, SCompIp, BashStmt))
             of.close()
         else:
             err = 'Computing node' + CompId + ':' + CompPort + 'parameter :"' + Compkeys[ini] + '" not found'
             print(err)
     CIPN+=1
+
+MIPN = 0
+for i in MetaIp:
+    for a in range(0, MedaNum):
+        if Medavalues[a]:
+            SMedakeys = ''.join(Medakeys[a])
+            SMedavalues = str(Medavalues[a])
+            SMetaIp = ''.join(MetaIp[MIPN])
+            SMetaPort = str(MetaPort[MIPN])
+            SMetaDir = ''.join(MetaDir[MIPN])
+            print(SMetaIp,SMetaPort,SMetaDir)
+            of=open('config.sh','a')
+            AddLine = "line=`cat %s/%s/my_%s.cnf | grep '\\'%s =\\'' | awk '\\'{print $1}\\''` && " % (SMetaDir, SMetaPort, SMetaPort, SMedakeys)
+            SedDel = 'sed -i "${line}d" ' + SMetaDir +'/' + SMetaPort + '/my_' + SMetaPort +'.cnf && '
+            SedAdd = 'sed -i "${line}i ' + SMedakeys + ' = ' + SMedavalues + '" ' + SMetaDir +'/' + SMetaPort + '/my_' + SMetaPort +'.cnf '
+            BashStmt = AddLine + SedDel + SedAdd
+            of.write("bash remote_run.sh --user=%s %s '%s'\n" %(defuser, SMetaIp, BashStmt))
+            of.close()
+        else:
+            err = 'Computing node' + CompId + ':' + CompPort + 'parameter :"' + Compkeys[ini] + '" not found'
+            print(err)
+
+    MIPN+=1
+
+DIPN = 0
+for i in DataIp:
+    for a in range(0, MedaNum):
+        if Medavalues[a]:
+            SMedakeys = ''.join(Medakeys[a])
+            SMedavalues = str(Medavalues[a])
+            SDataIp = ''.join(DataIp[DIPN])
+            SDataPort = str(DataPort[DIPN])
+            SDataDir = ''.join(DataDir[DIPN])
+
+            of=open('config.sh','a')
+            AddLine = "line=`cat %s/%s/my_%s.cnf | grep '\\'%s =\\'' | awk '\\'{print $1}\\''` && " % (SDataDir, SDataPort, SDataPort, SMedakeys)
+            SedDel = 'sed -i "${line}d" ' + SDataDir +'/' + SDataPort + '/my_' + SDataPort +'.cnf && '
+            SedAdd = 'sed -i "${line}i ' + SMedakeys + ' = ' + SMedavalues + '" ' + SDataDir +'/' + SDataPort + '/my_' + SDataPort +'.cnf '
+            BashStmt = AddLine + SedDel + SedAdd
+            of.write("bash remote_run.sh --user=%s %s '%s'\n" %(defuser, SDataIp, BashStmt))
+            of.close()
+        else:
+            err = 'Computing node' + CompId + ':' + CompPort + 'parameter :"' + Compkeys[ini] + '" not found'
+            print(err)
+
+    DIPN+=1
+
+subprocess.run("bash ./config.sh",shell=True)
+
+if __name__ == '__main__':
+    print('[' + '--defuser = ' + defuser + ', --defbase = ' + defbase + ', --install = ' + install + ', --config = ' + config + ']')
