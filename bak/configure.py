@@ -73,8 +73,14 @@ for i in DataTotal: # get data node info
 
 print('Meta:', MetaIp, MetaPort, MetaDir, MetaUser, '\n','Comp:', CompIp, CompPort, CompDir, CompUser, '\n','Data:', DataIp, DataPort, DataDir, DataUser)
 
-OpenConf=open(config,encoding='utf-8') # get computing conf info
-ReadConf=json.loads(OpenConf.read())
+try:
+    OpenConf=open(config,encoding='utf-8') # get computing conf info
+    ReadConf=json.loads(OpenConf.read())
+except:
+    print"open configure file %s fail, please check" % config)
+finally:
+    pass
+
 
 CompConf=ReadConf['comp'][0] # get data&metadata conf info
 MedaConf=ReadConf['meta-storage'][0]
