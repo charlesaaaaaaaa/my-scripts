@@ -106,7 +106,7 @@ for i in CompIp:
             SCompvalues = str(Compvalues[a])
             SCompUser = ''.join(MetaUser[CIPN])
             SCompIp = ''.join(CompIp[CIPN])
-            SCompPort = str.(CompPort)
+            SCompPort = str(CompPort)
             
             of=open('config.sh','a')
             AddLine = "line=`cat %s/postgresql.conf | awk -F= '\\'{print \\$1}\\'' | grep -n -w '\\'^%s\\'' | awk -F: '\\'{print \\$1}\\''` && " % (SCompDir,SCompkeys)
