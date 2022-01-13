@@ -77,7 +77,7 @@ try:
     OpenConf=open(config,encoding='utf-8') # get computing conf info
     ReadConf=json.loads(OpenConf.read())
 except:
-    print"open configure file %s fail, please check" % config)
+    print("open configure file %s fail, please check" % config)
 finally:
     pass
 
