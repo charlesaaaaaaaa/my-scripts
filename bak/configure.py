@@ -78,7 +78,7 @@ try:
     ReadConf=json.loads(OpenConf.read())
 except:
     printe="===================================================================="
-    print("\n\n%s\n--------- open configure file %s fail, please check --------\n%s\n" % (printe, config,printe))
+    print("\n\n%s\n--------- open configuration file %s fail, please check --------\n%s\n" % (printe, config,printe))
 finally:
     pass
 
