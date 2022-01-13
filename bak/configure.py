@@ -106,6 +106,7 @@ for i in CompIp:
             SCompvalues = str(Compvalues[a])
             SCompUser = ''.join(MetaUser[CIPN])
             SCompIp = ''.join(CompIp[CIPN])
+            SCompPort = str.(CompPort)
             
             of=open('config.sh','a')
             AddLine = "line=`cat %s/postgresql.conf | awk -F= '\\'{print \\$1}\\'' | grep -n -w '\\'^%s\\'' | awk -F: '\\'{print \\$1}\\''` && " % (SCompDir,SCompkeys)
@@ -118,7 +119,7 @@ for i in CompIp:
             #of.write("bash remote_run.sh --user=%s %s %s/bin/pg_ctl reload -D %s\n\n" % (defuser, SCompIp, SCompDir, SCompDir))
            # of.close()
         else:
-            err = 'Computing node' + CompId + ':' + CompPort + 'parameter :"' + Compkeys[ini] + '" not found'
+            err = 'Computing node' + SCompIp + ':' + SCompPort + 'parameter :"' + SCompkeys + '" values is null'
             print(err)
 
     of=open('config.sh','a')
@@ -145,7 +146,7 @@ for i in MetaIp:
             of.write("bash remote_run.sh --user=%s %s '%s'\n\n" %(defuser, SMetaIp, BashStmt))
             of.close()
         else:
-            err = 'Computing node' + CompId + ':' + CompPort + 'parameter :"' + Compkeys[ini] + '" not found'
+            err = 'Metadata node' + SMetaIp + ':' + SMetaPort + 'parameter :"' + SMedakeys + '" vaules is null! '
             print(err)
 
 
@@ -169,7 +170,7 @@ for i in DataIp:
             of.write("bash remote_run.sh --user=%s %s '%s'\n\n" %(defuser, SDataIp, BashStmt))
             of.close()
         else:
-            err = 'Computing node' + CompId + ':' + CompPort + 'parameter :"' + Compkeys[ini] + '" not found'
+            err = 'Data node' + SDataIp + ':' + SDataPort + 'parameter :"' + SMedakeys + '" values is null!'
             print(err)
 
     DIPN+=1
