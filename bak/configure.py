@@ -71,14 +71,14 @@ for i in DataTotal: # get data node info
         DataUser.append(user)
 
 
-print('Meta:', MetaIp, MetaPort, MetaDir, MetaUser, '\n','Comp:', CompIp, CompPort, CompDir, CompUser, '\n','Data:', DataIp, DataPort, DataDir, DataUser)
+#print('Meta:', MetaIp, MetaPort, MetaDir, MetaUser, '\n','Comp:', CompIp, CompPort, CompDir, CompUser, '\n','Data:', DataIp, DataPort, DataDir, DataUser)
 
 try:
     OpenConf=open(config,encoding='utf-8') # get computing conf info
     ReadConf=json.loads(OpenConf.read())
 except:
     printe="===================================================================="
-    print("%s\n--------- open configure file %s fail, please check --------\n%s\n" % (printe, config,printe))
+    print("\n\n%s\n--------- open configure file %s fail, please check --------\n%s\n" % (printe, config,printe))
 finally:
     pass
 
