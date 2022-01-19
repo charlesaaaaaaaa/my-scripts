@@ -107,10 +107,16 @@ def checkAllSystemTable():
             conn.close()
         num += 1
 
-    num = 0
+    
     for i in ip: #check tmp file
-        for i in range(5):
-            pass
+        num = 0
+        for a in range(3):
+            tbName = SysTabName[a]
+            diff = filecmp.cmp("./ddl-diff/%s%d" %(tbName, num), "./ddl-diff/%s%d" %(tbName, num + 1))
+            if diff :
+                print("./ddl-diff/%s%d" %(tbName, num) + 'is the same as' + "./ddl-diff/%s%d" %(tbName, num + 1) , success)
+            else:
+                print("./ddl-diff/%s%d" %(tbName, num) + 'is not the same as' + "./ddl-diff/%s%d" %(tbName, num + 1) , failure)
             
 
 def cheakAllCnsHasTpccRows():
