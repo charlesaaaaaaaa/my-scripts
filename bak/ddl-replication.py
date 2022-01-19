@@ -92,16 +92,17 @@ def checkAllSystemTable():
     num = 0
     subprocess.run('mkdir -p ./ddl-diff', shell = True)
     for a in ip: #generate tmp file
-        for i in range(5):
+        for i in range(4):
             conn=psycopg2.connect(database = 'postgres', user = user[num], host = ip[num], port = port[num], password = pwd[num])
             cur=conn.cursor();
             sysTab=sysTabName[i]
             execStmt = "select * from %s" % (sysTab)
             cur.execute(execStmt)
-            result_log = cur.fetchall()
+            result = str(cur.fetchall())
+            result_log = result.replace(')',')\n')
 
             with open("./ddl-diff/%s%s" %(sysTab, num), 'w') as f:
-                f.write("\n".join(str(result_log)))
+                f.write(result_log)
             cur.close()
             conn.close()
         num += 1
