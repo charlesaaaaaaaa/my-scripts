@@ -302,6 +302,30 @@ def Check_pg_ddl_log_progress():
     stmt1 = 'select dbid from pg_ddl_log_progress'
     TemplateGetResult(stmt1, 'pg_ddl_log_progress')
     TemplateFilecmp('pg_ddl_log_progress')
+    
+    num = 0
+    execStmt1 = "select ddl_op_id from pg_ddl_log_progress"
+    execStmt2 = "select max_op_id_done_local from pg_ddl_log_progress"
+    for i in ip:
+        conn = psycopg2.connect(database = 'postgres', user = user[num], host = i, port = port[num], password = pwd[num])
+        cur = conn.cursor()
+        cur.execute(execStmt1)
+        opid = cur.fetchall()
+        cur.close()
+        conn.close()
+
+        conn = psycopg2.connect(database = 'postgres', user = user[num], host = i, port = port[num], password = pwd[num])
+        cur = conn.cursor()
+        cur.execute(execStmt2)
+        maxid = cur.fetchall()
+        cur.close()
+        conn.close()
+        
+        exec("ddlog%d = []" % num)
+        exec("ddlog%d.append(maxid)" % num)
+        exec("ddlog%d.append(opid)" % num)
+        
+        num += 1
 
 def cheakAllCnsHasTpccRows():
     TpccTabName = ['history1', 'customer1', 'district1', 'item1', 'order_line1', 'orders1', 'stock1','warehouse1']
