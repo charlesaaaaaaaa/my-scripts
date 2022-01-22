@@ -4,6 +4,7 @@ import argparse
 import psycopg2
 import subprocess
 import filecmp
+import linecache
 
 def readJsonFile():
     Comp = open(File,encoding = 'utf-8')
@@ -306,6 +307,7 @@ def Check_pg_ddl_log_progress():
     num = 0
     execStmt1 = "select ddl_op_id from pg_ddl_log_progress"
     execStmt2 = "select max_op_id_done_local from pg_ddl_log_progress"
+    
     for i in ip:
         conn = psycopg2.connect(database = 'postgres', user = user[num], host = i, port = port[num], password = pwd[num])
         cur = conn.cursor()
@@ -320,12 +322,128 @@ def Check_pg_ddl_log_progress():
         maxid = cur.fetchall()
         cur.close()
         conn.close()
-        
-        exec("ddlog%d = []" % num)
-        exec("ddlog%d.append(maxid)" % num)
-        exec("ddlog%d.append(opid)" % num)
-        
+
+        values = str(opid + maxid)
+        values = values.replace(',), ','\n')
+        values = values.replace('[','')
+        values = values.replace('(','')
+        values = values.replace(',)]','')
+
+        with open("./ddl-diff/Cns%s" % num, 'w') as f:
+            f.write(values)
+        count = len(open("./ddl-diff/Cns%s" % num, 'rU').readlines())
         num += 1
+    
+    #现在是把所有节点的pg_ddl_log_process的第二列和第三列的值给取出来一个个进行对比
+    #如果节点1的value1和节点2的值出现相同的则和节点3对比，如果和其它节点比都没有问题
+    #则换节点1的其它值与其它节点的值进行对比
+    #节点1对比完就换节点2进行对比
+    #直到所有的节点都对比完成
+    timenum = 0 #找出所有节点的个数
+    for times in ip:
+        timenum += 1
+    filenum = 0
+    for a in range(timenum): #以节点个数循环
+        count = len(open("./ddl-diff/Cns%s" % filenum, 'rU').readlines()) #检查当前节点的值个数
+        filenum += 1
+        for line in range(1, count + 1): # 开始查找被对比的节点的当前值
+            thisline = linecache.getline("./ddl-diff/Cns%s" % (a), line)
+            for otherfile in range(timenum): # 再以节点所有数量为循环
+                flag = False
+                for otherline in range(1, count +1): # 找到要对比节点的当前值，然后与被对比的节点的值进行对比
+                    otherlines = linecache.getline("./ddl-diff/Cns%s" % (otherfile) , otherline)
+                    if otherlines == thisline :
+                        flag = True
+                        break
+                    else:
+                        pass
+                        
+                if flag:
+                    pass
+                else :
+                    print("CN%s table:pg_ddl_log_process values === %s === can not find with Cn%s, failure \n" %(a, thisline, otherfile)) ;
+    
+    #这一步是对比第一个节点的最后一列，最后一列一定是与另一个节点值相反，其他节点则和第一个节点相同
+    TemplateGetResult('select ddl_op_id from pg_ddl_log_progress','opid') #遍历所有节点然后各查询一次select语句，然后写到以opid开头的文件里
+    TemplateGetResult('select max_op_id_done_local from pg_ddl_log_progress','maxid') #遍历所有节点然后各查询一次select语句，然后写到以maxid开头的文件里
+    num = 0
+    for i in ip:
+    #每个节点各生成一个最后记录ddl_op_id列和max_op_id_done_local列最后一行的临时文件
+        with open("./ddl-diff/opid%s" % (num), 'r') as f:
+            opLine = f.readlines()
+        sopLine = str(opLine)
+        a = ",)\\n', ']']"
+        b = ",)\\n', ', ("
+        sopLine = sopLine.replace(a,'')
+        sopLine = sopLine.replace(b,'\n')
+        f.close()
+        
+        with open("./ddl-diff/opid%s" % (num), 'w') as f:
+            f.write(sopLine)
+        f.close()
+
+        with open("./ddl-diff/opid%s" % (num), 'r') as f:
+            opline = f.readlines()
+            opLastLine = opline[-1]
+
+        
+        with open("./ddl-diff/maxid%s" % (num), 'r') as f:
+            maxLine = f.readlines()
+        smaxLine = str(maxLine)
+        a = ",)\\n', ']']"
+        b = ",)\\n', ', ("
+        smaxLine = smaxLine.replace(a,'')
+        smaxLine = smaxLine.replace(b,'\n')
+        f.close()
+
+        with open("./ddl-diff/maxid%s" % (num), 'w') as f:
+            f.write(smaxLine)
+        f.close()
+
+        with open("./ddl-diff/maxid%s" % (num), 'r') as f:
+            maxline = f.readlines()
+            maxLastLine = maxline[-1]
+
+        #opLastLine = linecache.getline("./ddl-diff /opid%s" % (num), -2)
+        #maxLastLine = linecache.getline("./ddl-diff/maxid%s" % (num), -2)
+        #print(" %s\n%s\n " % (opLastLine, maxLastLine))
+        LastLine = "%s\n%s\n" % (opLastLine, maxLastLine)
+        print(LastLine)
+        with open("./ddl-diff/lastline%s" % (num), 'w') as f:
+            f.write(LastLine)
+        num += 1
+
+    # 将生成的存有节点信息的临时文件0和其它刚生成的临时文件相比
+    num = 0
+    cnum = 0
+    for i in Cns:
+        if i == Cns[-1]:
+            pass
+        else :
+            filenow = "./ddl-diff/lastline%s" % (0)
+            filelater = "./ddl-diff/lastline%s" % (num + 1)
+            print(filenow, filelater)
+            diff = filecmp.cmp(filenow, filelater)
+            if diff:
+                pass
+                num +=1
+            else : #如果文件不一致，则cnum +1
+                cnum += 1
+                opid1 = linecache.getline(filenow , 1)
+                maxid1 = linecache.getline(filenow, 2)
+                opid2 = linecache.getline(filelater, 1)
+                maxid2 = linecache.getline(filelater, 2)
+                if opid1 == maxid2 and maxid1 == opid2:
+                    pass
+                    num += 1
+                else : #如果不一致的两个文件内容不符合文件1的值1 = 文件2 并且 文件1的值2 == 文件2的值1，则cnum + 1
+                    cnum += 1
+                    num += 1
+
+    if cnum == 1 : #如果说cnum数为1，则刚好符合只有一个节点和节点1不同，其它节点都一样且不同的节点和节点1的值刚好相反
+        pass
+    else :
+        print('the last row of table "pg_ddl_log_progress" got some worng, please check, failure !!! ')
 
 def cheakAllCnsHasTpccRows():
     TpccTabName = ['history1', 'customer1', 'district1', 'item1', 'order_line1', 'orders1', 'stock1','warehouse1']
@@ -363,7 +481,7 @@ if __name__ == '__main__':
     #createDbAndConnect()
     #PrepareTpccAndRunTpcc5Second()
     #cheakAllCnsHasTpccRows()
-    checkAllSystemTable()
-    Checkpg_cluster_meta()
-    Check_pg_class()
+    #checkAllSystemTable()
+    #Checkpg_cluster_meta()
+    #Check_pg_class()
     Check_pg_ddl_log_progress()
