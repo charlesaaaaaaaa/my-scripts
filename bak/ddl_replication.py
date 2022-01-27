@@ -64,7 +64,7 @@ def TemplateGetResult(Stmt, genFile):
         num += 1
 
 def TemplateFilecmp(tableName):
-    print("\n======== " + tableName + " ========\n")
+    print("\n======== " + tableName + " ========")
     num = 0
     for i in Cns:
         if i == Cns[-1]:
@@ -78,28 +78,35 @@ def TemplateFilecmp(tableName):
         num += 1
 
 def createDbAndConnect():
-    num = 0
-    for i in ip:
-        dbnum = num + 1
-        conn = psycopg2.connect(database = 'postgres', user = user[num], host = ip[num], port = port[num], password = pwd[num] )
-        cur = conn.cursor()
-        conn.autocommit = True
-        dbname="t%i" % (dbnum)
-        CreateDb="""
-            CREATE DATABASE {};
-            """ .format(dbname)
-        cur.execute(CreateDb)
-        print('create Database {} success!' .format(dbname))
+    try:
+        num = 0
+        for i in ip:
+            dbnum = num + 1
+            conn = psycopg2.connect(database = 'postgres', user = user[num], host = ip[num], port = port[num], password = pwd[num] )
+            cur = conn.cursor()
+            conn.autocommit = True
+            dbname="t%i" % (dbnum)
+            CreateDb="""
+                CREATE DATABASE {};
+                """ .format(dbname)
+            cur.execute(CreateDb)
+            print('create Database {} success!' .format(dbname))
+            cur.close()
+            conn.close()
+
+            conn = psycopg2.connect(database = dbname, user = user[num], host = ip[num], port = port[num], password = pwd[num] )
+            print('connect database {} success!' .format(dbname))
+            conn.close()
+            sleep(3)
+            num += 1
+    except:
+        print("create database fail")
+    finally:
         cur.close()
         conn.close()
 
-        conn = psycopg2.connect(database = dbname, user = user[num], host = ip[num], port = port[num], password = pwd[num] )
-        print('connect database {} success!' .format(dbname))
-        conn.close()
-        sleep(3)
-        num += 1
-
 def PrepareTpccAndRunTpcc5Second():
+
     bak = 'cp ../Tools/sysbench-tpcc/tpcc.lua ../Tools/sysbench-tpcc/tpcc.luabak'
     path = 'path=`cd ../Tools/sysbench-tpcc/ && pwd`'
     bak2 = 'cp $path/prepare.sh $path/prepare.shbak && cp $path/tpcc_common.lua $path/tpcc_common.luabak && cp $path/run.sh $path/run.shbak'
@@ -119,7 +126,7 @@ def PrepareTpccAndRunTpcc5Second():
         sleep(5)
         num += 1
 
-    filebak='mv ../Tools/sysbench-tpcc/prepare.shbak ../Tools/sysbench-tpcc/prepare.sh && mv ../Tools/sysbench-tpcc/tpcc_common.luabak ../Tools/sysbench-tpcc/tpcc_common.lua && mv ../Tools/sysbench-tpcc/tpcc.luabak ../Tools/sysbench-tpcc/tpcc.lua && mv ../Tools/sysbench-tpcc/run.shbak mv ../Tools/sysbench-tpcc/run.sh && rm log.log '
+    filebak='mv ../Tools/sysbench-tpcc/prepare.shbak ../Tools/sysbench-tpcc/prepare.sh && mv ../Tools/sysbench-tpcc/tpcc_common.luabak ../Tools/sysbench-tpcc/tpcc_common.lua && mv ../Tools/sysbench-tpcc/tpcc.luabak ../Tools/sysbench-tpcc/tpcc.lua && mv ../Tools/sysbench-tpcc/run.shbak ../Tools/sysbench-tpcc/run.sh && rm log.log '
     subprocess.run(filebak, shell = True)
 
 def checkAllSystemTable():
@@ -146,7 +153,7 @@ def checkAllSystemTable():
     for a in range(4): #check tmp file
         num = 0
         tbName = sysTabName[a]
-        print("\n======== " + tbName + " ========\n")
+        print("\n======== " + tbName + " ========")
         for i in Cns:
 
             if i == Cns[-1]:
@@ -189,7 +196,7 @@ def checkAllSystemTable():
         num += 1
         dbnum += 1
 
-    print("\n======== pg_database ========\n")
+    print("\n======== pg_database ========")
     num = 0
     for i in Cns:
         if i == Cns[-1]:
@@ -219,7 +226,7 @@ def checkAllSystemTable():
             f.write(Res)
         num += 1
 
-    print("\n======== pg_shard ========\n")
+    print("\n======== pg_shard ========")
     num = 0
     for i in Cns:
         if i == Cns[-1]:
@@ -248,7 +255,7 @@ def checkAllSystemTable():
             f.write(Res)
         num += 1
 
-    print("\n======== pg_shard_node ========\n")
+    print("\n======== pg_shard_node ========")
     num = 0
     for i in Cns:
         if i == Cns[-1]:
@@ -294,46 +301,80 @@ def Checkpg_cluster_meta(): #check pg_cluster_meta and id/compName
             print('Cns Cinfigure file name :' + str(ids[num]) + ' is not the same as pg_cluster_meta/comp_node_name name, failure')
         num += 1
 
-def Check_pg_class(): # relpages, relallvisible
-    stmt1='select relname, relnamespace, reltype, reloftype, relowner, relam, relfilenode, reltablespace, reltuples, reltoastrelid, relhasindex, relisshared, relpersistence, relkind, relnatts, relchecks, relhasoids, relhasrules, relhastriggers, relhassubclass, relrowsecurity, relforcerowsecurity, relispopulated, relreplident, relispartition, pad1, pad2, relshardid, relrewrite, relfrozenxid, relminmxid, relacl, reloptions, relpartbound from pg_class;'
+def Check_pg_class():
+    stmt1='select relname, relshardid from pg_class;'
     TemplateGetResult(stmt1, 'pg_class')
     TemplateFilecmp('pg_class')
 
 def Check_pg_ddl_log_progress():
-    stmt1 = 'select dbid from pg_ddl_log_progress'
+    stmt1 = 'select t1.nspname, t2.relname, t2.relshardid from pg_namespace t1, pg_class t2 where t1.oid=t2.relnamespace'
     TemplateGetResult(stmt1, 'pg_ddl_log_progress')
     TemplateFilecmp('pg_ddl_log_progress')
-    
+
     num = 0
-    execStmt1 = "select ddl_op_id from pg_ddl_log_progress"
-    execStmt2 = "select max_op_id_done_local from pg_ddl_log_progress"
-    
+    dbnum = 1
     for i in ip:
+        stmt1 = "select t2.ddl_op_id from pg_database t1, pg_ddl_log_progress t2 where t1.oid=t2.dbid and datname = 't%s'" % (dbnum)
+        stmt2 = "select t2.max_op_id_done_local from pg_database t1, pg_ddl_log_progress t2 where t1.oid=t2.dbid and datname = 't%s'" % (dbnum)
+
+
         conn = psycopg2.connect(database = 'postgres', user = user[num], host = i, port = port[num], password = pwd[num])
         cur = conn.cursor()
-        cur.execute(execStmt1)
+        cur.execute(stmt1)
         opid = cur.fetchall()
         cur.close()
         conn.close()
 
         conn = psycopg2.connect(database = 'postgres', user = user[num], host = i, port = port[num], password = pwd[num])
         cur = conn.cursor()
-        cur.execute(execStmt2)
+        cur.execute(stmt2)
         maxid = cur.fetchall()
         cur.close()
         conn.close()
 
-        values = str(opid + maxid)
-        values = values.replace(',), ','\n')
-        values = values.replace('[','')
-        values = values.replace('(','')
-        values = values.replace(',)]','')
-
+        values = str(opid+maxid)
+        values = values.replace('[(','')
+        values = values.replace(',)','\n')
+        values = values.replace(', (','')
+        values = values.replace(']','')
+        
         with open("./ddl-diff/Cns%s" % num, 'w') as f:
             f.write(values)
         count = len(open("./ddl-diff/Cns%s" % num, 'rU').readlines())
         num += 1
     
+    num = 1    
+    different = 0
+    same = 0
+    for i in Cns:
+        if i == Cns[-1]:
+            pass
+        else:
+            diff = filecmp.cmp("./ddl-diff/Cns0", "./ddl-diff/Cns%s" % (num))
+            if diff :
+                pass
+            else:
+                different += 1
+                filenow = "./ddl-diff/Cns0"
+                filelater = "./ddl-diff/Cns%s" % (num)
+                opid1 = linecache.getline(filenow, 1)
+                maxid1 = linecache.getline(filenow, 1)
+                opid2 = linecache.getline(filelater, 2)
+                maxid2 = linecache.getline(filelater, 2)
+                if opid1 == maxid2 and maxid1 == opid2:
+                    same += 1
+                else:
+                    pass
+        num += 1
+    
+    numResult = num - 2
+    if different == 1 and same == 1:
+        pass
+    elif different == numResult and same == numResult:
+        pass
+    else:
+        print("system table : pg_ddl_log_process failure, please check!!")
+
     #现在是把所有节点的pg_ddl_log_process的第二列和第三列的值给取出来一个个进行对比
     #如果节点1的value1和节点2的值出现相同的则和节点3对比，如果和其它节点比都没有问题
     #则换节点1的其它值与其它节点的值进行对比
@@ -343,6 +384,7 @@ def Check_pg_ddl_log_progress():
     for times in ip:
         timenum += 1
     filenum = 0
+    checknum = 0
     for a in range(timenum): #以节点个数循环
         count = len(open("./ddl-diff/Cns%s" % filenum, 'rU').readlines()) #检查当前节点的值个数
         filenum += 1
@@ -361,9 +403,14 @@ def Check_pg_ddl_log_progress():
                 if flag:
                     pass
                 else :
+                    checknum += 1
                     print("CN%s table:pg_ddl_log_process values === %s === can not find with Cn%s, failure \n" %(a, thisline, otherfile)) ;
-    
-    #这一步是对比第一个节点的最后一列，最后一列一定是与另一个节点值相反，其他节点则和第一个节点相同
+    if checknum == 0:
+        print('pg_ddl_log_process test success')
+    else:
+        print('pg_ddl_log_process test fail, please check!')
+    '''
+    #这一步是对比第一个节点的最后一列，最后一列一定是与另一个节点值相反，其他节点则和第一个节点相同 --- 这步是我想多了，但删掉怪可惜的
     TemplateGetResult('select ddl_op_id from pg_ddl_log_progress','opid') #遍历所有节点然后各查询一次select语句，然后写到以opid开头的文件里
     TemplateGetResult('select max_op_id_done_local from pg_ddl_log_progress','maxid') #遍历所有节点然后各查询一次select语句，然后写到以maxid开头的文件里
     num = 0
@@ -408,43 +455,46 @@ def Check_pg_ddl_log_progress():
         #maxLastLine = linecache.getline("./ddl-diff/maxid%s" % (num), -2)
         #print(" %s\n%s\n " % (opLastLine, maxLastLine))
         LastLine = "%s\n%s\n" % (opLastLine, maxLastLine)
-        print(LastLine)
         with open("./ddl-diff/lastline%s" % (num), 'w') as f:
             f.write(LastLine)
         num += 1
 
     # 将生成的存有节点信息的临时文件0和其它刚生成的临时文件相比
     num = 0
+    global cnum
     cnum = 0
     for i in Cns:
         if i == Cns[-1]:
             pass
         else :
-            filenow = "./ddl-diff/lastline%s" % (0)
+            filenow = "./ddl-diff/lastline0"
             filelater = "./ddl-diff/lastline%s" % (num + 1)
-            print(filenow, filelater)
+            
+#            print(filenow, filelater)
             diff = filecmp.cmp(filenow, filelater)
+#            print(str(diff))
             if diff:
                 pass
-                num +=1
+                num += 1
             else : #如果文件不一致，则cnum +1
                 cnum += 1
                 opid1 = linecache.getline(filenow , 1)
                 maxid1 = linecache.getline(filenow, 2)
                 opid2 = linecache.getline(filelater, 1)
                 maxid2 = linecache.getline(filelater, 2)
+           #     print(opid1,maxid2,maxid1,opid2)
                 if opid1 == maxid2 and maxid1 == opid2:
                     pass
                     num += 1
                 else : #如果不一致的两个文件内容不符合文件1的值1 = 文件2 并且 文件1的值2 == 文件2的值1，则cnum + 1
                     cnum += 1
                     num += 1
-
-    if cnum == 1 : #如果说cnum数为1，则刚好符合只有一个节点和节点1不同，其它节点都一样且不同的节点和节点1的值刚好相反
-        pass
-    else :
-        print('the last row of table "pg_ddl_log_progress" got some worng, please check, failure !!! ')
-
+#    print(cnum)
+#    if cnum == 1 : #如果说cnum数为1，则刚好符合只有一个节点和节点1不同，其它节点都一样且不同的节点和节点1的值刚好相反
+#        pass
+#    else :
+#        print('the last row of table "pg_ddl_log_progress" got some worng, please check, failure !!! ')
+    '''
 def cheakAllCnsHasTpccRows():
     TpccTabName = ['history1', 'customer1', 'district1', 'item1', 'order_line1', 'orders1', 'stock1','warehouse1']
     num = 0
@@ -456,13 +506,32 @@ def cheakAllCnsHasTpccRows():
             cur = conn.cursor();
             execStmt = "select * from %s limit 1" % (a)
             cur.execute(execStmt)
-            print("\n======== check" + i + ':' + str(port[num]) + '/' + db + ' table:' + a + " success ========" )
-            print(cur.fetchall())
+            print("======== check" + i + ':' + str(port[num]) + '/' + db + ' table:' + a + " success ========" )
+            #print(cur.fetchall())
             cur.close()
             conn.close()
+        
         num += 1
+
         dbnum += 1
 
+def clearAllTmpFileAndDropDatabases():
+    num = 0 
+    dbnum = 1
+    for i in ip:
+        db = "t%d" % (dbnum)
+        conn = psycopg2.connect(database = 'postgres', user = user[num], host = i, port = port[num], password = pwd[num])
+        cur = conn.cursor()
+        conn.autocommit = True
+        stmt1 = "DROP DATABASE %s" % (db)
+        cur.execute(stmt1)
+        print(stmt1 + ', please wait 5s')
+        sleep(5)
+        cur.close()
+        conn.close()
+        num += 1
+        dbnum += 1
+    subprocess.run('rm -rf ./ddl-diff', shell = True)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'this script is use to test ddl replication!')
@@ -477,11 +546,12 @@ if __name__ == '__main__':
         Cn="%s:%s" % (i, str(port[num]))
         Cns.append(Cn)
         num += 1
-    #print('ip=[' + sip + ']\n' + 'port=' + sport + '\npwd= ' + pwd[0])
-    #createDbAndConnect()
-    #PrepareTpccAndRunTpcc5Second()
-    #cheakAllCnsHasTpccRows()
-    #checkAllSystemTable()
-    #Checkpg_cluster_meta()
-    #Check_pg_class()
+
+    createDbAndConnect()
+    PrepareTpccAndRunTpcc5Second()
+    cheakAllCnsHasTpccRows()
+    checkAllSystemTable()
+    Checkpg_cluster_meta()
+    Check_pg_class()
     Check_pg_ddl_log_progress()
+    clearAllTmpFileAndDropDatabases()
