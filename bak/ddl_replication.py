@@ -20,6 +20,7 @@ def readJsonFile():
     global name
     global pwd
     global ids
+    global datadir
     
     ip = []
     ids = []
@@ -27,6 +28,7 @@ def readJsonFile():
     user = []
     name = []
     pwd = []
+    datadir = []
     
     for i in totalComp:
         CompId = i['id']
@@ -35,14 +37,17 @@ def readJsonFile():
         CompUser = i['user']
         CompName = i['name']
         CompPwd = i['password']
+        DataDir = i['datadir']
         ids.append(CompId)
         ip.append(CompIp)
         port.append(CompPort)
         user.append(CompUser)
         name.append(CompName)
         pwd.append(CompPwd)
+        datadir.append(DataDir)
     sip = ', '.join(ip)
     sport = str(port)
+    #iprint(datadir)
     #print('ip=[' + sip + ']')
     #print('port=' + sport)
     return(ip, port, sip, sport)
@@ -106,29 +111,52 @@ def createDbAndConnect():
         conn.close()
 
 def PrepareTpccAndRunTpcc5Second():
-
+    '''
     bak = 'cp ../Tools/sysbench-tpcc/tpcc.lua ../Tools/sysbench-tpcc/tpcc.luabak'
     path = 'path=`cd ../Tools/sysbench-tpcc/ && pwd`'
     bak2 = 'cp $path/prepare.sh $path/prepare.shbak && cp $path/tpcc_common.lua $path/tpcc_common.luabak && cp $path/run.sh $path/run.shbak'
     inTc = 'sed -i "s/sleep(30)/--sleep(30)/" $path/tpcc_common.lua && sed -i "s@./tpcc.lua@$path/tpcc.lua@" $path/prepare.sh && sed -i "s@./tpcc.lua@$path/tpcc.lua@" $path/run.sh'
     lineTp = 'sed -i "' + '20i package.path =\\"$path/tpcc_common.lua\\"..\\";..\\\\?.lua\\"' + '" ../Tools/sysbench-tpcc/tpcc.lua'
     line = "%s && %s && %s && %s && %s " % (path, bak ,bak2, inTc, lineTp)
-    subprocess.run(line, shell=True)
+    '''
+    num = 0
+    for i in ip :
+        sendTpcc = "bash dist.sh --hosts=%s --user=%s ../Tools/sysbench-tpcc/ %s > log.log" % (i, defuser, datadir[num])
+        repTpcc = "bash remote_run.sh --user=%s %s 'sed -i " % (defuser, i) + '"' + '20i package.path =\\"' + "%s/sysbench-tpcc/tpcc_common.lua" % (datadir[num]) + '\\"..\\";..?.lua\\""' +  " %s/sysbench-tpcc/tpcc.lua' > log.log" % (datadir[num])
+        repTpcc1 = "bash remote_run.sh --user=%s %s 'sed -i \"s@sleep(30)@--sleep(30)@\" %s/sysbench-tpcc/tpcc_common.lua'> log.log" % (defuser, i, datadir[num])
+        repTpcc2 = "bash remote_run.sh --user=%s %s 'sed -i \"s@./tpcc.lua@%s/sysbench-tpcc/tpcc.lua@\" %s/sysbench-tpcc/prepare.sh'> log.log" % (defuser, i, datadir[num], datadir[num])
+        repTpcc3 = "bash remote_run.sh --user=%s %s 'sed -i \"s@./tpcc.lua@%s/sysbench-tpcc/tpcc.lua@\" %s/sysbench-tpcc/run.sh'> log.log" % (defuser, i, datadir[num], datadir[num])
+        repTpcc4 = "bash remote_run.sh --user=%s %s 'sed -i \"s@par.sh@%s/sysbench-tpcc/par.sh@\" %s/sysbench-tpcc/prepare.sh'> log.log" % (defuser, i, datadir[num], datadir[num])
+        repTpcc5 = "bash remote_run.sh --user=%s %s 'sed -i \"s@./par.sh@%s/sysbench-tpcc/par.sh@\" %s/sysbench-tpcc/run.sh'> log.log" % (defuser, i, datadir[num], datadir[num])
+        line = "%s && %s && %s && %s && %s && %s && %s " % (sendTpcc, repTpcc, repTpcc1, repTpcc2, repTpcc3, repTpcc4, repTpcc5)
+        subprocess.run(line, shell=True)
+        num += 1
 
     num = 0
     for i in ip:
         dbnum = num + 1
         print('======== run TPCC on %s:%s ========' % (i, port[num]))
-        runLine = "bash ../Tools/sysbench-tpcc/prepare.sh %s %s t%d %s %s 1 1 1 5 > log.log &" % (i, port[num], dbnum, user[num], pwd[num])
+        preLine = "bash remote_run.sh --user=%s %s '%s/sysbench-tpcc/prepare.sh %s %s t%d %s %s 1 1 1 5 >log.log &'>log.log &" % (defuser, i, datadir[num], i, port[num], dbnum, user[num], pwd[num])
+        subprocess.run(preLine, shell = True)
+        num += 1 
+        dbnum += 1
+    
+    sleep(55)
+    '''
+    num = 0 
+    for i in ip:
+        runLine = "bash remote_run.sh --user=%s %s '%s/sysbench-tpcc/run.sh 1 > log.log &' > log.log &" % (defuser, i, datadir[num])
         subprocess.run(runLine, shell = True)
-        sleep(55)
-        subprocess.run('bash ../Tools/sysbench-tpcc/run.sh 1 > log.log & ', shell = True)
-        sleep(5)
         num += 1
-
-    filebak='mv ../Tools/sysbench-tpcc/prepare.shbak ../Tools/sysbench-tpcc/prepare.sh && mv ../Tools/sysbench-tpcc/tpcc_common.luabak ../Tools/sysbench-tpcc/tpcc_common.lua && mv ../Tools/sysbench-tpcc/tpcc.luabak ../Tools/sysbench-tpcc/tpcc.lua && mv ../Tools/sysbench-tpcc/run.shbak ../Tools/sysbench-tpcc/run.sh && rm log.log '
-    subprocess.run(filebak, shell = True)
-
+    
+    sleep(5)
+    '''
+    num = 0 
+    for i in ip:
+        filebak="bash remote_run.sh --user=%s %s 'rm -rf %s/sysbench-tpcc > log.log &' > log.log &" % (defuser, i, datadir[num])
+        subprocess.run(filebak, shell = True)
+        num += 1
+    
 def checkAllSystemTable():
     sysTabName = ["pg_proc","pg_namespace","pg_index","pg_cluster_meta_nodes"]
     num = 0
@@ -524,20 +552,22 @@ def clearAllTmpFileAndDropDatabases():
         cur = conn.cursor()
         conn.autocommit = True
         stmt1 = "DROP DATABASE %s" % (db)
-        cur.execute(stmt1)
-        print(stmt1 + ', please wait 5s')
-        sleep(5)
+        #cur.execute(stmt1)
+        print(stmt1 + ', please wait 2s')
+        sleep(2)
         cur.close()
         conn.close()
         num += 1
         dbnum += 1
-    subprocess.run('rm -rf ./ddl-diff', shell = True)
+    #subprocess.run('rm -rf ./ddl-diff', shell = True)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'this script is use to test ddl replication!')
     parser.add_argument('--config', type=str, default = 'install.json', help = 'the configuration file of Kunlun_Cluster')
+    parser.add_argument('--defuser', type=str, help = 'the defause user of Kunlun_Cluster')
     args = parser.parse_args()
     File = args.config
+    defuser = args.defuser
     readJsonFile()
     global Cns
     Cns = []
@@ -553,5 +583,6 @@ if __name__ == '__main__':
     checkAllSystemTable()
     Checkpg_cluster_meta()
     Check_pg_class()
+    sleep(5)
     Check_pg_ddl_log_progress()
     clearAllTmpFileAndDropDatabases()
