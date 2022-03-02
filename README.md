@@ -1,7 +1,4 @@
-这个仓库是我用来存放我写的脚本或者魔改别人的脚本的。
-
-this repositories is use to store my scripts.
-
+嘿嘿
 
 
 
