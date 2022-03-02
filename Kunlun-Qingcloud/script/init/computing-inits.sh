@@ -25,28 +25,33 @@ do
 done
 #生成计算节点配置文件
 ((b=$comp_num - 1))
-echo '[' >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
-echo '	{' >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
-echo '	  "id":1,'  >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
-echo '	  "name":"comp1",' >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
-echo '	  "ip":"127.0.0.1",' >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
-echo '	  "port":5401,' >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
-echo '	  "user":"abc",' >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
-echo '	  "password":"abc",' >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
-echo '	  "datadir":"/data/pg_data_dir1"'>> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
+cat > /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json <<EOF 
+[
+   {
+      "id":1,
+      "name":"comp1",
+      "ip":"127.0.0.1",
+      "port":5401,
+      "user":"abc",
+      "password":"abc",
+      "datadir":"/data/pg_data_dir1"
+EOF
 
 for i in `seq 1 $b`
 do
 	((d=$i+1))
-	echo '	},' >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
-	echo '	{' >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
-	echo "	  \"id\":${d}," >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
-	echo "          \"name\":\"comp${d}\"," >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
-	echo "          \"ip\":\"127.0.0.1\"," >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
-	echo "          \"port\":5401," >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
-	echo "          \"user\":\"abc\"," >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
-	echo "	  \"password\":\"abc\"," >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
-	echo "          \"datadir\":\"/data/pg_data_dir1\"" >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
+	cat >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json <<EOF
+   },
+   {
+      "id":2,
+      "name":"comp2",
+      "ip":"127.0.0.1",
+      "port":5402,
+      "user":"abc",
+      "password":"abc",
+      "datadir":"/data/pg_data_dir2"
+EOF
+
 done
 echo '	}' >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
 echo ']' >> /home/ubuntu/kunlun/kunlun-computing/scripts/comp-node.json
