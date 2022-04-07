@@ -9,8 +9,8 @@ fi
 
 
 
-for i in 9
-#for i in `seq 1 10` # run sysbench test 100 to 1000 threads
+#for i in 9
+for i in `seq 1 10` # run sysbench test 100 to 1000 threads
 do
 	li=` expr ${i} \* 100 `
 	echo
