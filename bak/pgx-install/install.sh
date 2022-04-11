@@ -26,8 +26,8 @@ nodename = $nodename
 listen_addresses = '*'
 port = $port
 startup = STANDBY
-active_host = "$6"
-active_port = $7
+active_host = "$host"
+active_port = $user
 EOF
 
 elif [[ "$types" ==  'cn' ]]

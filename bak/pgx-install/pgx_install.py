@@ -147,7 +147,7 @@ def install():
     stmt2 = 'export LD_LIBRARY_PATH=' + defbase + '/lib:$LD_LIBRARY_PATH'
     f.write(stmt1 + '\n' + stmt2 + '\n')
     
-    # scp package & env file to every instance
+    # scp package & env file to each instance ======================
     for i in ahost:
         stmt = 'scp' + ' ' + package + ' ' + defuser + '@' + i + ':' + defbase
         stmt3 = 'scp' + ' ./env.sh ' + defuser + '@' + i + ':' + defbase
@@ -156,17 +156,38 @@ def install():
         print(stmt3)
     print()
     
-    # init gtm master node
-    gtminit = 'initgtm -Z gtm -D ' + gtmdata[0]
-    print(gtminit)
+    # -------------------------- gtm -------------------------------------
+    # init gtm master node ==================================
+    print('\n ======== creating gtm master node ======== \n')
+    initgtm = 'initgtm -Z gtm -D ' + gtmdata[0]
+    print(initgtm)
 
-    print(type(gtmhost[0]))
-    # change gtm configuration
-    sgtmport=str(gtmport[0])
-    gtmconf = '/bin/bash ./install.sh gtm ' + gtmhost[0] + ' ' + sgtmport[0] + ' ' + gtmname[0] + ' ' + gtmdata[0] + ' ' + gtmuser[0]
+    # change gtm configuration ===================================
+    gtmconf = '/bin/bash ' + defbase + '/install.sh gtm ' + gtmhost[0] + ' ' + str(gtmport[0]) + ' ' + gtmname[0] + ' ' + gtmdata[0] + ' ' + gtmuser[0]
     print(gtmconf)
 
+    # start gtm =============================
+    startgtm = 'gtm_ctl -Z gtm -D ' + gtmdata[0] + ' start'
+    print(startgtm)
 
+    # -------------------------- gtm slave -----------------------------
+    n = 0
+    print('\n ======== creating gtm slave node ========')
+    for i in gtmshost:
+        print('\n creating gtm slave node ' + gtmsname[n])
+        # init gtm slave node ====================
+        initgtms = 'initgtm -Z gtm -D ' + gtmsdata[n]
+        print(initgtms)
+        
+        # change gtm slave configuration =====================
+        gtmsconf = '/bin/bash ' + defbase + '/install.sh gtm_slave ' + gtmhost[0] + ' '  + str(gtmsport[n]) + ' ' + ' '  + gtmsname[n] + ' ' + gtmsdata[n] + ' ' + gtmsuser[0]
+        print(gtmsconf)
+
+        #start gtm slave 
+        startgtms = 'gtm_ctl -Z gtm -D ' + gtmsdata[n] + ' start'
+        print(startgtms)
+        
+        n = n + 1
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'the pgxz/pgxl/pgxc install script.')
