@@ -18,7 +18,7 @@ def readJsonFile():
     global gtmshost, gtmsport, gtmsdata, gtmsuser, gtmsname
     global cnhost, cnport, cndata, cnuser, cnname, cnpooler
     global dnhost, dnport, dndata, dnuser, dnname, dnpooler
-    global dnsname, dnshost, dnsport, dnsdata, dnsuser, dnspooler, dnsmname, dnsmport, dnsmhost
+    global dnsname, dnshost, dnsport, dnsdata, dnsuser, dnspooler, dnsmname, dnsmuser, dnsmport, dnsmhost
 
     gtmhost = []
     gtmport = []
@@ -53,8 +53,10 @@ def readJsonFile():
     dnsuser = []
     dnspooler = []
     dnsmname = []
+    dnsmuser = []
     dnsmport = []
     dnsmhost = []
+    
 
     for i in gtm:
         Gtmhost = i["host"]
@@ -117,6 +119,7 @@ def readJsonFile():
         Dnspooler = i["pooler_port"]
         Dnsname = i["name"]
         Dnsmport = i["Master_port"]
+        Dnsmuser = i["Master_user"]
         Dnsmname = i["Master_name"]
         Dnsmhost = i["Master_host"]
         dnshost.append(Dnshost)
@@ -126,6 +129,7 @@ def readJsonFile():
         dnspooler.append(Dnspooler)
         dnsname.append(Dnsname)
         dnsmport.append(Dnsmport)
+        dnsmuser.append(Dnsmuser)
         dnsmname.append(Dnsmname)
         dnsmhost.append(Dnsmhost)
 
@@ -209,6 +213,44 @@ def install():
 
         n = n + 1
 
+    # ------------------------- dn node --------------------------------
+    n = 0
+    print('\n ======== creating dn master node ========')
+    for i in dnhost:
+        print('\n creating dn node ' + dnname[n])
+        # init dn node ===============
+        initdn = 'initdb --locale=zh_CN.UTF-8 -U ' + dnuser[n] + ' -E utf8 -D ' + dndata[n] + '--nodename=' + dnname[n] + ' --nodetype=datanode --master_gtm_nodename ' + gtmname[0] + ' --master_gtm_ip ' + gtmhost[0] + ' --master_gtm_port ' + str(gtmport[0])
+        print(initdn)
+
+        # change dn configuration ====================
+        dnconf = '/bin/bash ' + defbase + '/install.sh dn ' + str(dnport[n]) + ' ' + str(dnpooler[n]) + ' ' + dndata[n]
+        print(dnconf)
+
+        # start dn node =================
+        startdn = 'pg_ctl -Z datanode -D ' + dndata[n] + ' start'
+        reloaddn = 'pg_ctl -D ' + dndata[n] + ' reload'
+
+        n = n + 1
+
+    # ----------------------- dn slave node --------------------------
+# pg_basebackup -p 23003 -h 192.168.0.132 -U kunlun -D /home/kunlun/TPC/postgres-xz/data/dn01s1 -X f -P -v
+    n = 0
+    print('\n ======== creating dn slave node ========')
+    for i in dnshost:
+        print('\n creating dns node ' + dnsname[n])
+        # init dns node ===============
+        initdns = 'pg_basebackup -p ' + dnsmport[n] + ' -h ' + dnsmhost[n] + ' -U ' + dnsuser[n] + ' -D ' + dnsdata[n] + ' -X f -P -v'
+        print(initdns)
+
+        # change dns configuration ==================
+        dnsconf = '/bin/bash ' + defbase + '/install.sh dn_slave ' + str(dnsport[n]) + ' ' + str(dnspooler[n]) + ' ' + dnsdata[n] + ' ' + dnsmhost[n]  + ' ' + dnsmport[n]  + ' ' + dnsmuser[n]  + ' ' + dnsmname[n]
+        print(dnsconf)
+
+        # start dns node ==================
+        startdns = 'pg_ctl -Z datanode -D ' + dnsdata[n] + ' start'
+        reloaddns = 'pg_ctl -D ' + dnsdata[n] + ' reload'
+
+        n = n + 1
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'the pgxz/pgxl/pgxc install script.')

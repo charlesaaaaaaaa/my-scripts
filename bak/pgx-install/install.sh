@@ -66,9 +66,9 @@ EOF
 
 elif [[ "$types" ==  'dn' ]]
 then
-        cat >> $path/postgresql.conf << EOF
-port =$port
-pooler_port=$pooler_port
+        cat >> $nodename/postgresql.conf << EOF
+port =$host
+pooler_port=$port
 include_if_exists ='/data/tbase/global/postgresql.conf.user'
 listen_addresses ='*'
 wal_level = replica
@@ -93,16 +93,16 @@ log_statement ='ddl'
 log_destination ='csvlog'
 wal_buffers =1GB
 EOF
-        cat >> $path/pg_hba.conf << EOF
+        cat >> $nodename/pg_hba.conf << EOF
 host    replication     all             0.0.0.0/0               trust
 host    all             all             0.0.0.0/0               trust
 EOF
 
 elif [[ "$types" ==  'dn_slave' ]]
 then
-        cat >> $path/postgresql.conf << EOF
-port =$port
-pooler_port=$pooler_port
+        cat >> $nodename/postgresql.conf << EOF
+port =$host
+pooler_port=$port
 include_if_exists ='/data/tbase/global/postgresql.conf.user'
 listen_addresses ='*'
 wal_level = replica
@@ -127,13 +127,13 @@ log_statement ='ddl'
 log_destination ='csvlog'
 wal_buffers =1GB
 EOF
-        cat >> $path/pg_hba.conf << EOF
+        cat >> $nodename/pg_hba.conf << EOF
 host    replication     all             0.0.0.0/0               trust
 host    all             all             0.0.0.0/0               trust
 EOF
-	cat >> $path/recovery.conf << EOF
+	cat >> $nodename/recovery.conf << EOF
 standby_mode = on
-primary_conninfo ='host = $mhost port = $mport user = $muser application_name = $mname'
+primary_conninfo ='host = $path port = $user user = $pooler_port application_name = $mhost'
 EOF
 
 fi

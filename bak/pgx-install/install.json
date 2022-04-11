@@ -81,6 +81,7 @@
                         "datadir":"/home/kunlun/compare/test/data/dn1s1",
                         "user":"kunlun",
 			"Master_name":"dn1",
+			"Master_user":"kunlun",
 			"Master_host":"192.168.0.140",
 			"Master_port":"34567"
 		},{
@@ -91,6 +92,7 @@
                         "datadir":"/home/kunlun/compare/test/data/dn1s2",
                         "user":"kunlun",
                         "Master_name":"dn1",
+			"Master_user":"kunlun",
                         "Master_host":"192.168.0.140",
                         "Master_port":"34567"
 
@@ -102,6 +104,7 @@
                         "datadir":"/home/kunlun/compare/test/data/dn2s1",
                         "user":"kunlun",
                         "Master_name":"dn2",
+			"Master_user":"kunlun",
                         "Master_host":"192.168.0.136",
                         "Master_port":"34567"
 		},{
@@ -112,6 +115,7 @@
                         "datadir":"/home/kunlun/compare/test/data/dn2s2",
                         "user":"kunlun",
                         "Master_name":"dn2",
+			"Master_user":"kunlun",
                         "Master_host":"192.168.0.136",
                         "Master_port":"34567"
 		},{
@@ -122,6 +126,7 @@
                         "datadir":"/home/kunlun/compare/test/data/dn3s1",
                         "user":"kunlun",
                         "Master_name":"dn3",
+			"Master_user":"kunlun",
                         "Master_host":"192.168.0.125",
                         "Master_port":"34567"
 		},{
@@ -132,6 +137,7 @@
                         "datadir":"/home/kunlun/compare/test/data/dn3s2",
                         "user":"kunlun",
                         "Master_name":"dn3",
+			"Master_user":"kunlun",
                         "Master_host":"192.168.0.125",
                         "Master_port":"34567"
 		}
