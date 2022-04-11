@@ -31,21 +31,24 @@
 			"port":23456,
 			"pooler_port":23556,
 			"datadir":"/home/kunlun/compare/test/data/cn1",
-                        "user":"kunlun"
+                        "user":"kunlun",
+			"passwd":"abc"
 		},{
 			"name":"cn2",
 			"host":"192.168.0.125",
 			"port":23456,
 			"pooler_port":23556,
 			"datadir":"/home/kunlun/compare/test/data/cn2",
-                        "user":"kunlun"
+                        "user":"kunlun",
+                        "passwd":"abc"
 		},{
 			"name":"cn3",
 			"host":"192.168.0.140",
 			"port":23456,
                         "pooler_port":23556,
 			"datadir":"/home/kunlun/compare/test/data/cn3",
-                        "user":"kunlun"
+                        "user":"kunlun",
+                        "passwd":"abc"
 		}
 	],
 	"datanode":[
@@ -55,21 +58,24 @@
 			"port":34567,
 			"pooler_port":35667,
 			"datadir":"/home/kunlun/compare/test/data/dn1",
-                        "user":"kunlun"
+                        "user":"kunlun",
+                        "passwd":"abc"
 		},{
 			"name":"dn2",
                         "host":"192.168.0.136",
                         "port":34567,
                         "pooler_port":35667,
                         "datadir":"/home/kunlun/compare/test/data/dn2",
-                        "user":"kunlun"
+                        "user":"kunlun",
+                        "passwd":"abc"
 		},{
 			"name":"dn3",
                         "host":"192.168.0.125",
                         "port":34567,
                         "pooler_port":35667,
                         "datadir":"/home/kunlun/compare/test/data/dn3",
-                        "user":"kunlun"
+                        "user":"kunlun",
+                        "passwd":"abc"
 		}
 	],
 	"datanode_slave":[
