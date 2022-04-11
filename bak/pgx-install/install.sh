@@ -32,9 +32,9 @@ EOF
 
 elif [[ "$types" ==  'cn' ]]
 then
-        cat >> $path/postgresql.conf << EOF
-port =$port
-pooler_port=$pooler_port
+        cat >> $nodename/postgresql.conf << EOF
+port =$host
+pooler_port=$port
 include_if_exists ='/home/kunlun/TPC/postgres-xz/global/postgresql.conf.user'
 wal_level = replica
 wal_keep_segments =256
@@ -59,7 +59,7 @@ listen_addresses ='*'
 max_connections =2000
 EOF
 
-	cat >> $path/pg_hba.conf << EOF
+	cat >> $nodename/pg_hba.conf << EOF
 host    replication     all             0.0.0.0/0               trust
 host    all             all             0.0.0.0/0               trust
 EOF

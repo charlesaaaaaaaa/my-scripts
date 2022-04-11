@@ -183,11 +183,32 @@ def install():
         gtmsconf = '/bin/bash ' + defbase + '/install.sh gtm_slave ' + gtmhost[0] + ' '  + str(gtmsport[n]) + ' ' + ' '  + gtmsname[n] + ' ' + gtmsdata[n] + ' ' + gtmsuser[0]
         print(gtmsconf)
 
-        #start gtm slave 
+        #start gtm slave ==================
         startgtms = 'gtm_ctl -Z gtm -D ' + gtmsdata[n] + ' start'
         print(startgtms)
         
         n = n + 1
+    
+    # ------------------------- cn node --------------------------------
+    n = 0
+    print('\n ======== creating cn node ========')
+    #initdb --locale=zh_CN.UTF-8 -U kunlun -E utf8 -D /home/kunlun/TPC/postgres-xz/data/cn01 --nodename=cn01 --nodetype=coordinator --master_gtm_nodename gtm --master_gtm_ip 192.168.0.134 --master_gtm_port 23001
+    for i in cnhost:
+        print('\n creating cn node ' + cnname[n])
+        # init cn node ===============
+        initcn = 'initdb --locale=zh_CN.UTF-8 -U ' + cnuser[n] + ' -E utf8 -D ' + cndata[n] + '--nodename=' + cnname[n] + ' --nodetype=coordinator --master_gtm_nodename ' + gtmname[0] + ' --master_gtm_ip ' + gtmhost[0] + ' --master_gtm_port ' + str(gtmport[0])
+        print(initcn)
+        
+        # change cn node configuration =============
+        cnconf = '/bin/bash ' + defbase + '/install.sh cn ' + str(cnport[n]) + ' ' + str(cnpooler[n]) + ' ' + cndata[n]
+        print(cnconf)
+
+        # start cn node =================
+        startcn = 'pg_ctl -Z coordinator -D ' + cndata[n] + ' start'
+        reloadcn = 'pg_ctl -D ' + cndata[n] + ' reload'
+
+        n = n + 1
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'the pgxz/pgxl/pgxc install script.')
