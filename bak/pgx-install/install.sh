@@ -26,7 +26,7 @@ nodename = $nodename
 listen_addresses = '*'
 port = $port
 startup = STANDBY
-active_host = "$host"
+active_host = '$host'
 active_port = $user
 EOF
 

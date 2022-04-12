@@ -2,24 +2,32 @@ import json
 import argparse
 from time import sleep
 import psycopg2
-
-File="./install.json"
+import subprocess
+import os
+import signal
 
 def connTemp(puser, phost, pport, stmt):
-#    conn = psycopg2.connect(database = 'postgres', user = puser, host = phost, port = pport)
-#    conn.autocommit = True
-#    cur = conn.cursor()
-#    cur.execute(stmt)
-#    res = cur.fetchall()
-    print(stmt)
-#    print(res)
-#    cur.close()
-#    conn.close()
+    conn = psycopg2.connect(database = 'postgres', user = puser, host = phost, port = pport)
+    conn.autocommit = True
+    cur = conn.cursor()
+    cur.execute(stmt)
+    #res = cur.fetchall()
+    conn.commit()
+    cur.close()
+    conn.close()
 
-def sshTemp(host, stmt):
+def makeTemp(host, path):
+    stmt = 'ssh ' + defuser + '@' + host + " 'mkdir -p " + path + "'"
+    subprocess.run(stmt, shell = True)
+    print('ssh mkdir : ' + stmt)
+
+
+def sshTemp(host, stmt, time):
     stmt = 'ssh ' + defuser + '@' + host + " 'cd " + defbase + ' && source env.sh && ' + stmt + "'"
-    #subprocess.run(stmt, shell = True)
+    p = subprocess.Popen(stmt, shell = True)
+    os.kill(p.pid, signal.SIGCONT)
     print('ssh common : ' + stmt)
+    sleep(time)
 
 def readJsonFile():
     Of = open(File,encoding='utf-8')
@@ -160,56 +168,64 @@ def install():
     ahost = list(set(allhost))
     #print(ahost)
 
+    pakname = package.replace('./','')
+    pakname = pakname.replace('.tgz','')
+
     # create env file
     print('======== deploy packages ========')
     f = open('./env.sh', 'w')
-    stmt1 = 'export PATH=' + defbase + '/bin:$PATH'
-    stmt2 = 'export LD_LIBRARY_PATH=' + defbase + '/lib:$LD_LIBRARY_PATH'
+    stmt1 = 'export PATH=' + defbase + '/' + pakname + '/bin:$PATH'
+    stmt2 = 'export LD_LIBRARY_PATH=' + defbase + '/' + pakname + '/lib:$LD_LIBRARY_PATH'
     f.write(stmt1 + '\n' + stmt2 + '\n')
-    
+    f.close()
+
     # scp package & env file to each instance ======================
     for i in ahost:
         stmt = 'scp' + ' ' + package + ' ' + defuser + '@' + i + ':' + defbase
         stmt3 = 'scp' + ' ./env.sh ' + defuser + '@' + i + ':' + defbase
         stmt5 = 'scp' + ' ./install.sh ' + defuser + '@' + i + ':' + defbase
-        #subprocess.run(stmt, shell = True)
+        subprocess.run(stmt, shell = True)
         print(stmt)
-        #subprocess.run(stmt3, shell = True)
+        subprocess.run(stmt3, shell = True)
         print(stmt3)
-        #subprocess.run(stmt5, shell = True)
+        subprocess.run(stmt5, shell = True)
         print(stmt5)
+        stmt7 = 'tar -zxf ' + defbase + '/' + package
+        sshTemp(i, stmt7, 1)
     print()
     
     # -------------------------- gtm -------------------------------------
     # init gtm master node ==================================
     print('\n ======== creating gtm master node ======== \n')
+    makeTemp(gtmhost[0], gtmdata[0])
     initgtm = 'initgtm -Z gtm -D ' + gtmdata[0]
-    sshTemp(gtmhost[0], initgtm) 
+    sshTemp(gtmhost[0], initgtm, 1) 
 
     # change gtm configuration ===================================
     gtmconf = '/bin/bash ' + defbase + '/install.sh gtm ' + gtmhost[0] + ' ' + str(gtmport[0]) + ' ' + gtmname[0] + ' ' + gtmdata[0] + ' ' + gtmuser[0]
-    sshTemp(gtmhost[0], gtmconf)
+    sshTemp(gtmhost[0], gtmconf, 1)
 
     # start gtm =============================
     startgtm = 'gtm_ctl -Z gtm -D ' + gtmdata[0] + ' start'
-    sshTemp(gtmhost[0], startgtm)
+    sshTemp(gtmhost[0], startgtm, 1)
 
     # -------------------------- gtm slave -----------------------------
     n = 0
     print('\n ======== creating gtm slave node ========')
     for i in gtmshost:
+        makeTemp(i, gtmsdata[n])
         print('\n creating gtm slave node ' + gtmsname[n])
         # init gtm slave node ====================
         initgtms = 'initgtm -Z gtm -D ' + gtmsdata[n]
-        sshTemp(i, initgtms)
+        sshTemp(i, initgtms, 1)
         
         # change gtm slave configuration =====================
-        gtmsconf = '/bin/bash ' + defbase + '/install.sh gtm_slave ' + gtmhost[0] + ' '  + str(gtmsport[n]) + ' ' + ' '  + gtmsname[n] + ' ' + gtmsdata[n] + ' ' + gtmsuser[0]
-        sshTemp(i, gtmsconf)
+        gtmsconf = '/bin/bash ' + defbase + '/install.sh gtm_slave ' + gtmhost[0] + ' '  + str(gtmsport[n]) + ' ' + gtmsname[n] + ' ' + gtmsdata[n] + ' ' + str(gtmport[0])
+        sshTemp(i, gtmsconf, 1)
 
         #start gtm slave ==================
         startgtms = 'gtm_ctl -Z gtm -D ' + gtmsdata[n] + ' start'
-        sshTemp(i, startgtms)
+        sshTemp(i, startgtms, 1)
 
         n = n + 1
     
@@ -218,20 +234,21 @@ def install():
     print('\n ======== creating cn node ========')
     #initdb --locale=zh_CN.UTF-8 -U kunlun -E utf8 -D /home/kunlun/TPC/postgres-xz/data/cn01 --nodename=cn01 --nodetype=coordinator --master_gtm_nodename gtm --master_gtm_ip 192.168.0.134 --master_gtm_port 23001
     for i in cnhost:
-        print('\n creating cn node ' + cnname[n])
+        makeTemp(i, cndata[n])
+        print('\n ==========creating cn node ' + cnname[n])
         # init cn node ===============
-        initcn = 'initdb --locale=zh_CN.UTF-8 -U ' + cnuser[n] + ' -E utf8 -D ' + cndata[n] + '--nodename=' + cnname[n] + ' --nodetype=coordinator --master_gtm_nodename ' + gtmname[0] + ' --master_gtm_ip ' + gtmhost[0] + ' --master_gtm_port ' + str(gtmport[0])
-        sshTemp(i, initcn)
+        initcn = 'initdb --locale=en_US.UTF-8 -U ' + cnuser[n] + ' -E utf8 -D ' + cndata[n] + ' --nodename=' + cnname[n] + ' --nodetype=coordinator --master_gtm_nodename ' + gtmname[0] + ' --master_gtm_ip ' + gtmhost[0] + ' --master_gtm_port ' + str(gtmport[0])
+        sshTemp(i, initcn, 3)
         
         # change cn node configuration =============
         cnconf = '/bin/bash ' + defbase + '/install.sh cn ' + str(cnport[n]) + ' ' + str(cnpooler[n]) + ' ' + cndata[n]
-        sshTemp(i, cnconf)
+        sshTemp(i, cnconf, 1)
 
         # start cn node =================
         startcn = 'pg_ctl -Z coordinator -D ' + cndata[n] + ' start'
         reloadcn = 'pg_ctl -D ' + cndata[n] + ' reload'
-        sshTemp(i, startcn)
-        sshTemp(i, reloadcn)
+        sshTemp(i, startcn, 6)
+        sshTemp(i, reloadcn, 1)
 
         n = n + 1
 
@@ -239,20 +256,21 @@ def install():
     n = 0
     print('\n ======== creating dn master node ========')
     for i in dnhost:
-        print('\n creating dn node ' + dnname[n])
+        makeTemp(i, dndata[n])
+        print('\n ================creating dn node ' + dnname[n])
         # init dn node ===============
-        initdn = 'initdb --locale=zh_CN.UTF-8 -U ' + dnuser[n] + ' -E utf8 -D ' + dndata[n] + '--nodename=' + dnname[n] + ' --nodetype=datanode --master_gtm_nodename ' + gtmname[0] + ' --master_gtm_ip ' + gtmhost[0] + ' --master_gtm_port ' + str(gtmport[0])
-        sshTemp(i, initdn)
+        initdn = 'initdb --locale=en_US.UTF-8 -U ' + dnuser[n] + ' -E utf8 -D ' + dndata[n] + ' --nodename=' + dnname[n] + ' --nodetype=datanode --master_gtm_nodename ' + gtmname[0] + ' --master_gtm_ip ' + gtmhost[0] + ' --master_gtm_port ' + str(gtmport[0])
+        sshTemp(i, initdn, 3)
 
         # change dn configuration ====================
         dnconf = '/bin/bash ' + defbase + '/install.sh dn ' + str(dnport[n]) + ' ' + str(dnpooler[n]) + ' ' + dndata[n]
-        sshTemp(i, dnconf)
+        sshTemp(i, dnconf, 1)
 
         # start dn node =================
         startdn = 'pg_ctl -Z datanode -D ' + dndata[n] + ' start'
         reloaddn = 'pg_ctl -D ' + dndata[n] + ' reload'
-        sshTemp(i, startdn)
-        sshTemp(i, reloaddn)
+        sshTemp(i, startdn, 6)
+        sshTemp(i, reloaddn, 1)
 
         n = n + 1
 
@@ -261,77 +279,84 @@ def install():
     n = 0
     print('\n ======== creating dn slave node ========')
     for i in dnshost:
-        print('\n creating dns node ' + dnsname[n])
+        makeTemp(i, dnsdata[n])
+        print('\n ==============creating dns node ' + dnsname[n])
         # init dns node ===============
         initdns = 'pg_basebackup -p ' + dnsmport[n] + ' -h ' + dnsmhost[n] + ' -U ' + dnsuser[n] + ' -D ' + dnsdata[n] + ' -X f -P -v'
-        sshTemp(i, initdns)
+        sshTemp(i, initdns, 2)
 
         # change dns configuration ==================
         dnsconf = '/bin/bash ' + defbase + '/install.sh dn_slave ' + str(dnsport[n]) + ' ' + str(dnspooler[n]) + ' ' + dnsdata[n] + ' ' + dnsmhost[n]  + ' ' + dnsmport[n]  + ' ' + dnsmuser[n]  + ' ' + dnsmname[n]
-        sshTemp(i, dnsconf)
+        changedir = 'chmod 700 ' + dnsdata[n]
+        sshTemp(i, dnsconf, 1)
+        sshTemp(i, changedir, 1)
 
         # start dns node ==================
         startdns = 'pg_ctl -Z datanode -D ' + dnsdata[n] + ' start'
         reloaddns = 'pg_ctl -D ' + dnsdata[n] + ' reload'
-        sshTemp(i, startdns)
-        sshTemp(i, reloaddns)
+        sshTemp(i, startdns, 3)
+        sshTemp(i, reloaddns, 1)
 
         n = n + 1
-    
+
+def ConfigRoute():
+
     # 配置路由
     print('\n======== Configration Route ========')
     cof = ['cn','dn']
     for i in cof:
         if i == 'cn':
-            nn = 0
+            ns = 0
             for a in cnhost:
-                print('\npsql -h '+ cnhost[nn] + ' -d postgres -p ' + str(cnport[nn]))
-                nn = nn + 1
+                print('\npsql -h '+ cnhost[ns] + ' -d postgres -p ' + str(cnport[ns]))
                 for b in cof:
                     if b == 'cn':
                         n = 0
                         for c in cnhost:
                             if c == a:
                                 stmt = 'alter node ' + cnname[n] + " with(host='" + c + "',port=" + str(cnport[n]) + ')'
-                                connTemp(cnuser[n], cnhost[n], cnport[n], stmt)
-                                
+                                print(cnuser[ns],cnhost[ns], cnport[ns],stmt)
+                                connTemp(cnuser[ns], cnhost[ns], cnport[ns], stmt)
                                 n = n + 1
                             else:
-                                stmt = 'create node ' + cnname[n] + " with(type=coordinator,host='" + c + "',port=" + str(cnport[n]) + ',primary=false,preferred=false);'
-                                connTemp(cnuser[n], cnhost[n], cnport[n], stmt)
+                                stmt = 'create node ' + cnname[n] + " with(type=coordinator,host='" + c + "',port=" + str(cnport[n]) + ',primary=false,preferred=false)'
+                                print(cnuser[ns], cnhost[ns], cnport[ns],stmt)
+                                connTemp(cnuser[ns], cnhost[ns], cnport[ns], stmt)
                                 n = n + 1
-                            
-                
                     else:
                         n = 0
                         for c in dnhost:
-                            stmt = 'create node ' + dnname[n] + " with(type=datanode,host='" + c + "',port=" + str(dnport[n]) + ',primary=false,preferred=false);'
-                            connTemp(dnuser[n], dnhost[n], dnport[n], stmt)
+                            stmt = 'create node ' + dnname[n] + " with(type=datanode,host='" + c + "',port=" + str(dnport[n]) + ',primary=false,preferred=false)'
+                            print(cnuser[ns], cnhost[ns], cnport[ns],stmt)
+                            connTemp(cnuser[ns], cnhost[ns], cnport[ns], stmt)
                             n = n + 1
+                ns = ns + 1
         if i == 'dn':
             nn = 0
             for a in dnhost:
                 print('\npsql -h '+ dnhost[nn] + ' -d postgres -p ' + str(dnport[nn]))
-                nn = nn + 1
                 for b in cof:
                     if b == 'dn':
                         n = 0
                         for c in dnhost:
                             if c == a:
                                 stmt = 'alter node ' + dnname[n] + " with(host='" + c + "',port=" + str(dnport[n]) + ')'
-                                connTemp(dnuser[n], dnhost[n], dnport[n], stmt)
+                                print(dnuser[nn], dnhost[nn], dnport[nn],stmt)
+                                connTemp(dnuser[nn], dnhost[nn], dnport[nn], stmt)
                                 n = n + 1
                             else:
-                                stmt = 'create node ' + dnname[n] + " with(type=datanode,host='" + c + "',port=" + str(dnport[n]) + ',primary=false,preferred=false);'
-                                connTemp(dnuser[n], dnhost[n], dnport[n], stmt)
+                                stmt = 'create node ' + dnname[n] + " with(type=datanode,host='" + c + "',port=" + str(dnport[n]) + ',primary=false,preferred=false)'
+                                print(dnuser[nn], dnhost[nn], dnport[nn], stmt)
+                                connTemp(dnuser[nn], dnhost[nn], dnport[nn], stmt)
                                 n = n + 1
                     else:
                         n = 0
                         for c in cnhost:
-                            stmt = 'create node ' + cnname[n] + " with(type=coordinator,host='" + c + "',port=" + str(cnport[n]) + ',primary=false,preferred=false);'
-                            connTemp(cnuser[n], cnhost[n], cnport[n], stmt)
+                            stmt = 'create node ' + cnname[n] + " with(type=coordinator,host='" + c + "',port=" + str(cnport[n]) + ',primary=false,preferred=false)'
+                            print(cnuser[nn], cnhost[nn], cnport[nn], stmt)
+                            connTemp(dnuser[nn], dnhost[nn], dnport[nn], stmt)
                             n = n + 1
-
+                nn = nn + 1
     
     print('\ncreating sharding')
     alldn = ''
@@ -349,8 +374,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'the pgxz/pgxl/pgxc install script.')
     parser.add_argument('--type', default='pgxz', help = 'pgxc, pgxz, pgxl')
     parser.add_argument('--config', default='install.json', help = 'the config json file')
-    parser.add_argument('--defbase', default='/home/kunlun/compare/test/base', help = 'default basedir')
-    parser.add_argument('--defuser', default='user', help = 'default user')
+    parser.add_argument('--defbase', default='/home/kunlun/compare/postgres-xz/base', help = 'default basedir')
+    parser.add_argument('--defuser', default='kunlun', help = 'default user')
     parser.add_argument('--package', default='package', help = 'the package of pgxz/xl/xc')
     args = parser.parse_args()
     File = args.config
@@ -360,5 +385,6 @@ if __name__ == '__main__':
     print(args)
     readJsonFile()
     install()
+    ConfigRoute()
 
     #print('gtm\n', gtmhost,'\n', gtmport, '\n', gtmdata, '\n',gtmuser, '\n', gtmname, '\n' , '\ngtm_slave \n',gtmshost, '\n', gtmsport, '\n', gtmsdata, '\n', gtmsuser, '\n', gtmsname, '\n', '\ncn\n', cnhost, '\n', cnport, '\n', cndata, '\n', cnuser, '\n', cnname, '\n', '\ndn\n', dnhost, '\n', dnport, '\n', dndata, '\n', dnuser, '\n', dnname, '\n', dnpooler, '\n', '\ndn_slave \n', dnshost, '\n', dnsport, '\n', dnsdata, '\n', dnsuser, '\n', dnspooler, '\n', dnsname, '\n', dnsmport, '\n', dnsmname, '\n', dnsmhost)

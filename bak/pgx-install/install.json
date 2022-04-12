@@ -4,7 +4,7 @@
 			"name":"gtm",
 			"host":"192.168.0.125",
 			"port":12345,
-			"datadir":"/home/kunlun/compare/test/data/gtm",
+			"datadir":"/home/kunlun/compare/postgres-xz/data/gtm",
 			"user":"kunlun"
 		}
 	],
@@ -13,14 +13,14 @@
 			"name":"gtms1",
 			"host":"192.168.0.136",
 			"port":12345,
-			"datadir":"/home/kunlun/compare/test/data/gtm_slave",
+			"datadir":"/home/kunlun/compare/postgres-xz/data/gtm_slave",
                         "user":"kunlun"
 		
 		},{
 			"name":"gtms2",
 			"host":"192.168.0.140",
 			"port":12345,
-			"datadir":"/home/kunlun/compare/test/data/gtm_slave",
+			"datadir":"/home/kunlun/compare/postgres-xz/data/gtm_slave",
                         "user":"kunlun"
 		}
 	],
@@ -30,7 +30,7 @@
 			"host":"192.168.0.136",
 			"port":23456,
 			"pooler_port":23556,
-			"datadir":"/home/kunlun/compare/test/data/cn1",
+			"datadir":"/home/kunlun/compare/postgres-xz/data/cn1",
                         "user":"kunlun",
 			"passwd":"abc"
 		},{
@@ -38,7 +38,7 @@
 			"host":"192.168.0.125",
 			"port":23456,
 			"pooler_port":23556,
-			"datadir":"/home/kunlun/compare/test/data/cn2",
+			"datadir":"/home/kunlun/compare/postgres-xz/data/cn2",
                         "user":"kunlun",
                         "passwd":"abc"
 		},{
@@ -46,7 +46,7 @@
 			"host":"192.168.0.140",
 			"port":23456,
                         "pooler_port":23556,
-			"datadir":"/home/kunlun/compare/test/data/cn3",
+			"datadir":"/home/kunlun/compare/postgres-xz/data/cn3",
                         "user":"kunlun",
                         "passwd":"abc"
 		}
@@ -57,7 +57,7 @@
 			"host":"192.168.0.140",
 			"port":34567,
 			"pooler_port":35667,
-			"datadir":"/home/kunlun/compare/test/data/dn1",
+			"datadir":"/home/kunlun/compare/postgres-xz/data/dn1",
                         "user":"kunlun",
                         "passwd":"abc"
 		},{
@@ -65,7 +65,7 @@
                         "host":"192.168.0.136",
                         "port":34567,
                         "pooler_port":35667,
-                        "datadir":"/home/kunlun/compare/test/data/dn2",
+                        "datadir":"/home/kunlun/compare/postgres-xz/data/dn2",
                         "user":"kunlun",
                         "passwd":"abc"
 		},{
@@ -73,7 +73,7 @@
                         "host":"192.168.0.125",
                         "port":34567,
                         "pooler_port":35667,
-                        "datadir":"/home/kunlun/compare/test/data/dn3",
+                        "datadir":"/home/kunlun/compare/postgres-xz/data/dn3",
                         "user":"kunlun",
                         "passwd":"abc"
 		}
@@ -84,7 +84,7 @@
                         "host":"192.168.0.136",
                         "port":56789,
                         "pooler_port":56788,
-                        "datadir":"/home/kunlun/compare/test/data/dn1s1",
+                        "datadir":"/home/kunlun/compare/postgres-xz/data/dn1s1",
                         "user":"kunlun",
 			"Master_name":"dn1",
 			"Master_user":"kunlun",
@@ -95,7 +95,7 @@
                         "host":"192.168.0.125",
                         "port":56789,
                         "pooler_port":56788,
-                        "datadir":"/home/kunlun/compare/test/data/dn1s2",
+                        "datadir":"/home/kunlun/compare/postgres-xz/data/dn1s2",
                         "user":"kunlun",
                         "Master_name":"dn1",
 			"Master_user":"kunlun",
@@ -107,7 +107,7 @@
                         "host":"192.168.0.140",
                         "port":56789,
                         "pooler_port":56788,
-                        "datadir":"/home/kunlun/compare/test/data/dn2s1",
+                        "datadir":"/home/kunlun/compare/postgres-xz/data/dn2s1",
                         "user":"kunlun",
                         "Master_name":"dn2",
 			"Master_user":"kunlun",
@@ -118,7 +118,7 @@
                         "host":"192.168.0.125",
                         "port":56765,
                         "pooler_port":56766,
-                        "datadir":"/home/kunlun/compare/test/data/dn2s2",
+                        "datadir":"/home/kunlun/compare/postgres-xz/data/dn2s2",
                         "user":"kunlun",
                         "Master_name":"dn2",
 			"Master_user":"kunlun",
@@ -129,7 +129,7 @@
                         "host":"192.168.0.136",
                         "port":56765,
                         "pooler_port":56766,
-                        "datadir":"/home/kunlun/compare/test/data/dn3s1",
+                        "datadir":"/home/kunlun/compare/postgres-xz/data/dn3s1",
                         "user":"kunlun",
                         "Master_name":"dn3",
 			"Master_user":"kunlun",
@@ -140,7 +140,7 @@
                         "host":"192.168.0.140",
                         "port":56765,
                         "pooler_port":56766,
-                        "datadir":"/home/kunlun/compare/test/data/dn3s2",
+                        "datadir":"/home/kunlun/compare/postgres-xz/data/dn3s2",
                         "user":"kunlun",
                         "Master_name":"dn3",
 			"Master_user":"kunlun",
