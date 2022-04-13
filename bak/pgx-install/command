@@ -1,1 +1,0 @@
-python3 pgx_install.py --type=pgxc --config=install.json --defbase=/home/charles/File/python/pgx-install --defuser=kunlun
