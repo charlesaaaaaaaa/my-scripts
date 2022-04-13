@@ -237,29 +237,30 @@ def install():
         makeTemp(i, cndata[n])
         print('\n ==========creating cn node ' + cnname[n])
         # init cn node ===============
-        if type == 'pgxz':
+        if types == 'pgxz':
             initcn = 'initdb --locale=en_US.UTF-8 -U ' + cnuser[n] + ' -E utf8 -D ' + cndata[n] + ' --nodename=' + cnname[n] + ' --nodetype=coordinator --master_gtm_nodename ' + gtmname[0] + ' --master_gtm_ip ' + gtmhost[0] + ' --master_gtm_port ' + str(gtmport[0])
             sshTemp(i, initcn, 3)
 
-        else if type = 'pgxc':
+        else if types = 'pgxc':
             initcn = 'initdb -D ' + cndata[n] + ' --nodename ' + cnname[n]
             sshTemp(i, initcn, 3)
         
         # change cn node configuration =============
-        cnconf = '/bin/bash ' + defbase + '/install.sh cn ' + str(cnport[n]) + ' ' + str(cnpooler[n]) + ' ' + cndata[n] + ' ' + gtmhost[0] + ' ' + gtmport[0]
-        sshTemp(i, cnconf, 1)
+        if types == 'pgxz':
+            cnconf = '/bin/bash ' + defbase + '/install.sh cn ' + str(cnport[n]) + ' ' + str(cnpooler[n]) + ' ' + cndata[n] + ' ' + gtmhost[0] + ' ' + gtmport[0]
+            sshTemp(i, cnconf, 1)
+        else if types == 'pgxc':
+            cnconf = '/bin/bash ' + defbase + '/install.sh cn ' + str(cnport[n]) + ' ' + str(cnpooler[n]) + ' ' + cndata[n] + ' ' + gtmhost[0] + ' ' + gtmport[0] + ' ' + types
+
+            sshTemp(i, cnconf, 1)
 
         # start cn node =================
-        if type == 'pgxz':
-            startcn = 'pg_ctl -Z coordinator -D ' + cndata[n] + ' start'
-            reloadcn = 'pg_ctl -D ' + cndata[n] + ' reload'
-            sshTemp(i, startcn, 6)
-            sshTemp(i, reloadcn, 1)
         
-        else if type == 'pgxc':
-            startcn == 'postgres --coordinator -D ' + cndata[n]
-            sshTemp(i, startcn, 6)
-
+        startcn = 'pg_ctl -Z coordinator -D ' + cndata[n] + ' start'
+        reloadcn = 'pg_ctl -D ' + cndata[n] + ' reload'
+        sshTemp(i, startcn, 6)
+        sshTemp(i, reloadcn, 1)
+        
         n = n + 1
 
     # ------------------------- dn node --------------------------------
@@ -269,12 +270,21 @@ def install():
         makeTemp(i, dndata[n])
         print('\n ================creating dn node ' + dnname[n])
         # init dn node ===============
-        initdn = 'initdb --locale=en_US.UTF-8 -U ' + dnuser[n] + ' -E utf8 -D ' + dndata[n] + ' --nodename=' + dnname[n] + ' --nodetype=datanode --master_gtm_nodename ' + gtmname[0] + ' --master_gtm_ip ' + gtmhost[0] + ' --master_gtm_port ' + str(gtmport[0])
-        sshTemp(i, initdn, 3)
+        if types == 'pgxz':
+            initdn = 'initdb --locale=en_US.UTF-8 -U ' + dnuser[n] + ' -E utf8 -D ' + dndata[n] + ' --nodename=' + dnname[n] + ' --nodetype=datanode --master_gtm_nodename ' + gtmname[0] + ' --master_gtm_ip ' + gtmhost[0] + ' --master_gtm_port ' + str(gtmport[0])
+            sshTemp(i, initdn, 3)
 
+        else if types == 'pgxc':
+            initdn = 'initdb -D ' + dndata[n] + ' --nodename ' + dnname[n]
+            sshTemp(i, initdn, 3)
         # change dn configuration ====================
-        dnconf = '/bin/bash ' + defbase + '/install.sh dn ' + str(dnport[n]) + ' ' + str(dnpooler[n]) + ' ' + dndata[n] + ' ' + gtmhost[0] + ' ' + gtmport[0]
-        sshTemp(i, dnconf, 1)
+        if types == 'pgxz':
+            dnconf = '/bin/bash ' + defbase + '/install.sh dn ' + str(dnport[n]) + ' ' + str(dnpooler[n]) + ' ' + dndata[n] + ' ' + gtmhost[0] + ' ' + gtmport[0]
+            sshTemp(i, dnconf, 1)
+
+        else if types == 'pgxc':
+            dnconf = '/bin/bash ' + defbase + '/install.sh dn ' + str(dnport[n]) + ' ' + str(dnpooler[n]) + ' ' + dndata[n] + ' ' + gtmhost[0] + ' ' + gtmport[0] + ' ' + types
+            sshTemp(i, dnconf, 1)
 
         # start dn node =================
         startdn = 'pg_ctl -Z datanode -D ' + dndata[n] + ' start'
@@ -392,6 +402,7 @@ if __name__ == '__main__':
     defbase = args.defbase
     defuser = args.defuser
     package = args.package
+    types = args.type
     print(args)
     readJsonFile()
     install()

@@ -124,8 +124,5 @@ then
 	sed -i 's/wal_level = replica/wal_level = archive/' $nodename/postgresql.conf
 elif [[ "$types" == "dn" && "$pooler_port" == "pgxc" ]]
 then
-	sed -i 's/wal_level = replica/wal_level = archive/' $nodename/postgresql.conf
-elif [[ "$types" == "dn_slave" && "$mport" == "pgxc" ]]
-then
-	sed -i 's/wal_level = replica/wal_level = archive/' $nodename/postgresql.conf
+	sed -i 's/wal_level = replica/wal_level = hot_standby/' $nodename/postgresql.conf
 fi
