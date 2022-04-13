@@ -241,26 +241,28 @@ def install():
             initcn = 'initdb --locale=en_US.UTF-8 -U ' + cnuser[n] + ' -E utf8 -D ' + cndata[n] + ' --nodename=' + cnname[n] + ' --nodetype=coordinator --master_gtm_nodename ' + gtmname[0] + ' --master_gtm_ip ' + gtmhost[0] + ' --master_gtm_port ' + str(gtmport[0])
             sshTemp(i, initcn, 3)
 
-        else if types = 'pgxc':
+        elif types == 'pgxc':
             initcn = 'initdb -D ' + cndata[n] + ' --nodename ' + cnname[n]
             sshTemp(i, initcn, 3)
         
         # change cn node configuration =============
         if types == 'pgxz':
-            cnconf = '/bin/bash ' + defbase + '/install.sh cn ' + str(cnport[n]) + ' ' + str(cnpooler[n]) + ' ' + cndata[n] + ' ' + gtmhost[0] + ' ' + gtmport[0]
+            cnconf = '/bin/bash ' + defbase + '/install.sh cn ' + str(cnport[n]) + ' ' + str(cnpooler[n]) + ' ' + cndata[n] + ' ' + gtmhost[0] + ' ' + str(gtmport[0])
             sshTemp(i, cnconf, 1)
-        else if types == 'pgxc':
-            cnconf = '/bin/bash ' + defbase + '/install.sh cn ' + str(cnport[n]) + ' ' + str(cnpooler[n]) + ' ' + cndata[n] + ' ' + gtmhost[0] + ' ' + gtmport[0] + ' ' + types
+        elif types == 'pgxc':
+            cnconf = '/bin/bash ' + defbase + '/install.sh cn ' + str(cnport[n]) + ' ' + str(cnpooler[n]) + ' ' + cndata[n] + ' ' + gtmhost[0] + ' ' + str(gtmport[0]) + ' ' + types
 
-            sshTemp(i, cnconf, 1)
+            sshTemp(i, cnconf, 2)
 
         # start cn node =================
         
         startcn = 'pg_ctl -Z coordinator -D ' + cndata[n] + ' start'
         reloadcn = 'pg_ctl -D ' + cndata[n] + ' reload'
-        sshTemp(i, startcn, 6)
+        sshTemp(i, startcn, 3)
+        if types == 'pgxc':
+            restartcn = 'pg_ctl -Z coordinator restart -m f -D ' + cndata[n]
+            sshTemp(i, restartcn, 2)
         sshTemp(i, reloadcn, 1)
-        
         n = n + 1
 
     # ------------------------- dn node --------------------------------
@@ -274,24 +276,26 @@ def install():
             initdn = 'initdb --locale=en_US.UTF-8 -U ' + dnuser[n] + ' -E utf8 -D ' + dndata[n] + ' --nodename=' + dnname[n] + ' --nodetype=datanode --master_gtm_nodename ' + gtmname[0] + ' --master_gtm_ip ' + gtmhost[0] + ' --master_gtm_port ' + str(gtmport[0])
             sshTemp(i, initdn, 3)
 
-        else if types == 'pgxc':
+        elif types == 'pgxc':
             initdn = 'initdb -D ' + dndata[n] + ' --nodename ' + dnname[n]
-            sshTemp(i, initdn, 3)
+            sshTemp(i, initdn, 5)
         # change dn configuration ====================
         if types == 'pgxz':
-            dnconf = '/bin/bash ' + defbase + '/install.sh dn ' + str(dnport[n]) + ' ' + str(dnpooler[n]) + ' ' + dndata[n] + ' ' + gtmhost[0] + ' ' + gtmport[0]
+            dnconf = '/bin/bash ' + defbase + '/install.sh dn ' + str(dnport[n]) + ' ' + str(dnpooler[n]) + ' ' + dndata[n] + ' ' + gtmhost[0] + ' ' + str(gtmport[0])
             sshTemp(i, dnconf, 1)
 
-        else if types == 'pgxc':
-            dnconf = '/bin/bash ' + defbase + '/install.sh dn ' + str(dnport[n]) + ' ' + str(dnpooler[n]) + ' ' + dndata[n] + ' ' + gtmhost[0] + ' ' + gtmport[0] + ' ' + types
-            sshTemp(i, dnconf, 1)
+        elif types == 'pgxc':
+            dnconf = '/bin/bash ' + defbase + '/install.sh dn ' + str(dnport[n]) + ' ' + str(dnpooler[n]) + ' ' + dndata[n] + ' ' + gtmhost[0] + ' ' + str(gtmport[0]) + ' ' + types
+            sshTemp(i, dnconf, 2)
 
         # start dn node =================
         startdn = 'pg_ctl -Z datanode -D ' + dndata[n] + ' start'
         reloaddn = 'pg_ctl -D ' + dndata[n] + ' reload'
-        sshTemp(i, startdn, 6)
+        sshTemp(i, startdn, 3)
+        if types == 'pgxc':
+            restartdn = 'pg_ctl -Z datanode restart -m f -D ' + dndata[n]
+            sshTemp(i, restartdn, 2)
         sshTemp(i, reloaddn, 1)
-
         n = n + 1
 
     # ----------------------- dn slave node --------------------------
@@ -303,20 +307,22 @@ def install():
         print('\n ==============creating dns node ' + dnsname[n])
         # init dns node ===============
         initdns = 'pg_basebackup -p ' + dnsmport[n] + ' -h ' + dnsmhost[n] + ' -U ' + dnsuser[n] + ' -D ' + dnsdata[n] + ' -X f -P -v'
-        sshTemp(i, initdns, 2)
+        sshTemp(i, initdns, 5)
 
         # change dns configuration ==================
         dnsconf = '/bin/bash ' + defbase + '/install.sh dn_slave ' + str(dnsport[n]) + ' ' + str(dnspooler[n]) + ' ' + dnsdata[n] + ' ' + dnsmhost[n]  + ' ' + dnsmport[n]  + ' ' + dnsmuser[n]  + ' ' + dnsmname[n]
         changedir = 'chmod 700 ' + dnsdata[n]
-        sshTemp(i, dnsconf, 1)
+        sshTemp(i, dnsconf, 2)
         sshTemp(i, changedir, 1)
 
         # start dns node ==================
         startdns = 'pg_ctl -Z datanode -D ' + dnsdata[n] + ' start'
         reloaddns = 'pg_ctl -D ' + dnsdata[n] + ' reload'
         sshTemp(i, startdns, 3)
+        if types == 'pgxc':
+            restartdns = 'pg_ctl -Z datanode restart -m f -D ' + dnsdata[n]
+            sshTemp(i, restartdns, 2)
         sshTemp(i, reloaddns, 1)
-
         n = n + 1
 
 def ConfigRoute():
@@ -392,9 +398,9 @@ def ConfigRoute():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'the pgxz/pgxl/pgxc install script.')
-    parser.add_argument('--type', default='pgxz', help = 'pgxc, pgxz, pgxl')
+    parser.add_argument('--type', default='pgxc', help = 'pgxc, pgxz, pgxl')
     parser.add_argument('--config', default='install.json', help = 'the config json file')
-    parser.add_argument('--defbase', default='/home/kunlun/compare/postgres-xz/base', help = 'default basedir')
+    parser.add_argument('--defbase', default='/home/kunlun/compare/postgres-xc/base', help = 'default basedir')
     parser.add_argument('--defuser', default='kunlun', help = 'default user')
     parser.add_argument('--package', default='package', help = 'the package of pgxz/xl/xc')
     args = parser.parse_args()
