@@ -246,7 +246,7 @@ def install():
             sshTemp(i, initcn, 3)
         
         # change cn node configuration =============
-        cnconf = '/bin/bash ' + defbase + '/install.sh cn ' + str(cnport[n]) + ' ' + str(cnpooler[n]) + ' ' + cndata[n]
+        cnconf = '/bin/bash ' + defbase + '/install.sh cn ' + str(cnport[n]) + ' ' + str(cnpooler[n]) + ' ' + cndata[n] + ' ' + gtmhost[0] + ' ' + gtmport[0]
         sshTemp(i, cnconf, 1)
 
         # start cn node =================
@@ -273,7 +273,7 @@ def install():
         sshTemp(i, initdn, 3)
 
         # change dn configuration ====================
-        dnconf = '/bin/bash ' + defbase + '/install.sh dn ' + str(dnport[n]) + ' ' + str(dnpooler[n]) + ' ' + dndata[n]
+        dnconf = '/bin/bash ' + defbase + '/install.sh dn ' + str(dnport[n]) + ' ' + str(dnpooler[n]) + ' ' + dndata[n] + ' ' + gtmhost[0] + ' ' + gtmport[0]
         sshTemp(i, dnconf, 1)
 
         # start dn node =================
