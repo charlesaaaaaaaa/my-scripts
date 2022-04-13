@@ -224,7 +224,7 @@ def install():
         sshTemp(i, gtmsconf, 1)
 
         #start gtm slave ==================
-        startgtms = 'gtm_ctl -Z gtm -D ' + gtmsdata[n] + ' start'
+        startgtms = 'gtm_ctl -Z gtm_standby -D ' + gtmsdata[n] + ' start'
         sshTemp(i, startgtms, 1)
 
         n = n + 1
@@ -237,18 +237,28 @@ def install():
         makeTemp(i, cndata[n])
         print('\n ==========creating cn node ' + cnname[n])
         # init cn node ===============
-        initcn = 'initdb --locale=en_US.UTF-8 -U ' + cnuser[n] + ' -E utf8 -D ' + cndata[n] + ' --nodename=' + cnname[n] + ' --nodetype=coordinator --master_gtm_nodename ' + gtmname[0] + ' --master_gtm_ip ' + gtmhost[0] + ' --master_gtm_port ' + str(gtmport[0])
-        sshTemp(i, initcn, 3)
+        if type == 'pgxz':
+            initcn = 'initdb --locale=en_US.UTF-8 -U ' + cnuser[n] + ' -E utf8 -D ' + cndata[n] + ' --nodename=' + cnname[n] + ' --nodetype=coordinator --master_gtm_nodename ' + gtmname[0] + ' --master_gtm_ip ' + gtmhost[0] + ' --master_gtm_port ' + str(gtmport[0])
+            sshTemp(i, initcn, 3)
+
+        else if type = 'pgxc':
+            initcn = 'initdb -D ' + cndata[n] + ' --nodename ' + cnname[n]
+            sshTemp(i, initcn, 3)
         
         # change cn node configuration =============
         cnconf = '/bin/bash ' + defbase + '/install.sh cn ' + str(cnport[n]) + ' ' + str(cnpooler[n]) + ' ' + cndata[n]
         sshTemp(i, cnconf, 1)
 
         # start cn node =================
-        startcn = 'pg_ctl -Z coordinator -D ' + cndata[n] + ' start'
-        reloadcn = 'pg_ctl -D ' + cndata[n] + ' reload'
-        sshTemp(i, startcn, 6)
-        sshTemp(i, reloadcn, 1)
+        if type == 'pgxz':
+            startcn = 'pg_ctl -Z coordinator -D ' + cndata[n] + ' start'
+            reloadcn = 'pg_ctl -D ' + cndata[n] + ' reload'
+            sshTemp(i, startcn, 6)
+            sshTemp(i, reloadcn, 1)
+        
+        else if type == 'pgxc':
+            startcn == 'postgres --coordinator -D ' + cndata[n]
+            sshTemp(i, startcn, 6)
 
         n = n + 1
 

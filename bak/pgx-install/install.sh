@@ -137,3 +137,14 @@ primary_conninfo ='host = $path port = $user user = $pooler_port application_nam
 EOF
 
 fi
+
+if [[ "$types" == "cn" && "$path" == "pgxc" ]]
+then
+	sed -i 's/wal_level = replica/wal_level = archive/' $nodename/postgresql.conf
+elif [[ "$types" == "dn" && "$path" == "pgxc" ]]
+then
+	sed -i 's/wal_level = replica/wal_level = archive/' $nodename/postgresql.conf
+elif [[ "$types" == "dn_slave" && "$mport" == "pgxc" ]]
+then
+	sed -i 's/wal_level = replica/wal_level = archive/' $nodename/postgresql.conf
+fi
