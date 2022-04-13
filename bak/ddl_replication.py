@@ -552,14 +552,14 @@ def clearAllTmpFileAndDropDatabases():
         cur = conn.cursor()
         conn.autocommit = True
         stmt1 = "DROP DATABASE %s" % (db)
-        #cur.execute(stmt1)
+        cur.execute(stmt1)
         print(stmt1 + ', please wait 2s')
         sleep(2)
         cur.close()
         conn.close()
         num += 1
         dbnum += 1
-    #subprocess.run('rm -rf ./ddl-diff', shell = True)
+    subprocess.run('rm -rf ./ddl-diff', shell = True)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'this script is use to test ddl replication!')

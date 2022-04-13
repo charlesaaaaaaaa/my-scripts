@@ -7,8 +7,8 @@ import os
 parser = argparse.ArgumentParser(description='Configure')
 parser.add_argument('--defuser', type=str, default='kunlun', help='User')
 parser.add_argument('--defbase', type=str, default='/kunlun', help='basedir')
-parser.add_argument('--install', type=str, default='./install.json', help='The original configuration file for the Kunlun_cluster')
-parser.add_argument('--config', type=str, default='./configure.json', help='the configuration file')
+parser.add_argument('--install', type=str, default='./install.json', help='The original configuration file for the Kunlun_cluster,like "./install.json"')
+parser.add_argument('--config', type=str, default='./configure.json', help='the configuration file,like "configure.json"')
 
 args = parser.parse_args()
 
