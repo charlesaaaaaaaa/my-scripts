@@ -20,14 +20,21 @@ def makeTemp(host, path):
     stmt = 'ssh ' + defuser + '@' + host + " 'mkdir -p " + path + "'"
     subprocess.run(stmt, shell = True)
     print('ssh mkdir : ' + stmt)
+    print()
 
+def remoTemp(host, path):
+    stmt = 'ssh ' + defuser + '@' + host + " 'rm -rf " + path + "'"
+    subprocess.run(stmt, shell = True)
+    print('ssh rm : ' + stmt)
+    print()
 
 def sshTemp(host, stmt, time):
     stmt = 'ssh ' + defuser + '@' + host + " 'cd " + defbase + ' && source env.sh && ' + stmt + "'"
+    print('ssh common : ' + stmt)
     p = subprocess.Popen(stmt, shell = True)
     os.kill(p.pid, signal.SIGCONT)
-    print('ssh common : ' + stmt)
     sleep(time)
+    print()
 
 def readJsonFile():
     Of = open(File,encoding='utf-8')
@@ -391,10 +398,68 @@ def ConfigRoute():
             alldn = i
         else:
             alldn = alldn + ',' + i
+    
     stmt1 = 'create default node group default_group with(' + alldn + ')'
+    connTemp(cnuser[0], cnhost[0], cnport[0], stmt1)
+    
     stmt2 = 'create sharding group to group default_group'
+    connTemp(cnuser[0], cnhost[0], cnport[0], stmt2)
+    
     stmt3 = 'clean sharding'
-    print(stmt1 + '\n' + stmt2 + '\n' + stmt3 + '\n')
+    connTemp(cnuser[0], cnhost[0], cnport[0], stmt3)
+    
+def clean():
+    #pg_ctl -D /home/charles/data/pgdatadir stop -m immediate
+    
+    gtmclean = 'gtm_ctl -Z gtm -m immediate -D ' + gtmdata[0] + '\n'
+    sshTemp(gtmhost[0], gtmclean, 1)
+
+    n = 0
+    for i in gtmshost:
+        gtmsclean = 'gtm_ctl -Z gtm_standby stop -m immediate -D ' + gtmsdata[n] + '\n'
+        sshTemp(i, gtmsclean, 1)
+        n = n +1
+    
+    n = 0
+    for i in cnhost:
+        cnclean = 'pg_ctl stop -m immediate -D ' + cndata[n] + '\n'
+        sshTemp(i, cnclean, 1)
+        n = n + 1
+
+    n = 0
+    for i in dnhost:
+        dnclean = 'pg_ctl stop -m immediate -D ' + dndata[n] + '\n'
+        sshTemp(i, dnclean, 1)
+        n = n + 1
+    
+    n = 0 
+    for i in dnshost:
+        dnsclean = 'pg_ctl stop -m immediate -D ' + dnsdata[n] + '\n'
+        sshTemp(i, dnsclean, 1)
+        n = n + 1
+    
+    remoTemp(gtmhost[0], gtmdata[0])
+    
+    n = 0
+    for i in gtmshost:
+        remoTemp(i, gtmsdata[n])
+        n = n +1
+
+    n = 0
+    for i in cnhost:
+        remoTemp(i, cndata[n])
+        n = n + 1
+
+    n = 0
+    for i in dnhost:
+        remoTemp(i, dndata[n])
+        n = n + 1
+
+    n = 0
+    for i in dnshost:
+        remoTemp(i, dnsdata[n])
+        n = n + 1
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'the pgxz/pgxl/pgxc install script.')
@@ -403,15 +468,21 @@ if __name__ == '__main__':
     parser.add_argument('--defbase', default='/home/kunlun/compare/postgres-xc/base', help = 'default basedir')
     parser.add_argument('--defuser', default='kunlun', help = 'default user')
     parser.add_argument('--package', default='package', help = 'the package of pgxz/xl/xc')
+    parser.add_argument('--opt', default='install', help = 'can be "i" or "c", "i" = "install" \n "c" = "clean"')
     args = parser.parse_args()
     File = args.config
     defbase = args.defbase
     defuser = args.defuser
     package = args.package
     types = args.type
+    opt = args.opt
     print(args)
     readJsonFile()
-    install()
-    ConfigRoute()
+    if opt == 'i':
+        install()
+        ConfigRoute()
+    elif opt == 'c':
+        clean()
+
 
     #print('gtm\n', gtmhost,'\n', gtmport, '\n', gtmdata, '\n',gtmuser, '\n', gtmname, '\n' , '\ngtm_slave \n',gtmshost, '\n', gtmsport, '\n', gtmsdata, '\n', gtmsuser, '\n', gtmsname, '\n', '\ncn\n', cnhost, '\n', cnport, '\n', cndata, '\n', cnuser, '\n', cnname, '\n', '\ndn\n', dnhost, '\n', dnport, '\n', dndata, '\n', dnuser, '\n', dnname, '\n', dnpooler, '\n', '\ndn_slave \n', dnshost, '\n', dnsport, '\n', dnsdata, '\n', dnsuser, '\n', dnspooler, '\n', dnsname, '\n', dnsmport, '\n', dnsmname, '\n', dnsmhost)
