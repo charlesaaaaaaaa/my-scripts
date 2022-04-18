@@ -51,43 +51,15 @@ def readJsonFile():
     global dnhost, dnport, dndata, dnuser, dnname, dnpooler
     global dnsname, dnshost, dnsport, dnsdata, dnsuser, dnspooler, dnsmname, dnsmuser, dnsmport, dnsmhost
 
-    gtmhost = []
-    gtmport = []
-    gtmdata = []
-    gtmuser = []
-    gtmname = []
-    
-    gtmshost = []
-    gtmsport = []
-    gtmsdata = []
-    gtmsuser = []
-    gtmsname = []
+    gtmhost, gtmport, gtmdata, gtmuser, gtmname = [], [], [], [], []
 
-    cnhost = []
-    cnport = []
-    cndata = []
-    cnuser = []
-    cnname = []
-    cnpooler = []
+    gtmshost, gtmsport, gtmsdata, gtmsuser, gtmsname = [], [], [], [], []
 
-    dnhost = []
-    dnport = []
-    dndata = []
-    dnuser = []
-    dnname = []
-    dnpooler = []
+    cnhost, cnport, cndata, cnuser, cnname, cnpooler = [], [], [], [], [], []
 
-    dnsname = []
-    dnshost = []
-    dnsport = []
-    dnsdata = []
-    dnsuser = []
-    dnspooler = []
-    dnsmname = []
-    dnsmuser = []
-    dnsmport = []
-    dnsmhost = []
-    
+    dnhost, dnport, dndata, dnuser, dnname, dnpooler = [], [], [], [], [], []
+
+    dnsname, dnshost, dnsport, dnsdata, dnsuser, dnspooler, dnsmname, dnsmuser, dnsmport, dnsmhost = [], [], [], [], [], [], [], [], [], []
 
     for i in gtm:
         Gtmhost = i["host"]
