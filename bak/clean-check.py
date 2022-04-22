@@ -37,7 +37,7 @@ def readJsonFile():
 
 def clean(ip, path):
     stmt = 'ssh ' + defuser + '@' + ip + " 'cd " + path + " && for i in `ls | sed \"$\"d | sed \"$\"d | sed \"$\"d`; do echo $i; rm $i; done'"
-    #subprocess.run(stmt, shell=True)
+    subprocess.run(stmt, shell=True)
     print(stmt)
 
 def check(ip):
@@ -46,11 +46,11 @@ def check(ip):
     stmt3 = 'ssh ' + defuser + '@' + ip + " 'sar -n DEV 1 1 | grep -A 2 IFACE' >> ./check/net-" + ip + '.sh'
     stmt4 = 'ssh ' + defuser + '@' + ip + " 'sar 1 1' >> ./check/cpu-" + ip + '.sh'
 
-    print(stmt1 + '========>'  + stmt2 + '========>'  + stmt3+ '========>' + stmt4)
-    #subprocess.run(stmt1, shell=True)
-    #subprocess.run(stmt2, shell=True)
-    #subprocess.run(stmt3, shell=True)
-    #subprocess.run(stmt4, shell=True)
+    print(stmt1 + ' ======>> '  + stmt2 + ' ======> '  + stmt3+ ' ======> ' + stmt4)
+    subprocess.run(stmt1, shell=True)
+    subprocess.run(stmt2, shell=True)
+    subprocess.run(stmt3, shell=True)
+    subprocess.run(stmt4, shell=True)
 
 def all():
     n=0
