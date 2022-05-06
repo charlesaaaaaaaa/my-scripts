@@ -5,19 +5,6 @@ import argparse
 import os
 import psycopg2
 
-#parser = argparse.ArgumentParser(description='Configure')
-#parser.add_argument('--defuser', type=str, default='kunlun', help='User')
-#parser.add_argument('--defbase', type=str, default='/kunlun', help='basedir')
-#parser.add_argument('--install', type=str, default='./install.json', help='The original configuration file for the Kunlun_cluster')
-#parser.add_argument('--config', type=str, default='./configure.json', help='the configuration file')
-
-#args = parser.parse_args()
-
-#defuser=args.defuser
-#defbase=args.defbase
-#install=args.install
-#config=args.config
-
 def readJsonFile():
     OpenCluster=open(install, encoding='utf-8')
     ReadCluster=json.loads(OpenCluster.read())
@@ -27,8 +14,9 @@ def readJsonFile():
     DataTotal=ReadCluster['cluster']['data']
 
     # get cluster info
-    global MetaIp, MetaPort, MetaDir, CompIp, MetaUser, CompPort, CompDir, CompUser, DataIp, DataPort, DataDir, DataUser
-    MetaIp, MetaPort, MetaDir, CompIp, MetaUser, CompPort, CompDir, CompUser, DataIp, DataPort, DataDir, DataUser = [], [], [], [], [], [], [], [], [], [], [], []
+    global MetaIp, MetaPort, MetaDir, CompIp, CompPwd, MetaUser, CompPort, CompDir, CompUser, DataIp, DataPort, DataDir, DataUser
+    
+    MetaIp, MetaPort, MetaDir, CompIp, CompPwd, MetaUser, CompPort, CompDir, CompUser, DataIp, DataPort, DataDir, DataUser = [], [], [], [], [], [], [], [], [], [], [], [], []
 
     for i in MetaTotal: #get metadata node info
         ip=i['ip']
@@ -46,6 +34,8 @@ def readJsonFile():
         port=i['port']
         datadir=i['datadir']
         user=i['user']
+        pwd=i['password']
+        CompPwd.append(pwd)
         CompIp.append(ip)
         CompPort.append(port)
         CompDir.append(datadir)
@@ -61,9 +51,6 @@ def readJsonFile():
             DataPort.append(port)
             DataDir.append(datadir)
             DataUser.append(user)
-
-
-    #print('Meta:', MetaIp, MetaPort, MetaDir, MetaUser, '\n','Comp:', CompIp, CompPort, CompDir, CompUser, '\n','Data:', DataIp, DataPort, DataDir, DataUser)
 
     try:
         OpenConf=open(config,encoding='utf-8') # get computing conf info
@@ -87,9 +74,6 @@ def readJsonFile():
     CompNum=len(Compkeys)
     sCompNum = str(CompNum)
     MedaNum=len(Medakeys)
-    #print('CompNum=',CompNum,'\n',Compkeys,'\n', Compvalues, '\n', 'Medanum=', MedaNum, '\n', Medakeys, '\n', Medavalues)
-    #global CIPN
-    #CIPN = 0 generate bash file
 
     try:
         os.remove('config.sh')
@@ -115,17 +99,14 @@ def configs():
                 SedDel = 'sed -i "${line}d" ' + SCompDir +'/postgresql.conf && '
                 SedAdd = 'sed -i "${line}i ' + SCompkeys + ' = ' + SCompvalues + '" ' + SCompDir +'/postgresql.conf'
                 BashStmt = AddLine + SedDel + SedAdd
-                of.write("ssh %s@%s '%s'\n\n" %(defuser, SCompIp, BashStmt))
+                of.write("ssh %s@%s '%s'\n\necho ssh %s@%s '%s'\n\n" %(defuser, SCompIp, BashStmt, defuser, SCompIp, BashStmt))
                 of.close()
-                #of=open('config.sh','a')
-                #of.write("bash remote_run.sh --user=%s %s %s/bin/pg_ctl reload -D %s\n\n" % (defuser, SCompIp, SCompDir, SCompDir))
-               # of.close()
             else:
                 err = 'Computing node' + SCompIp + ':' + SCompPort + 'parameter :"' + SCompkeys + '" values is null'
                 print(err)
 
         of=open('config.sh','a')
-        stmt = "ssh %s@%s '%s/kunlun-server-0.9.1/bin/pg_ctl reload -D %s\n\n'" % (defuser, SCompIp, defbase, SCompDir)
+        stmt = "ssh %s@%s '%s/kunlun-server-0.9.1/bin/pg_ctl reload -D %s'\n\necho ssh %s@%s '%s/kunlun-server-0.9.1/bin/pg_ctl reload -D %s'\n\n" % (defuser, SCompIp, defbase, SCompDir, defuser, SCompIp, defbase, SCompDir)
         of.write(stmt)
         of.close()
 
@@ -140,13 +121,12 @@ def configs():
                 SMetaIp = ''.join(MetaIp[MIPN])
                 SMetaPort = str(MetaPort[MIPN])
                 SMetaDir = ''.join(MetaDir[MIPN])
-                #print(SMetaIp,SMetaPort,SMetaDir)
                 of=open('config.sh','a')
                 AddLine = "line=`cat %s/%s/my_%s.cnf | awk -F= '\\'{print \\$1}\\'' | grep -n -w '\\'^%s\\'' | awk -F: '\\'{print \\$1}\\''` && " % (SMetaDir, SMetaPort, SMetaPort, SMedakeys)
                 SedDel = 'sed -i "${line}d" ' + SMetaDir +'/' + SMetaPort + '/my_' + SMetaPort +'.cnf && '
                 SedAdd = 'sed -i "${line}i ' + SMedakeys + ' = ' + SMedavalues + '" ' + SMetaDir +'/' + SMetaPort + '/my_' + SMetaPort +'.cnf '
                 BashStmt = AddLine + SedDel + SedAdd
-                of.write("ssh %s@%s '%s'\n\n" %(defuser, SMetaIp, BashStmt))
+                of.write("ssh %s@%s '%s'\n\necho ssh %s@%s '%s'\n\n" %(defuser, SMetaIp, BashStmt, defuser, SMetaIp, BashStmt))
                 of.close()
             else:
                 err = 'Metadata node' + SMetaIp + ':' + SMetaPort + 'parameter :"' + SMedakeys + '" vaules is null! '
@@ -170,7 +150,7 @@ def configs():
                 SedDel = 'sed -i "${line}d" ' + SDataDir +'/' + SDataPort + '/my_' + SDataPort +'.cnf && '
                 SedAdd = 'sed -i "${line}i ' + SMedakeys + ' = ' + SMedavalues + '" ' + SDataDir +'/' + SDataPort + '/my_' + SDataPort +'.cnf '
                 BashStmt = AddLine + SedDel + SedAdd
-                of.write("bash remote_run.sh --user=%s %s '%s'\n\n" %(defuser, SDataIp, BashStmt))
+                of.write("ssh %s@%s '%s'\n\necho ssh %s@%s '%s'\n\n" %(defuser, SDataIp, BashStmt, defuser, SDataIp, BashStmt))
                 of.close()
             else:
                 err = 'Data node' + SDataIp + ':' + SDataPort + 'parameter :"' + SMedakeys + '" values is null!'
@@ -178,28 +158,20 @@ def configs():
 
         DIPN+=1
 
-#    of=open('config.sh','a')
-#    stmt = "python2 generate_scripts.py --action=stop --config=%s --defbase=%s \n\ntime bash stop/commands.sh \n\npython2 generate_scripts.py --action=start --config=%s \n\ntime bash start/commands.sh" % (install, defbase, install)
-#    of.write(stmt)
-#    of.close()
-
-    #subprocess.run("bash ./config.sh",shell=True)
-    
-    #print(Medakeys, Medavalues)
     n = 0
     for i in Medakeys:
         stmt = 'set shard global ' + i + ' = ' + str(Medavalues[n])
-        #print(stmt)
-        '''
-        conn = psycopg2.connect(database = 'postgres', user = CompUser[0], host = CompIp[0], port = CompPort[0])
+        print(stmt)
+        conn = psycopg2.connect(database = 'postgres', user = CompUser[0], host = CompIp[0], port = CompPort[0], password = CompPwd[0])
         conn.autocommit = True
         cur = conn.cursor()
         cur.execute(stmt)
         conn.commit()
         cur.close()
         conn.close()
-        '''
         n = n + 1
+
+    subprocess.run("bash ./config.sh",shell=True)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Configure')
