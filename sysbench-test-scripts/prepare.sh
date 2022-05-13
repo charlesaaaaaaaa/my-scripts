@@ -23,7 +23,7 @@ sysbench oltp_point_select        \
 
 for i in point_select insert read_only read_write write_only update_index update_non_index
 do
-	# create test resault dir
+	# create test result dir
 	if [ ! -d $i ] ; then
 		mkdir $i 
 	fi

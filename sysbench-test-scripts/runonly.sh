@@ -10,7 +10,7 @@ fi
 
 
 #for i in 9
-for i in `seq 1 10` # run sysbench test 100 to 1000 threads
+for i in 3 6 9 # run sysbench test 100 to 1000 threads
 do
 	li=` expr ${i} \* 100 `
 	echo
@@ -21,17 +21,17 @@ do
 	#        ./loop_test.sh host          port  dbname   user table_num table_size test_time
 done
 
-bash ./resault.sh 
-cp resault result_before
+bash ./result.sh 
+cp result result_before
 
 for n in `seq 1 5`
 do
         for a in point_select write_only insert update_index update_non_index
         do
-                for i in 100 200 300 400 500 600 700 800 900 1000
-                do
+                for i in 300 600 900
+		do
 
-                        b=`cat resault | grep -A 11 "=== $a" | grep "|| $i ||" | awk '{print $16}' | sed 's/...$//'`
+                        b=`cat result | grep -A 11 "=== $a" | grep "|| $i ||" | awk '{print $16}' | sed 's/...$//'`
                         if [[ "$b" -eq '' ]]; then
                                 echo
                                 date
@@ -43,9 +43,9 @@ do
                         fi
                 done
         done
-        bash ./resault.sh
+        bash ./result.sh
 done
 
-bash ./resault.sh
+bash ./result.sh
 
 #sysbench oltp_delete --tables=10 --table-size=100000 --db-driver=pgsql --pgsql-host=192.168.0.134 --pgsql-port=38701 --pgsql-user=abc --pgsql-db=postgres --pgsql-password=abc cleanup

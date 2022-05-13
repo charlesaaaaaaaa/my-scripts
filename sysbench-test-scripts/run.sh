@@ -23,7 +23,7 @@ sysbench oltp_point_select        \
 
 for i in point_select delete insert read_only read_write write_only update_index update_non_index
 do
-	# create test resault dir
+	# create test result dir
 	if [ ! -d $i ] ; then
 		mkdir $i 
 	fi
@@ -57,4 +57,4 @@ sysbench oltp_delete        \
 
 #sysbench oltp_delete --tables=10 --db-driver=pgsql --pgsql-host=192.168.0.134 --pgsql-port=5433 --pgsql-user=postgres --pgsql-password=postgres --pgsql-db=postgres cleanup
 
-bash ./resault.sh
+bash ./result.sh
