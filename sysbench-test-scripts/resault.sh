@@ -23,7 +23,7 @@ do
 done
 
 sed -i 's/ / || /g' resault
-sed -i 's/^/|| yugabyte || /' resault
+sed -i 's/^/|| kunlun || /' resault
 sed -i 's/$/ ||/' resault
 #sed -i '1 i\|| db || threads || tps(avg) || read || wirte || txn || total || avg response time(ms) || .95 response time(ms) || total events ||' resault
 sed -i "1 i * `date`" resault
@@ -35,10 +35,10 @@ do
         ai=`expr ${i} \* 13 + 4 `
         sed -i "$ai i\|| db || threads || tps(avg) || read || wirte || txn || avg response time(ms) || .95 response time(ms) || total events ||" resault
         #sed -i "$ei s/||//g" resault
-        sed -i "$ei s/yugabyte//g" resault
+        sed -i "$ei s/kunlun//g" resault
 done
-sed -i 's/|| yugabyte ||  ||/----/' resault
-sed -i 's/|| yugabyte || == || /=== /' resault
+sed -i 's/|| kunlun ||  ||/----/' resault
+sed -i 's/|| kunlun || == || /=== /' resault
 sed -i 's/ || == ||  ||//' resault
 
 cat resault

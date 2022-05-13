@@ -2,7 +2,7 @@ if [ $# -lt 7 ] ; then
        echo	
        echo get me 7 parameters,runing like	
 	echo ./run.sh host port dbname user table_num table_size test_runtime       
-	echo 'nohup /bin/bash `pwd`/runonly.sh 192.168.0.125 26252 postgres yugabyte 10 10000000 120 > log.log 2>&1 &'
+	echo 'nohup /bin/bash `pwd`/runonly.sh 192.168.0.125 26252 postgres kunlun 10 10000000 120 > log.log 2>&1 &'
 	echo
 	exit 1
 fi
