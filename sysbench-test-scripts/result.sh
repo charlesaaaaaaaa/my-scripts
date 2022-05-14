@@ -1,11 +1,11 @@
-#
 rm -rf result
 touch result
 
 for list in point_select insert read_only read_write write_only update_index update_non_index
 do
         echo "== ${list} == " >> result
-        for a in `seq 1 10`
+        #for a in `seq 1 10`
+	for a in 3 6 9
         do
                 la=`expr $a \* 100`
                 wcl=`cat ${list}/${la}_${list} | grep tps | wc -l`
@@ -22,24 +22,15 @@ do
         echo >> result
 done
 
-sed -i 's/ / || /g' result
-sed -i 's/^/|| kunlun || /' result
+sed -i 's/ / || /g' result && sed -i 's/^/|| kunlun || /' result
 sed -i 's/$/ ||/' result
-#sed -i '1 i\|| db || threads || tps(avg) || read || wirte || txn || total || avg response time(ms) || .95 response time(ms) || total events ||' result
-sed -i "1 i * `date`" result
-sed -i "1 i [[PageOutline]]" result
+sed -i "1 i * `date`" result && sed -i "1 i [[PageOutline]]" result
 
-for i in `seq 0 6`
+for i in point_select insert read_only read_write write_only update_index update_non_index
 do
-        ei=`expr ${i} \* 13 + 4`
-        ai=`expr ${i} \* 13 + 4 `
-        sed -i "$ai i\|| db || threads || tps(avg) || read || wirte || txn || avg response time(ms) || .95 response time(ms) || total events ||" result
-        #sed -i "$ei s/||//g" result
-        sed -i "$ei s/kunlun//g" result
+	ai=`cat -n result | grep $i | awk '{print $1}'`
+	sed -i "$ai a\|| db || threads || tps(avg) || read || wirte || txn || avg response time(ms) || .95 response time(ms) || total events ||" result
 done
-sed -i 's/|| kunlun ||  ||/----/' result
-sed -i 's/|| kunlun || == || /=== /' result
-sed -i 's/ || == ||  ||//' result
 
-cat result
-
+sed -i 's/|| kunlun ||  ||/----/' result && sed -i 's/|| kunlun || == || /=== /' result
+sed -i 's/ || == ||  ||//' result && cat result
