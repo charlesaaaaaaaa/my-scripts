@@ -80,7 +80,7 @@ def net(ip):
     subprocess.run(stmt3, shell=True)
 
 def cpu(ip):
-    stmt4 = 'ssh ' + defuser + '@' + ip + " 'sar 1 1' >> ./check/cpu/cpu-" + ip + '.sh'
+    stmt4 = 'ssh ' + defuser + '@' + ip + " 'mpstat -P All' >> ./check/cpu/cpu-" + ip + '.sh'
     print(stmt4)
     subprocess.run(stmt4, shell=True)
 
