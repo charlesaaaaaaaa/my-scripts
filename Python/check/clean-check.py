@@ -75,7 +75,7 @@ def free(ip):
     subprocess.run(stmt2, shell=True)
 
 def net(ip):
-    stmt3 = 'ssh ' + defuser + '@' + ip + " 'sar -n DEV 1 1 | grep -A 2 IFACE' >> ./check/net/net-" + ip + '.sh'
+    stmt3 = 'ssh ' + defuser + '@' + ip + " 'sar -n DEV 1 1' >> ./check/net/net-" + ip + '.sh'
     print(stmt3)
     subprocess.run(stmt3, shell=True)
 
