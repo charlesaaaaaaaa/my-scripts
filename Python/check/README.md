@@ -4,4 +4,5 @@
 * `python3 clean-check.py --help` 查看其要传递的参数
   * --config 群集的json配置文件
   * --defuser 集群的默认用户
+  * --type 可以为`all`或者`onlycheck`
   * 示例：python3 clean-check.py --config=install.json --defuser=kunlun
