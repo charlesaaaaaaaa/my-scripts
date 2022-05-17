@@ -35,7 +35,7 @@ do
                 for i in 300 600 900
 		do
 
-                        b=`cat result | grep -A 11 "=== $a" | grep "|| $i ||" | awk '{print $16}' | sed 's/...$//'`
+                        b=`cat result | grep -A 11 "=== $a" | grep "|| $i ||" | awk '{print $10}' | sed 's/...$//'`
                         if [[ "$b" -eq '' ]]; then
                                 echo
                                 date
