@@ -10,7 +10,7 @@ do
 	do
 		for i in $*
 		do
-			num=`echo "3+1" | bc -l`
+			num=`echo "scale=0;3+2" | bc -l`
 			export thd$i=`cat $i/result | grep -A $num "$sn" | grep -v "$sn" | grep -v threads | sed -n "${tn}p" | awk '{print $4}'`
 			export tps$i=`cat $i/result | grep -A $num "$sn" | grep -v "$sn" | grep -v threads | sed -n "${tn}p" | awk '{print $6}'`
 			export qps$i=`cat $i/result | grep -A $num "$sn" | grep -v "$sn" | grep -v threads | sed -n "${tn}p" | awk '{print $8}'`
