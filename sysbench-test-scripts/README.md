@@ -8,7 +8,7 @@ test.sh 是测试一次的脚本
 plus_result.sh 是用来处理多个sysbench结果的脚本，因为后面不用haproxy，所以要起多个sysbench  
   * plus_result.sh使用方法
 ```
-1.先创建**计算节点个数**的文件夹。该文件夹命名不限制，以下用comp1 comp2 comp3代替
+1.先创建**计算节点个数**的文件夹。该文件夹命名不限制，假设有三个计算节点且以下用comp1 comp2 comp3代替
 
 2.每一个文件夹里面都要放run.sh runonly.sh result.sh prepare.sh test.sh
 
@@ -21,6 +21,9 @@ cd comp3 && nohup /bin/bash `pwd`/runonly.sh 192.168.0.140 8888 postgres abc 10 
 bash ./plus_result.sh comp1 comp2 comp3
   注意传递的文件名不可以加 / 号
 5.查看同级目录下allresult.txt结果会输出在 allresult.txt里面
+allresult.txt 线程数和tps、qps是三个计算节点相加的结果
+avg是所有计算节点结果相加再除计算节点个数
+.95是拿所有计算节点最大的结果
 
 ```
 
