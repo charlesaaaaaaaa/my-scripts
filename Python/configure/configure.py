@@ -101,7 +101,7 @@ def configs():
                 SedAdd = 'sed -i "${line}i ' + SCompkeys + ' = ' + SCompvalues + '" ' + SCompDir +'/postgresql.conf'
                 BashStmt = AddLine + SedDel + SedAdd
                 '''
-                BashStmt = 'echo %s = %s > %s/postgresql.conf' % (SCompvalues, SCompkeys, SCompDir )
+                BashStmt = 'echo %s = %s >> %s/postgresql.conf' % (SCompkeys, SCompvalues, SCompDir )
                 of.write("ssh %s@%s '%s'\n\necho ssh %s@%s '%s'\n\n" %(defuser, SCompIp, BashStmt, defuser, SCompIp, BashStmt))
                 of.write("")
                 of.close()
@@ -132,7 +132,7 @@ def configs():
                 SedAdd = 'sed -i "${line}i ' + SMedakeys + ' = ' + SMedavalues + '" ' + SMetaDir +'/' + SMetaPort + '/my_' + SMetaPort +'.cnf '
                 BashStmt = AddLine + SedDel + SedAdd
                 '''
-                BashStmt = 'echo %s = %s > %s/%s/my_%s.conf' % (SMedakeys, SMedavalues, SMetaDir, SMetaPort, SMetaPort)
+                BashStmt = 'echo %s = %s >> %s/%s/my_%s.conf' % (SMedakeys, SMedavalues, SMetaDir, SMetaPort, SMetaPort)
                 of.write("ssh %s@%s '%s'\n\necho ssh %s@%s '%s'\n\n" %(defuser, SMetaIp, BashStmt, defuser, SMetaIp, BashStmt))
                 of.close()
             else:
@@ -153,13 +153,7 @@ def configs():
                 SDataDir = ''.join(DataDir[DIPN])
 
                 of=open('config.sh','a')
-                '''
-                AddLine = "line=`cat  %s/%s/my_%s.cnf | awk -F= '\\'{print \\$1}\\'' | grep -n -w '\\'^%s\\'' | awk -F: '\\'{print \\$1}\\''` && " % (SDataDir, SDataPort, SDataPort, SMedakeys)
-                SedDel = 'sed -i "${line}d" ' + SDataDir +'/' + SDataPort + '/my_' + SDataPort +'.cnf && '
-                SedAdd = 'sed -i "${line}i ' + SMedakeys + ' = ' + SMedavalues + '" ' + SDataDir +'/' + SDataPort + '/my_' + SDataPort +'.cnf '
-                BashStmt = AddLine + SedDel + SedAdd
-                '''
-                BashStmt = 'echo %s = %s > %s/%s/my_%s.conf' % (SMedakeys, SMedavalues, SDataDir, SDataPort, SDataPort)
+                BashStmt = 'echo %s = %s >> %s/%s/my_%s.conf' % (SMedakeys, SMedavalues, SDataDir, SDataPort, SDataPort)
                 of.write("ssh %s@%s '%s'\n\necho ssh %s@%s '%s'\n\n" %(defuser, SDataIp, BashStmt, defuser, SDataIp, BashStmt))
                 of.close()
             else:
