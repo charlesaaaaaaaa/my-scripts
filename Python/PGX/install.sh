@@ -126,3 +126,13 @@ elif [[ "$types" == "dn" && "$pooler_port" == "pgxc" ]]
 then
 	sed -i 's/wal_level = replica/wal_level = hot_standby/' $nodename/postgresql.conf
 fi
+
+if [[ "$types" == "cn" && "$pooler_port" == "pgxz" ]]
+then
+	sed -i 's/gtm_host/#gtm_host/' $nodename/postgresql.conf
+	sed -i 's/gtm_port/#gtm_port/' $nodename/postgresql.conf
+elif [[ "$types" == "dn" && "$pooler_port" == "pgxz" ]]
+then
+        sed -i 's/gtm_host/#gtm_host/' $nodename/postgresql.conf
+        sed -i 's/gtm_port/#gtm_port/' $nodename/postgresql.conf
+fi

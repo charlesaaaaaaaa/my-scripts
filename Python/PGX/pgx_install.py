@@ -135,6 +135,16 @@ def readJsonFile():
         dnsmuser.append(Dnsmuser)
         dnsmname.append(Dnsmname)
         dnsmhost.append(Dnsmhost)
+    
+    global ahost
+
+    allhost = []
+    allhost.extend(gtmhost)
+    allhost.extend(gtmshost)
+    allhost.extend(dnhost)
+    allhost.extend(cnhost)
+    allhost.extend(dnshost)
+    ahost = list(set(allhost))
 
 
 def install():
@@ -186,6 +196,7 @@ def install():
 
     # start gtm =============================
     startgtm = 'gtm_ctl -Z gtm -D ' + gtmdata[0] + ' start'
+    
     sshTemp(gtmhost[0], startgtm, 1)
 
     # -------------------------- gtm slave -----------------------------
@@ -204,7 +215,11 @@ def install():
 
         #start gtm slave ==================
         startgtms = 'gtm_ctl -Z gtm_standby -D ' + gtmsdata[n] + ' start'
-        sshTemp(i, startgtms, 1)
+        startgtmsz = 'gtm_ctl -Z gtm -D ' + gtmsdata[n] + ' start'
+        if types == 'pgxc':
+            sshTemp(i, startgtms, 1)
+        elif types == 'pgxz':
+            sshTemp(i, startgtmsz, 1)
 
         n = n + 1
     
@@ -226,7 +241,7 @@ def install():
         
         # change cn node configuration =============
         if types == 'pgxz':
-            cnconf = '/bin/bash ' + defbase + '/install.sh cn ' + str(cnport[n]) + ' ' + str(cnpooler[n]) + ' ' + cndata[n] + ' ' + gtmhost[0] + ' ' + str(gtmport[0])
+            cnconf = '/bin/bash ' + defbase + '/install.sh cn ' + str(cnport[n]) + ' ' + str(cnpooler[n]) + ' ' + cndata[n] + ' ' + gtmhost[0] + ' ' + str(gtmport[0]) + ' ' + types
             sshTemp(i, cnconf, 1)
         elif types == 'pgxc':
             cnconf = '/bin/bash ' + defbase + '/install.sh cn ' + str(cnport[n]) + ' ' + str(cnpooler[n]) + ' ' + cndata[n] + ' ' + gtmhost[0] + ' ' + str(gtmport[0]) + ' ' + types
@@ -260,7 +275,7 @@ def install():
             sshTemp(i, initdn, 5)
         # change dn configuration ====================
         if types == 'pgxz':
-            dnconf = '/bin/bash ' + defbase + '/install.sh dn ' + str(dnport[n]) + ' ' + str(dnpooler[n]) + ' ' + dndata[n] + ' ' + gtmhost[0] + ' ' + str(gtmport[0])
+            dnconf = '/bin/bash ' + defbase + '/install.sh dn ' + str(dnport[n]) + ' ' + str(dnpooler[n]) + ' ' + dndata[n] + ' ' + gtmhost[0] + ' ' + str(gtmport[0]) + ' ' + types
             sshTemp(i, dnconf, 1)
 
         elif types == 'pgxc':
@@ -362,24 +377,27 @@ def ConfigRoute():
                             connTemp(dnuser[nn], dnhost[nn], dnport[nn], stmt)
                             n = n + 1
                 nn = nn + 1
+    if types == 'pgxz':    
+        print('\ncreating sharding')
+        alldn = ''
+        for i in dnname:
+            if i == dnname[0]:
+                alldn = i
+            else:
+                alldn = alldn + ',' + i
     
-    print('\ncreating sharding')
-    alldn = ''
-    for i in dnname:
-        if i == dnname[0]:
-            alldn = i
-        else:
-            alldn = alldn + ',' + i
-    
-    stmt1 = 'create default node group default_group with(' + alldn + ')'
-    connTemp(cnuser[0], cnhost[0], cnport[0], stmt1)
-    
-    stmt2 = 'create sharding group to group default_group'
-    connTemp(cnuser[0], cnhost[0], cnport[0], stmt2)
-    
-    stmt3 = 'clean sharding'
-    connTemp(cnuser[0], cnhost[0], cnport[0], stmt3)
-    
+        stmt1 = 'create default node group default_group with(' + alldn + ')'
+        connTemp(cnuser[0], cnhost[0], cnport[0], stmt1)
+        print(stmt1)
+
+        stmt2 = 'create sharding group to group default_group'
+        connTemp(cnuser[0], cnhost[0], cnport[0], stmt2)
+        print(stmt2)
+
+        stmt3 = 'clean sharding'
+        connTemp(cnuser[0], cnhost[0], cnport[0], stmt3)
+        print(stmt3)
+
 def clean():
     #pg_ctl -D /home/charles/data/pgdatadir stop -m immediate
     
@@ -432,6 +450,10 @@ def clean():
         remoTemp(i, dnsdata[n])
         n = n + 1
 
+    for i in ahost:
+        stmt = 'ssh ' + defuser + '@' + i + " 'rm -rf " + defbase + "/*'"
+        subprocess.run(stmt, shell = True)
+        print('ssh rm : ' + stmt)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'the pgxz/pgxl/pgxc install script.')
