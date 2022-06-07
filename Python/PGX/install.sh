@@ -12,7 +12,7 @@ muser=${11}
 
 if [[ "$types" ==  'gtm' ]]
 then
-	cat > $path/gtm.conf << EOF
+	cat >> $path/gtm.conf << EOF
 nodename = $nodename
 listen_addresses = '*'
 port = $port
