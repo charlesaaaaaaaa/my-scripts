@@ -1,0 +1,8 @@
+sudo sh -c "echo export PATH=$PATH:/home/ubuntu/kunlun/cluster_mgr_rel/bin"
+
+sudo sh -c "echo export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/kunlun/cluster_mgr_rel/bin"
+
+sudo sh -c "echo PATH=${PATH}:/home/ubuntu/kunlun/kunlun-computing/bin:/home/ubuntu/kunlun/kunlun-storage/bin >> /etc/profile"
+
+sudo sh -c "echo LD_LIBRARY_PATH=/home/ubuntu/kunlun/kunlun-computing/lib:/home/ubuntu/kunlun/kunlun-storage/lib >> /etc/profile"
+

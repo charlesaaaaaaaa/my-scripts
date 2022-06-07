@@ -1,0 +1,26 @@
+\COPY    dbgen_version from 'tools/dbgen_version.dat' with DELIMITER '|' NULL ''  ;
+\COPY    customer_address  from 'tools/customer_address.dat' with DELIMITER '|' NULL ''  ;
+\COPY    customer_demographics from 'tools/customer_demographics.dat'  with DELIMITER '|' NULL ''  ;
+\COPY    date_dim  from 'tools/date_dim.dat' with DELIMITER '|' NULL ''  ;
+\COPY    warehouse  from 'tools/warehouse.dat' with DELIMITER '|' NULL ''  ;
+\COPY    ship_mode  from 'tools/ship_mode.dat' with DELIMITER '|' NULL ''  ;
+\COPY    time_dim  from 'tools/time_dim.dat' with DELIMITER '|' NULL ''  ;
+\COPY    reason  from 'tools/reason.dat' with DELIMITER '|' NULL ''  ;
+\COPY    income_band  from 'tools/income_band.dat' with DELIMITER '|' NULL ''  ;
+\COPY    item  from 'tools/item.dat' with DELIMITER '|' NULL ''  ;
+\COPY    store  from 'tools/store.dat' with DELIMITER '|' NULL ''  ;
+\COPY    call_center  from 'tools/call_center.dat' with DELIMITER '|' NULL ''  ;
+\COPY    customer  from 'tools/customer.dat' with DELIMITER '|' NULL ''  ;
+\COPY    web_site  from 'tools/web_site.dat' with DELIMITER '|' NULL ''  ;
+\COPY    store_returns  from 'tools/store_returns.dat' with DELIMITER '|' NULL ''  ;
+\COPY    household_demographics  from 'tools/household_demographics.dat' with DELIMITER '|' NULL ''  ;
+\COPY    web_page  from 'tools/web_page.dat' with DELIMITER '|' NULL ''  ;
+\COPY    promotion  from 'tools/promotion.dat' with DELIMITER '|' NULL ''  ;
+\COPY    catalog_page  from 'tools/catalog_page.dat' with DELIMITER '|' NULL ''  ;
+\COPY    inventory  from 'tools/inventory.dat' with DELIMITER '|' NULL ''  ;
+\COPY    catalog_returns  from 'tools/catalog_returns.dat' with DELIMITER '|' NULL ''  ;
+\COPY    web_returns  from 'tools/web_returns.dat' with DELIMITER '|' NULL ''  ;
+\COPY    web_sales  from 'tools/web_sales.dat' with DELIMITER '|' NULL ''  ;
+\COPY    catalog_sales  from 'tools/catalog_sales.dat' with DELIMITER '|' NULL ''  ;
+\COPY    store_sales from 'tools/store_sales.dat' with DELIMITER '|' NULL ''  ;
+
