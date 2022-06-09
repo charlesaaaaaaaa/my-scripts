@@ -220,6 +220,8 @@ def install():
             sshTemp(i, startgtms, 1)
         elif types == 'pgxz':
             sshTemp(i, startgtmsz, 1)
+        elif types == 'pgxl':
+            sshTemp(i, startgtmsz, 1)
 
         n = n + 1
     
@@ -238,6 +240,10 @@ def install():
         elif types == 'pgxc':
             initcn = 'initdb -D ' + cndata[n] + ' --nodename ' + cnname[n]
             sshTemp(i, initcn, 3)
+
+        elif types == 'pgxl':
+            initcn = 'initdb -D ' + cndata[n] + ' --nodename ' + cnname[n]
+            sshTemp(i, initcn, 3)
         
         # change cn node configuration =============
         if types == 'pgxz':
@@ -245,14 +251,20 @@ def install():
             sshTemp(i, cnconf, 1)
         elif types == 'pgxc':
             cnconf = '/bin/bash ' + defbase + '/install.sh cn ' + str(cnport[n]) + ' ' + str(cnpooler[n]) + ' ' + cndata[n] + ' ' + gtmhost[0] + ' ' + str(gtmport[0]) + ' ' + types
-
             sshTemp(i, cnconf, 2)
+        elif types == 'pgxl':
+            cnconf = '/bin/bash ' + defbase + '/install.sh cn ' + str(cnport[n]) + ' ' + str(cnpooler[n]) + ' ' + cndata[n] + ' ' + gtmhost[0] + ' ' + str(gtmport[0]) + ' ' + types
+            sshTemp(i, cnconf, 3)
 
         # start cn node =================
-        
-        startcn = 'pg_ctl -Z coordinator -D ' + cndata[n] + ' start'
+        if types == 'pgxl':
+            startcn = 'pg_ctl -D ' + cndata[n] + ' -l logfile start  -Z coordinator'
+            sshTemp(i, startcn,3)
+        else:
+            startcn = 'pg_ctl -Z coordinator -D ' + cndata[n] + ' start'
+            sshTemp(i, startcn, 3)
+
         reloadcn = 'pg_ctl -D ' + cndata[n] + ' reload'
-        sshTemp(i, startcn, 3)
         if types == 'pgxc':
             restartcn = 'pg_ctl -Z coordinator restart -m f -D ' + cndata[n]
             sshTemp(i, restartcn, 2)
@@ -273,12 +285,20 @@ def install():
         elif types == 'pgxc':
             initdn = 'initdb -D ' + dndata[n] + ' --nodename ' + dnname[n]
             sshTemp(i, initdn, 5)
+
+        elif types == 'pgxl':
+            initdn = 'initdb -D ' + dndata[n] + ' --nodename ' + dnname[n]
+            sshTemp(i, initdn, 2)
         # change dn configuration ====================
         if types == 'pgxz':
             dnconf = '/bin/bash ' + defbase + '/install.sh dn ' + str(dnport[n]) + ' ' + str(dnpooler[n]) + ' ' + dndata[n] + ' ' + gtmhost[0] + ' ' + str(gtmport[0]) + ' ' + types
             sshTemp(i, dnconf, 1)
 
         elif types == 'pgxc':
+            dnconf = '/bin/bash ' + defbase + '/install.sh dn ' + str(dnport[n]) + ' ' + str(dnpooler[n]) + ' ' + dndata[n] + ' ' + gtmhost[0] + ' ' + str(gtmport[0]) + ' ' + types
+            sshTemp(i, dnconf, 2)
+
+        elif types == 'pgxl':
             dnconf = '/bin/bash ' + defbase + '/install.sh dn ' + str(dnport[n]) + ' ' + str(dnpooler[n]) + ' ' + dndata[n] + ' ' + gtmhost[0] + ' ' + str(gtmport[0]) + ' ' + types
             sshTemp(i, dnconf, 2)
 
@@ -301,7 +321,10 @@ def install():
         print('\n ==============creating dns node ' + dnsname[n])
         # init dns node ===============
         initdns = 'pg_basebackup -p ' + dnsmport[n] + ' -h ' + dnsmhost[n] + ' -U ' + dnsuser[n] + ' -D ' + dnsdata[n] + ' -X f -P -v'
-        sshTemp(i, initdns, 5)
+        if types == 'pgxl':
+            sshTemp(i, initdns, 10)
+        else:
+            sshTemp(i, initdns, 5)
 
         # change dns configuration ==================
         dnsconf = '/bin/bash ' + defbase + '/install.sh dn_slave ' + str(dnsport[n]) + ' ' + str(dnspooler[n]) + ' ' + dnsdata[n] + ' ' + dnsmhost[n]  + ' ' + dnsmport[n]  + ' ' + dnsmuser[n]  + ' ' + dnsmname[n]
@@ -401,7 +424,7 @@ def ConfigRoute():
 def clean():
     #pg_ctl -D /home/charles/data/pgdatadir stop -m immediate
     
-    gtmclean = 'gtm_ctl -Z gtm -m immediate -D ' + gtmdata[0] + '\n'
+    gtmclean = 'gtm_ctl -Z gtm stop -m immediate -D ' + gtmdata[0] + '\n'
     sshTemp(gtmhost[0], gtmclean, 1)
 
     n = 0
@@ -472,6 +495,10 @@ if __name__ == '__main__':
     opt = args.opt
     print(args)
     readJsonFile()
+    if types != 'pgxz' and types != 'pgxc' and types != 'pgxl':
+        print('\n========================================================\ntypes \'s value error: "--types" can be "pgxz", "pgxc", "pgxl"\n========================================================\n')
+        os._exit()
+
     if opt == 'i':
         install()
         ConfigRoute()
