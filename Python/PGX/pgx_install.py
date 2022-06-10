@@ -421,6 +421,34 @@ def ConfigRoute():
         connTemp(cnuser[0], cnhost[0], cnport[0], stmt3)
         print(stmt3)
 
+def stop():
+    gtmclean = 'gtm_ctl -Z gtm stop -m immediate -D ' + gtmdata[0] + '\n'
+    sshTemp(gtmhost[0], gtmclean, 1)
+
+    n = 0
+    for i in gtmshost:
+        gtmsclean = 'gtm_ctl -Z gtm_standby stop -m immediate -D ' + gtmsdata[n] + '\n'
+        sshTemp(i, gtmsclean, 1)
+        n = n +1
+
+    n = 0
+    for i in cnhost:
+        cnclean = 'pg_ctl stop -m immediate -D ' + cndata[n] + '\n'
+        sshTemp(i, cnclean, 1)
+        n = n + 1
+
+    n = 0
+    for i in dnhost:
+        dnclean = 'pg_ctl stop -m immediate -D ' + dndata[n] + '\n'
+        sshTemp(i, dnclean, 1)
+        n = n + 1
+
+    n = 0
+    for i in dnshost:
+        dnsclean = 'pg_ctl stop -m immediate -D ' + dnsdata[n] + '\n'
+        sshTemp(i, dnsclean, 1)
+        n = n + 1
+
 def clean():
     #pg_ctl -D /home/charles/data/pgdatadir stop -m immediate
     
@@ -495,8 +523,9 @@ if __name__ == '__main__':
     opt = args.opt
     print(args)
     readJsonFile()
+    inf='\n========================================================\n'
     if types != 'pgxz' and types != 'pgxc' and types != 'pgxl':
-        print('\n========================================================\ntypes \'s value error: "--types" can be "pgxz", "pgxc", "pgxl"\n========================================================\n')
+        print('%s"--types" can be "pgxz", "pgxc", "pgxl"%s' % (inf, inf))
         os._exit()
 
     if opt == 'i':
@@ -504,6 +533,10 @@ if __name__ == '__main__':
         ConfigRoute()
     elif opt == 'c':
         clean()
+    elif opt == 'stop':
+        stop()
+    else:
+        print('%s"--opt" can be "i"(install_cluster),"c"(clean_cluster),"stop"(stop_cluster)%s' % (inf, inf))
 
 
     #print('gtm\n', gtmhost,'\n', gtmport, '\n', gtmdata, '\n',gtmuser, '\n', gtmname, '\n' , '\ngtm_slave \n',gtmshost, '\n', gtmsport, '\n', gtmsdata, '\n', gtmsuser, '\n', gtmsname, '\n', '\ncn\n', cnhost, '\n', cnport, '\n', cndata, '\n', cnuser, '\n', cnname, '\n', '\ndn\n', dnhost, '\n', dnport, '\n', dndata, '\n', dnuser, '\n', dnname, '\n', dnpooler, '\n', '\ndn_slave \n', dnshost, '\n', dnsport, '\n', dnsdata, '\n', dnsuser, '\n', dnspooler, '\n', dnsname, '\n', dnsmport, '\n', dnsmname, '\n', dnsmhost)
