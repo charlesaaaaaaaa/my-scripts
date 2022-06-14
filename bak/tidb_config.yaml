@@ -1,0 +1,58 @@
+global:
+  user: "kunlun"
+  ssh_port: 22
+  deploy_dir: "/nvme2/compare/tidb/base"
+  data_dir: "/tidb-data"
+server_configs: {}
+pd_servers:
+  - host: 192.168.0.132
+    data_dir: "/nvme2/compare/tidb/data/pd1"
+    log_dir: "/nvme2/compare/tidb/data/pd1_log"
+  - host: 192.168.0.134
+    data_dir: "/nvme2/compare/tidb/data/pd2"
+    log_dir: "/nvme2/compare/tidb/data/pd2_log"
+  - host: 192.168.0.140
+    data_dir: "/nvme2/compare/tidb/data/pd3"
+    log_dir: "/nvme2/compare/tidb/data/pd3_log"
+tidb_servers:
+  - host: 192.168.0.134
+    log_dir: "/nvme2/compare/tidb/data/tidb1_log"
+    config:
+        log.level: "info"
+  - host: 192.168.0.140
+    log_dir: "/nvme2/compare/tidb/data/tidb2_log"
+    config:
+        log.level: "info"
+  - host: 192.168.0.132
+    log_dir: "/nvme2/compare/tidb/data/tidb3_log"
+    config:
+        log.level: "info"
+tikv_servers:
+  - host: 192.168.0.140
+    data_dir: "/nvme2/compare/tidb/data/tikv1"
+    log_dir: "/nvme2/compare/tidb/data/tikv1_log"
+    config:
+            log-level: "info"
+            storage.block-cache.capacity: "8GB"
+  - host: 192.168.0.132
+    data_dir: "/nvme2/compare/tidb/data/tikv2"
+    log_dir: "/nvme2/compare/tidb/data/tikv2_log"
+    config:
+            log-level: "info"
+            storage.block-cache.capacity: "8GB"
+  - host: 192.168.0.134
+    data_dir: "/nvme2/compare/tidb/data/tikv3"
+    log_dir: "/nvme2/compare/tidb/data/tikv3_log"
+    config:
+            log-level: "info"
+            storage.block-cache.capacity: "8GB"
+monitoring_servers:
+  - host: 192.168.0.132
+    data_dir: "/nvme2/compare/tidb/data/monitoring"
+    log_dir: "/nvme2/compare/tidb/data/monitoring_log"
+grafana_servers:
+  - host: 192.168.0.134
+alertmanager_servers:
+  - host: 192.168.0.140
+    data_dir: "/nvme2/compare/tidb/data/alertmanager"
+    log_dir: "/nvme2/compare/tidb/data/alertmanager_log"
