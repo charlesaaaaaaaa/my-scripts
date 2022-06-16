@@ -23,14 +23,39 @@ def randomList():
     level2 = list(l2)[l2rans]
     print('   - ' + level2)
     sleep(1)
+    
+    try:
+        l3lens = len(dict(file)[level1][level2]) - 1 
+        l3ran = random.randint(0,l3lens)
+        l3rans = l3ran
+        l3 = dict(file)[level1][level2]
+        level3 = list(l3)[l3rans]
+        print('      - ' + str(level3))
+        sleep(1)
+    except:
+        pass
 
-    l3lens = len(dict(file)[level1][level2]) - 1 
-    l3ran = random.randint(0,l3lens)
-    l3rans = l3ran
-    l3 = dict(file)[level1][level2]
-    level3 = list(l3)[l3rans]
-    print('      - ' + str(level3))
-    sleep(1)
+    try:
+        l4lens = len(dict(file)[level1][level2][level3]) - 1
+        l4ran = random.randint(0,l4lens)
+        l4rans = l4ran
+        l4 = dict(file)[level1][level2][level3]
+        level4 = list(l4)[l4rans]
+        print('         - ' + str(level4))
+        sleep(1)
+    except:
+        pass
+
+    try:
+        l5lens = len(dict(file)[level1][level2][level3][level4]) - 1
+        l5ran = random.randint(0,l5lens)
+        l5rans = l5ran
+        l5 = dict(file)[level1][level2][level3][level4]
+        level5 = list(l5)[l5rans]
+        print('            - ' + str(level5))
+        sleep(1)
+    except:
+        pass
 
 def randrun():
     l1lens = len(dict(file))
