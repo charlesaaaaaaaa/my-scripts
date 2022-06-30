@@ -67,6 +67,7 @@ def runTest():
             num = 0
             print('%s this is %s %s' % (tis, thd, tis))
             for hosts in host:
+                #这个是首次跑时的sysbench数据
                 stmt = "sysbench oltp_%s --tables=%d --table-size=%d --db-ps-mode=disable --db-driver=%s --pgsql-host=%s --report-interval=%d --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s --threads=%d --time=%s --rand-type=uniform run > ./%s/%s/%d_%s 2>&1 & \n" % (loadworkers, table, tableSize, driver, hosts, reportInterval, port[num], user[num], pwd[num], dbname[num], thd, runtime, i, loadworkers, thd, loadworkers)
                 print(stmt)
                 num = num + 1
@@ -112,6 +113,7 @@ def checkRerun():
             for item in a.items():
                 loadworker = item[0]
                 thd  = item[1]
+                #这个是在检查发现有不成功重新跑的sysbench，会所有节点同时重跑失败的测试
                 stmt = "sysbench oltp_%s --tables=%d --table-size=%d --db-ps-mode=disable --db-driver=%s --pgsql-host=%s --report-interval=%d --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s --threads=%d --time=%s --rand-type=uniform run > ./%s/%s/%d_%s 2>&1 & \n" % (loadworkers, table, tableSize, driver, hosts, reportInterval, port[num], user[num], pwd[num], dbname[num], thd, runtime, i, loadworkers, thd, loadworkers)
                 print(stmt)
             
