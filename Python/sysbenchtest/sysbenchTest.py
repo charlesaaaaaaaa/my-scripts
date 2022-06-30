@@ -25,6 +25,14 @@ def readFile():
     sthd = sthd.replace('[','"')
     sthd = sthd.replace(']','"')
 
+    slwk = str(loadworker)
+    slwk = slwk.replace('[','"')
+    slwk = slwk.replace(']','"')
+    slwk = slwk.replace("'","")
+    
+    print('-------- testing threads = ' + sthd)
+    print('-------- testing loadworker = ' + slwk)
+
 def runTest():
     a = 0
     host, pwd, port, dbname, user = [], [], [], [], []
@@ -106,6 +114,8 @@ def checkRerun():
                 thd  = item[1]
                 stmt = "sysbench oltp_%s --tables=%d --table-size=%d --db-ps-mode=disable --db-driver=%s --pgsql-host=%s --report-interval=%d --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s --threads=%d --time=%s --rand-type=uniform run > ./%s/%s/%d_%s 2>&1 & \n" % (loadworkers, table, tableSize, driver, hosts, reportInterval, port[num], user[num], pwd[num], dbname[num], thd, runtime, i, loadworkers, thd, loadworkers)
                 print(stmt)
+            
+            #sleep(runtime)
 
             stmt = 'bash pid.sh %s %s' % (hosts, loadworker)
 
