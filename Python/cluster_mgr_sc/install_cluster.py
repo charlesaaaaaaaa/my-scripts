@@ -145,10 +145,34 @@ def runTest():
     
     createCluster(user_name, nick_name, ha_mode, shards, nodes, comps, max_storage_size, max_connections, total_cpu_cores, innodb_size, dbcfg, fullsync_level, dataHost, compHost)
 
+def deleteTest():
+    delete_cluster  = json.dumps({
+    "version":"1.0",
+    "job_id":"",
+    "job_type":"delete_cluster",
+    "timestamp":"1435749309",
+    "user_name":user_name,
+    "paras":{
+        "cluster_name":nick_name
+    }
+})
+    print(delete_cluster + '\n')
+    res = requests.post(postad, data=delete_cluster)
+    print("delete cluster...")
+    print(res.status_code, res.reason)
+    print(res.text)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'install')
     parser.add_argument('--config', default='config.ymal', help = 'the configure yaml file')
+    parser.add_argument('--type', default='install' , help = 'can be "install", "delete"')
     args = parser.parse_args()
+    types = args.type
     files = args.config
-    readFile()
-    runTest()
+    if types == 'install':
+        readFile()
+        runTest()
+    elif types == 'delete':
+        readFile()
+        deleteTest()
+
