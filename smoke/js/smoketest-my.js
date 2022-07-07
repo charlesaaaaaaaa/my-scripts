@@ -7,10 +7,10 @@ var mysql  = require('mysql');
 
 var connection = mysql.createConnection({
     host     : hosts,
-    user     : 'pgx',
-    password : 'pgx_pwd',
+    user     : 'abc',
+    password : 'abc',
     port: ports,
-    database: 'mysql'
+    database: 'postgres'
 });
 //console.log(connection)
 

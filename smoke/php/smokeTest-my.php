@@ -1,9 +1,9 @@
 <?php
 $host = "$argv[1]";
 $port = "$argv[2]";
-$dbname = "mysql";
-$user = "pgx";
-$pwd = "pgx_pwd";
+$dbname = "postgres";
+$user = "abc";
+$pwd = "abc";
 
 $conn = mysqli_connect($host, $user, $pwd, $dbname, $port) or die("数据库连接错误！");
 

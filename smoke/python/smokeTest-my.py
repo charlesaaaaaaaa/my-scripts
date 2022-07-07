@@ -3,7 +3,7 @@ import sys
 
 
 def myconn(host, port, sql):
-    conn = pymysql.connect(host=host, port=port , database='mysql', user='pgx', password='pgx_pwd')
+    conn = pymysql.connect(host=host, port=port , database='postgres', user='abc', password='abc')
     cursor = conn.cursor()
     cursor.execute(sql)
     cursor.close()

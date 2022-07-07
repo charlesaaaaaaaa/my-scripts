@@ -21,7 +21,7 @@ int main(int argc,char* argv[]){
 	//string in2 = "\"";
 	//string infos = in1 + argv[1] + in2;
 	string infos = argv[1];
-  	con = driver->connect(infos, "pgx", "pgx_pwd");
+  	con = driver->connect(infos, "abc", "abc");
 	con->setSchema("mysql");
 	stmt = con->createStatement();
   	stmt->execute("drop table if exists mycpp_sm;");

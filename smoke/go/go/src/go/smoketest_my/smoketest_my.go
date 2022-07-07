@@ -22,9 +22,9 @@ func main() {
         var Dbname string
         flag.StringVar(&Host,"h","","默认为空")
         flag.IntVar(&Port,"p",5001,"默认为5001")
-        flag.StringVar(&Pwd,"pwd","pgx_pwd","默认为abc")
-        flag.StringVar(&Dbname,"d","mysql","默认为postgres")
-        flag.StringVar(&User,"u","pgx","默认为abc")
+        flag.StringVar(&Pwd,"pwd","abc","默认为abc")
+        flag.StringVar(&Dbname,"d","postgres","默认为postgres")
+        flag.StringVar(&User,"u","abc","默认为abc")
         flag.Parse()
 
         fmt.Println("============= Golang-mysql ============")

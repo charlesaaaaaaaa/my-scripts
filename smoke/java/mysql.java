@@ -13,8 +13,8 @@ public class mysql {
     //static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";
     //static final String DB_URL = "jdbc:mysql://localhost:3306/RUNOOB?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
     // 数据库的用户名与密码，需要根据自己的设置
-    static final String USER = "pgx";
-    static final String PASS = "pgx_pwd";
+    static final String USER = "abc";
+    static final String PASS = "abc";
 
     public static void main(String[] args) {
         Connection conn = null;

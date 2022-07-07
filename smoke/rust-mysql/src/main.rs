@@ -30,7 +30,7 @@ fn main() {
     // let mut hosts = front + &host + ":".to_string() + &port + "/mysql".to_string();
 //    let mut url = format!("mysql://pgx:pgx_pwd@{:?}:{:?}/mysql", host, port);
     
-    let urls = "mysql://pgx:pgx_pwd@192.168.0.113:5662/mysql";
+    let urls = "mysql://abc:abc@192.168.0.113:5662/postgres";
     println!("{}", url);
     println!("{}", urls);
     let pool = Pool::new(urls).unwrap(); // 获取连接池
