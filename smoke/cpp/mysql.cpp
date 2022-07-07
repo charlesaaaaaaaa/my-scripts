@@ -16,14 +16,11 @@ int main(int argc,char* argv[]){
 
   /* Create a connection */
   	driver = get_driver_instance();
-	//string infos = sprintf("\"tcp://" , argv[1] , "\"");
-	//string in1 = "\"tcp://";
-	//string in2 = "\"";
-	//string infos = in1 + argv[1] + in2;
 	string infos = argv[1];
   	con = driver->connect(infos, "abc", "abc");
-	con->setSchema("postgres");
+	
 	stmt = con->createStatement();
+	//stmt->execute("use mysql");
   	stmt->execute("drop table if exists mycpp_sm;");
 	cout<<"drop table if exists mycpp_sm;"<<endl;
 	stmt->execute("create table mycpp_sm(a int primary key, b text)");
