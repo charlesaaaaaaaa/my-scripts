@@ -22,7 +22,7 @@ int main(int argc,char* argv[]){
 	//string infos = in1 + argv[1] + in2;
 	string infos = argv[1];
   	con = driver->connect(infos, "abc", "abc");
-	con->setSchema("mysql");
+	con->setSchema("postgres");
 	stmt = con->createStatement();
   	stmt->execute("drop table if exists mycpp_sm;");
 	cout<<"drop table if exists mycpp_sm;"<<endl;
