@@ -1,4 +1,4 @@
-for a in write_only insert point_select point_select_k read_only read_only_k read_write read_write_k update_index update_non_index
+for a in $2
 do
 	for i in $1
                 #for i in 500 1000 1500

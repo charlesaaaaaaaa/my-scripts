@@ -2,14 +2,14 @@ rm -rf result
 touch result
 
 #for list in insert write_only read_write read_write_k update_index update_non_index
-for list in insert point_select point_select_k write_only read_only read_only_k read_write read_write_k update_index update_non_index
+for list in $2
 do
         echo "== ${list} == " >> result
         #for a in `seq 1 10`
-	for a in $1
+	for la in $1
         do
                 #la=`expr $a \* 500`
-		la=`expr $a \* 100`
+		#la=`expr $a \* 100`
                 wcl=`cat ${list}/${la}_${list} | grep tps | wc -l`
                 tpa=`cat ${list}/${la}_${list} | grep transactions | awk '{print $3}' | sed 's/^.//'`
                 qps=`cat ${list}/${la}_${list} | grep queries: | awk '{print $3}' | sed 's/^.//'`
