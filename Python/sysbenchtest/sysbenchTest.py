@@ -5,6 +5,9 @@ import subprocess
 import random
 import os
 
+def run(stmt):
+    subprocess.Popen(stmt, stdout=subprocess.PIPE, shell = True)
+
 def readFile():
     global config, runtime, table, tableSize, driver, sthd
     global loadworker, reportInterval, relaxTime, threads, files, comp
@@ -38,6 +41,7 @@ def runTest():
     host, pwd, port, dbname, user = [], [], [], [], []
     for i in comp:
         print(i)
+        print(comp)
         comps = comp[i]
         hosts = comps['host']
         pwds = comps['pwd']
@@ -52,11 +56,14 @@ def runTest():
     
     for dir1 in comp:
         for dir2 in loadworker:
-            stmt = "mkdir `pwd`/%s/%s" % (dir1, dir2)
+            stmt = "mkdir -p %s/%s " % (dir1, dir2)
+            #run(stmt)
             print(stmt)
+            os.makedirs('%s/%s' % (dir1, dir2))
 
     for cp in comp:
-        stmt = "cp *sh ./%s" % (cp)
+        stmt = 'cp *sh ./%s' % (cp)
+        run(stmt)
         print(stmt)
 
     tis = '\n====================\n'
@@ -66,21 +73,25 @@ def runTest():
         for thd in threads:
             num = 0
             print('%s this is %s %s' % (tis, thd, tis))
-            for hosts in host:
+            for i in comp:
                 #这个是首次跑时的sysbench数据
-                stmt = "sysbench oltp_%s --tables=%d --table-size=%d --db-ps-mode=disable --db-driver=%s --pgsql-host=%s --report-interval=%d --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s --threads=%d --time=%s --rand-type=uniform run > ./%s/%s/%d_%s 2>&1 & \n" % (loadworkers, table, tableSize, driver, hosts, reportInterval, port[num], user[num], pwd[num], dbname[num], thd, runtime, i, loadworkers, thd, loadworkers)
+                stmt = "sysbench oltp_%s --tables=%d --table-size=%d --db-ps-mode=disable --db-driver=%s --pgsql-host=%s --report-interval=%d --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s --threads=%d --time=%s --rand-type=uniform run > ./%s/%s/%d_%s 2>&1 & \n" % (loadworkers, table, tableSize, driver, host[num], reportInterval, port[num], user[num], pwd[num], dbname[num], thd, runtime, i, loadworkers, thd, loadworkers)
                 print(stmt)
+                run(stmt)
                 num = num + 1
 
-            #sleep(runtime)
+            sleep(runtime)
             
             num = 0
             stmt = 'rm -rf checktmp && touch checktmp'
             print(stmt)
+            run(stmt)
             for hosts in host:
                 stmt = 'bash ./pid.sh %s %s' % (hosts, port[num])
                 print(stmt)
-            
+                run(stmt)
+                
+            sleep(10)
             print('sleep 10')
             
             while not os.path.getsize('./pid.log'):
@@ -91,17 +102,20 @@ def runTest():
                 sleep(10)
                 stmt = 'ps -ef | grep sysbench | xargs kill -9'
                 print(stmt)
+                run(stmt)
                 os.remove('./pid.log')
 
 def checkRerun():
     
     stmt1 = 'rm -rf tmpcheck.txt\n ========================\n'
     for dirs in comp:
-        stmt = 'cd `pwd`/%s && /bin/bash ./result.sh && /bin/bash ./check.sh %s ' % (sthd)
+        stmt = 'cd `pwd`/%s && /bin/bash ./result.sh && /bin/bash ./check.sh %s ' % (dirs, sthd)
         print(stmt)
+        run(stmt)
 
     stmt = 'cat tmpcheck.yaml | sort | uniq >> tmpcheck.yaml && rm tmpcheck1.yaml'
     print(stmt)
+    run(stmt)
 
     for i in threads:
         ch = open('%scheck.yaml' % (i))
@@ -116,8 +130,9 @@ def checkRerun():
                 #这个是在检查发现有不成功重新跑的sysbench，会所有节点同时重跑失败的测试
                 stmt = "sysbench oltp_%s --tables=%d --table-size=%d --db-ps-mode=disable --db-driver=%s --pgsql-host=%s --report-interval=%d --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s --threads=%d --time=%s --rand-type=uniform run > ./%s/%s/%d_%s 2>&1 & \n" % (loadworkers, table, tableSize, driver, hosts, reportInterval, port[num], user[num], pwd[num], dbname[num], thd, runtime, i, loadworkers, thd, loadworkers)
                 print(stmt)
+                run(stmt)
             
-            #sleep(runtime)
+            sleep(runtime)
 
             stmt = 'bash pid.sh %s %s' % (hosts, loadworker)
 
@@ -129,6 +144,7 @@ def checkRerun():
                 sleep(10)
                 stmt = 'bash pid.sh %s %s' % (hosts, loadworker)
                 print(stmt)
+                run(stmt)
                 os.remove('./pid.log')
 
             
@@ -160,6 +176,6 @@ if __name__ == '__main__':
     config = args.config
 
     readFile()
-    #runTest()
-    #for i in range(10):
-    #    checkRerun()
+    runTest()
+    for i in range(10):
+        checkRerun()
