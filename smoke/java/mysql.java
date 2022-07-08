@@ -22,7 +22,7 @@ public class mysql {
 	
 	//处理传入的参数
 	String host = Arrays.toString(args);
-	String urls1 = "jdbc:mysql://" + host + "/mysql";
+	String urls1 = "jdbc:mysql://" + host + "/postgres";
 	String urls2 = urls1.replace("[","");
 	String urls = urls2.replace("]","");
         
