@@ -55,6 +55,10 @@ def runTest():
         user.append(users)
     
     for dir1 in comp:
+        stmt = "rm -rf %s" % (dir1)
+        print(stmt)
+        run(stmt)
+        sleep(1)
         for dir2 in loadworker:
             stmt = "mkdir -p %s/%s " % (dir1, dir2)
             #run(stmt)
@@ -91,29 +95,32 @@ def runTest():
                 print(stmt)
                 run(stmt)
                 
-            sleep(10)
-            print('sleep 10')
+            sleep(1)
             
             while not os.path.getsize('./pid.log'):
                 os.remove('./pid.log')
                 break
             else:
                 print('%s:%s is got some worng, please wait 10s……' % (loadworkers, thd))
+                stmt = 'cat pid.log'
+                run(stmt)
                 sleep(10)
-                stmt = 'ps -ef | grep sysbench | xargs kill -9'
+                stmt = "ps -ef | grep sysbench | grep -v sysbenchTest | head -n -1 | awk '{print $2}' | xargs kill -9"
                 print(stmt)
                 run(stmt)
                 os.remove('./pid.log')
+
+            sleep(relaxTime)
 
 def checkRerun():
     
     stmt1 = 'rm -rf tmpcheck.txt\n ========================\n'
     for dirs in comp:
-        stmt = 'cd `pwd`/%s && /bin/bash ./result.sh && /bin/bash ./check.sh %s ' % (dirs, sthd)
+        stmt = 'cd %s && /bin/bash ./result.sh %s %s && /bin/bash ./check.sh %s %s ' % (dirs, sthd, slwk, sthd, slwk)
         print(stmt)
         run(stmt)
 
-    stmt = 'cat tmpcheck.yaml | sort | uniq >> tmpcheck.yaml && rm tmpcheck1.yaml'
+    stmt = 'cat tmpcheck.yaml | sort | uniq >> tmpcheck.yaml && rm tmpcheck.yaml'
     print(stmt)
     run(stmt)
 
