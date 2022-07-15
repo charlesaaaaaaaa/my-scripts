@@ -1,11 +1,11 @@
 #sysbench压测的时间，以s计
-runtime: 300
+runtime: 10
 
 #sysbench的表数量
 table: 10
 
 #sysbench的数据量大小
-tableSize: 10000000
+tableSize: 1000
 
 #sysbench压测的驱动类型, "pgsql" 或者 "mysql"
 driver: "pgsql"
@@ -17,12 +17,18 @@ reportInterval: 1
 relaxTime: 10
 
 #指定要运行的loadworker:
+#        - write_only
+#        - read_only
+#        - read_write
+#        - point_select
+#        - update_index
 loadworker:
-        - write_only
-        - read_only
-        - read_write
+        #- write_only
+        #- read_only
+        #- read_write
+        - insert
         - point_select
-        - update_index
+        #- update_index
 
 #sysbench每个计算节点要压测的线程数
 threads:
@@ -36,7 +42,7 @@ config:
         comp1:
         #第三级开始就是计算节点的信息,key不可以随便改
                 host: "192.168.0.132"
-                port: 8888
+                port: 8881
                 user: "abc"
                 #密码有就填，没有也随便写，反正不能为空
                 pwd:  "abc"
@@ -44,14 +50,14 @@ config:
         
         computer2:
                 host: "192.168.0.134"
-                port: 8888
+                port: 8881
                 user: "abc"
                 pwd:  "abc"
                 dbname: "postgres"
 
         compnode3:
                 host: "192.168.0.140"
-                port: 8888
+                port: 8881
                 user: "abc"
                 pwd:  "abc"
                 dbname: "postgres"

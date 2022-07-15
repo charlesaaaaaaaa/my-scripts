@@ -11,9 +11,7 @@ do
         done
 done
 
-cat check.yaml | sort | uniq > check.yaml
-
 for i in $1
 do
-	cat check.yaml | sort | uniq > ${i}check.yaml
+	cat check.yaml | sort | uniq >> ../${i}check.yaml
 done

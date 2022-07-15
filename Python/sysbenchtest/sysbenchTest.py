@@ -1,15 +1,17 @@
 import yaml
+#import PyYaml
 from time import sleep
 import argparse
 import subprocess
 import random
 import os
+import json
 
 def run(stmt):
     subprocess.Popen(stmt, stdout=subprocess.PIPE, shell = True)
 
 def readFile():
-    global config, runtime, table, tableSize, driver, sthd
+    global config, runtime, table, tableSize, driver, sthd, slwk
     global loadworker, reportInterval, relaxTime, threads, files, comp
     f = open(config)
     files = yaml.safe_load(f.read())
@@ -26,18 +28,21 @@ def readFile():
     
     sthd = str(threads)
     sthd = sthd.replace('[','"')
+    sthd = sthd.replace(',','')
     sthd = sthd.replace(']','"')
 
     slwk = str(loadworker)
     slwk = slwk.replace('[','"')
     slwk = slwk.replace(']','"')
     slwk = slwk.replace("'","")
+    slwk = slwk.replace(",","")
     
     print('-------- testing threads = ' + sthd)
     print('-------- testing loadworker = ' + slwk)
 
 def runTest():
     a = 0
+    global comps
     host, pwd, port, dbname, user = [], [], [], [], []
     for i in comp:
         print(i)
@@ -90,6 +95,7 @@ def runTest():
             stmt = 'rm -rf checktmp && touch checktmp'
             print(stmt)
             run(stmt)
+            sleep(1)
             for hosts in host:
                 stmt = 'bash ./pid.sh %s %s' % (hosts, port[num])
                 print(stmt)
@@ -116,38 +122,61 @@ def checkRerun():
     
     stmt1 = 'rm -rf tmpcheck.txt\n ========================\n'
     for dirs in comp:
-        stmt = 'cd %s && /bin/bash ./result.sh %s %s && /bin/bash ./check.sh %s %s ' % (dirs, sthd, slwk, sthd, slwk)
+        #stmt = 'cd %s && /bin/bash ./result.sh %s %s' % (dirs, sthd, slwk)
+        stmt = 'cd %s && /bin/bash ./result.sh %s %s && /bin/bash ./check.sh %s %s && ls' % (dirs, sthd, slwk, sthd, slwk)
         print(stmt)
-        run(stmt)
+        subprocess.run(stmt, shell = True)
 
-    stmt = 'cat tmpcheck.yaml | sort | uniq >> tmpcheck.yaml && rm tmpcheck.yaml'
-    print(stmt)
-    run(stmt)
+#    stmt = 'cat tmpcheck.yaml | sort | uniq >> tmpcheck.yaml && rm tmpcheck.yaml'
+#    print(stmt)
+#    run(stmt)
 
     for i in threads:
-        ch = open('%scheck.yaml' % (i))
-        check = yaml.safe_load(ch.read())
-        print(check)
-        num = 0
-        for a in check:
-            sleep(1)
-            for item in a.items():
-                loadworker = item[0]
-                thd  = item[1]
+        if not os.path.getsize('%scheck.yaml' % (i)):
+            stmt = "rm -rf %scheck.yaml" % (i)
+            print(stmt)
+            #run(stmt)
+        else:
+            with open('%scheck.yaml' % (i),"r",encoding="utf-8") as f:
+            #check = yaml.safe_load(ch.read())
+                check = yaml.load(f, Loader=yaml.FullLoader)
+            #print(type(check))
+            num = 0
+            #for a in check:
+             #   print(a,type(a))
+                #print(type(a))
+                #dic = yaml.load(a,Loader=yaml.FullLoader) #把str转换成dict
+                #print(type(dic))
+               # sleep(1)
+            for item in check.items():
+                #host = comps['host']
+                sums = 0
+                for ip in comp:
+                    comps = comp[ip]
+                    hosts = comps['host']
+                    port = comps['port']
+                    user = comps['user']
+                    pwd = comps['pwd']
+                    dbname = comps['dbname']
+                    loadworker = str(item[0])
+                    thd  = str(item[1])
+                   # print(type(loadworker), type(thd))
                 #这个是在检查发现有不成功重新跑的sysbench，会所有节点同时重跑失败的测试
-                stmt = "sysbench oltp_%s --tables=%d --table-size=%d --db-ps-mode=disable --db-driver=%s --pgsql-host=%s --report-interval=%d --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s --threads=%d --time=%s --rand-type=uniform run > ./%s/%s/%d_%s 2>&1 & \n" % (loadworkers, table, tableSize, driver, hosts, reportInterval, port[num], user[num], pwd[num], dbname[num], thd, runtime, i, loadworkers, thd, loadworkers)
-                print(stmt)
-                run(stmt)
+                    stmt = "sysbench oltp_%s --tables=%s --table-size=%s --db-ps-mode=disable --db-driver=%s --pgsql-host=%s --report-interval=%s --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s --threads=%s --time=%s --rand-type=uniform run > ./%s/%s/%s_%s 2>&1 & \n" % (loadworker, table, tableSize, driver, hosts, reportInterval, str(port), user, pwd, dbname, thd, runtime, ip, loadworker, thd, loadworker)
+                    print(stmt)
+                    run(stmt)
+                    sums = sums + 1
             
             sleep(runtime)
 
             stmt = 'bash pid.sh %s %s' % (hosts, loadworker)
-
+            subprocess.run(stmt, shell = True)
+            sleep(1)
             while not os.path.getsize('./pid.log'):
                 os.remove('./pid.log')
                 break
             else:
-                print('%s:%s is got some worng, please wait 10s……' % (loadworkers, thd))
+                print('%s:%s is got some worng, please wait 10s……' % (loadworker, thd))
                 sleep(10)
                 stmt = 'bash pid.sh %s %s' % (hosts, loadworker)
                 print(stmt)
@@ -156,6 +185,9 @@ def checkRerun():
 
             
             num = num + 1
+    stmt = 'rm -rf *check.ymal'
+    print(stmt)
+    run(stmt)
 
 '''
     ch = open('tmpcheck.yaml')
@@ -183,6 +215,6 @@ if __name__ == '__main__':
     config = args.config
 
     readFile()
-    runTest()
+    #runTest()
     for i in range(10):
         checkRerun()
