@@ -215,6 +215,6 @@ if __name__ == '__main__':
     config = args.config
 
     readFile()
-    #runTest()
+    runTest()
     for i in range(10):
         checkRerun()
