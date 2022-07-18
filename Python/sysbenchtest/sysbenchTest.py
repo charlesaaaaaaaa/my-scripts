@@ -1,5 +1,5 @@
 import yaml
-#import PyYaml
+import datetime
 from time import sleep
 import argparse
 import subprocess
@@ -207,6 +207,11 @@ def checkRerun():
         num = num + 1
 '''
 
+def date():
+    global dirName
+    dirName=datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+    stmt = 'tar -zxf %s.tgz comp*' % (dirName)
+    run(stmt)
 
 if __name__ == '__main__':
     parse = argparse.ArgumentParser(description = 'a')
@@ -218,3 +223,4 @@ if __name__ == '__main__':
     runTest()
     for i in range(10):
         checkRerun()
+    date()
