@@ -96,28 +96,22 @@ def runTest():
             print(stmt)
             run(stmt)
             sleep(1)
-            for hosts in host:
-                stmt = 'bash ./pid.sh %s %s' % (hosts, port[num])
-                print(stmt)
-                run(stmt)
-                
-            sleep(1)
             
-            while not os.path.getsize('./pid.log'):
-                os.remove('./pid.log')
-                break
-            else:
-                print('%s:%s is got some worng, please wait 10s……' % (loadworkers, thd))
-                stmt = 'cat pid.log'
-                run(stmt)
-                sleep(10)
-                stmt = "ps -ef | grep sysbench | grep -v sysbenchTest | head -n -1 | awk '{print $2}' | xargs kill -9"
+            for hosts in host:
+                stmt = '/bin/bash pid.sh %s %s' % (hosts, port[num])
                 print(stmt)
                 run(stmt)
-                os.remove('./pid.log')
-
+                num = num + 1
+                while os.path.isfile('./pid.log'):
+                    print('%s:%s still runing, plz wait...' % (hosts, port[num]))
+                    sleep(1)
+                    run(stmt)
             sleep(relaxTime)
 
+            stmt = 'rm -rf checktmp'
+            run(stmt)
+            sleep(1)
+            
 def checkRerun():
     
     stmt1 = 'rm -rf tmpcheck.txt\n ========================\n'
@@ -169,19 +163,26 @@ def checkRerun():
             
             sleep(runtime)
 
-            stmt = 'bash pid.sh %s %s' % (hosts, loadworker)
-            subprocess.run(stmt, shell = True)
+            num = 0
+            stmt = 'rm -rf checktmp && touch checktmp'
+            print(stmt)
+            run(stmt)
             sleep(1)
-            while not os.path.getsize('./pid.log'):
-                os.remove('./pid.log')
-                break
-            else:
-                print('%s:%s is got some worng, please wait 10s……' % (loadworker, thd))
-                sleep(10)
-                stmt = 'bash pid.sh %s %s' % (hosts, loadworker)
+            
+            for hosts in host:
+                stmt = '/bin/bash pid.sh %s %s' % (hosts, port[num])
                 print(stmt)
                 run(stmt)
-                os.remove('./pid.log')
+                num = num + 1
+                while os.path.isfile('./pid.log'):
+                    print('%s:%s still runing, plz wait...' % (hosts, port[num]))
+                    sleep(1)
+                    run(stmt)
+            sleep(relaxTime)
+
+            stmt = 'rm -rf checktmp'
+            run(stmt)
+            sleep(1)
 
             
             num = num + 1
@@ -189,28 +190,18 @@ def checkRerun():
     print(stmt)
     run(stmt)
 
-'''
-    ch = open('tmpcheck.yaml')
-    check = yaml.safe_load(ch.read())
-    
-    print(check)
-    num = 0
-    for a in check:
-        print(a)
-        sleep(1)
-        for item in a.items():
-            loadworker = item[0]
-            thd  = item[1]
-            stmt = "sysbench oltp_%s --tables=%d --table-size=%d --db-ps-mode=disable --db-driver=%s --pgsql-host=%s --report-interval=%d --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s --threads=%d --time=%s --rand-type=uniform run > ./%s/%s/%d_%s 2>&1 & \n" % (loadworkers, table, tableSize, driver, hosts, reportInterval, port[num], user[num], pwd[num], dbname[num], thd, runtime, i, loadworkers, thd, loadworkers)
-            print(stmt)
-
-        num = num + 1
-'''
-
 def date():
     global dirName
+    compName = []
+    for i in comp:
+        compName.append(i)
+    compName = str(compName)
+    compName = compName.replace("'","")
+    compName = compName.replace(",","")
+    compName = compName.replace("[","")
+    compName = compName.replace("]","")
     dirName=datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
-    stmt = 'tar -zxf %s.tgz comp*' % (dirName)
+    stmt = 'tar -zcf %s.tgz %s' % (dirName, compName)
     run(stmt)
 
 if __name__ == '__main__':
@@ -221,6 +212,6 @@ if __name__ == '__main__':
 
     readFile()
     runTest()
-    for i in range(10):
-        checkRerun()
+    #for i in range(10):
+    #    checkRerun()
     date()
