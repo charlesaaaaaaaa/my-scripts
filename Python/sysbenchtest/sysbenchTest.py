@@ -214,6 +214,6 @@ if __name__ == '__main__':
 
     readFile()
     runTest()
-    #for i in range(10):
-    #    checkRerun()
+    for i in range(10):
+        checkRerun()
     date()
