@@ -66,7 +66,6 @@ def runTest():
         sleep(1)
         for dir2 in loadworker:
             stmt = "mkdir -p %s/%s " % (dir1, dir2)
-            #run(stmt)
             print(stmt)
             os.makedirs('%s/%s' % (dir1, dir2))
 
@@ -102,10 +101,20 @@ def runTest():
                 print(stmt)
                 run(stmt)
                 num = num + 1
+                times = 1
                 while os.path.isfile('./pid.log'):
-                    print('%s:%s still runing, plz wait...' % (hosts, port[num]))
-                    sleep(1)
-                    run(stmt)
+                    if times < 50 :
+                        print('%s:%s still running, plz wait %ss ...' % (hosts, port[num], times))
+                        sleep(1)
+                        run(stmt)
+                        times = times + 1
+                    elif times == 50:
+                        stmt = "ps -ef | grep sysbench | grep %s | grep %s | awk '{print $2}' | xargs kill -9" % (hosts, port[num])
+                        print('running more than 50s, now kill sysbench process\n' + stmt)
+                        run(stmt)
+                        break
+
+
             sleep(relaxTime)
 
             stmt = 'rm -rf checktmp'
@@ -116,34 +125,19 @@ def checkRerun():
     
     stmt1 = 'rm -rf tmpcheck.txt\n ========================\n'
     for dirs in comp:
-        #stmt = 'cd %s && /bin/bash ./result.sh %s %s' % (dirs, sthd, slwk)
         stmt = 'cd %s && /bin/bash ./result.sh %s %s && /bin/bash ./check.sh %s %s && ls' % (dirs, sthd, slwk, sthd, slwk)
         print(stmt)
         subprocess.run(stmt, shell = True)
-
-#    stmt = 'cat tmpcheck.yaml | sort | uniq >> tmpcheck.yaml && rm tmpcheck.yaml'
-#    print(stmt)
-#    run(stmt)
 
     for i in threads:
         if not os.path.getsize('%scheck.yaml' % (i)):
             stmt = "rm -rf %scheck.yaml" % (i)
             print(stmt)
-            #run(stmt)
         else:
             with open('%scheck.yaml' % (i),"r",encoding="utf-8") as f:
-            #check = yaml.safe_load(ch.read())
                 check = yaml.load(f, Loader=yaml.FullLoader)
-            #print(type(check))
             num = 0
-            #for a in check:
-             #   print(a,type(a))
-                #print(type(a))
-                #dic = yaml.load(a,Loader=yaml.FullLoader) #把str转换成dict
-                #print(type(dic))
-               # sleep(1)
             for item in check.items():
-                #host = comps['host']
                 sums = 0
                 for ip in comp:
                     comps = comp[ip]
@@ -154,7 +148,6 @@ def checkRerun():
                     dbname = comps['dbname']
                     loadworker = str(item[0])
                     thd  = str(item[1])
-                   # print(type(loadworker), type(thd))
                 #这个是在检查发现有不成功重新跑的sysbench，会所有节点同时重跑失败的测试
                     stmt = "sysbench oltp_%s --tables=%s --table-size=%s --db-ps-mode=disable --db-driver=%s --pgsql-host=%s --report-interval=%s --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s --threads=%s --time=%s --rand-type=uniform run > ./%s/%s/%s_%s 2>&1 & \n" % (loadworker, table, tableSize, driver, hosts, reportInterval, str(port), user, pwd, dbname, thd, runtime, ip, loadworker, thd, loadworker)
                     print(stmt)
@@ -174,10 +167,19 @@ def checkRerun():
                 print(stmt)
                 run(stmt)
                 num = num + 1
+                times = 1
                 while os.path.isfile('./pid.log'):
-                    print('%s:%s still runing, plz wait...' % (hosts, port[num]))
-                    sleep(1)
-                    run(stmt)
+                    if times < 50 :
+                        print('%s:%s still running, plz wait %ss ...' % (hosts, port[num], times))
+                        sleep(1)
+                        run(stmt)
+                        times = times + 1
+                    elif times == 50:
+                        stmt = "ps -ef | grep sysbench | grep %s | grep %s | awk '{print $2}' | xargs kill -9" % (hosts, port[num])
+                        print('running more than 50s, now kill sysbench process\n' + stmt)
+                        run(stmt)
+                        break
+
             sleep(relaxTime)
 
             stmt = 'rm -rf checktmp'
