@@ -100,7 +100,6 @@ def runTest():
                 stmt = '/bin/bash pid.sh %s %s' % (hosts, port[num])
                 print(stmt)
                 run(stmt)
-                num = num + 1
                 times = 1
                 while os.path.isfile('./pid.log'):
                     if times < 50 :
@@ -113,6 +112,7 @@ def runTest():
                         print('running more than 50s, now kill sysbench process\n' + stmt)
                         run(stmt)
                         break
+                num = num + 1
 
 
             sleep(relaxTime)
@@ -166,7 +166,6 @@ def checkRerun():
                 stmt = '/bin/bash pid.sh %s %s' % (hosts, port[num])
                 print(stmt)
                 run(stmt)
-                num = num + 1
                 times = 1
                 while os.path.isfile('./pid.log'):
                     if times < 50 :
@@ -179,6 +178,7 @@ def checkRerun():
                         print('running more than 50s, now kill sysbench process\n' + stmt)
                         run(stmt)
                         break
+                num = num + 1
 
             sleep(relaxTime)
 
@@ -206,13 +206,61 @@ def date():
     stmt = 'tar -zcf %s.tgz %s' % (dirName, compName)
     run(stmt)
 
+def prepare():
+    if Prepare == 'y':
+        host, pwd, port, dbname, user = [], [], [], [], []
+        #sysbench oltp_point_select --tables= --table-size= --db-driver= --pgsql-host=$1 --pgsql-port= --pgsql-user= --pgsql-password= --pgsql-db= prepare
+        for ip in comp:
+            comps = comp[ip]
+            hosts = comps['host']
+            pwds = comps['pwd']
+            ports = comps['port']
+            dbnames = comps['dbname']
+            users = comps['user']
+            host.append(hosts)
+            pwd.append(pwds)
+            port.append(ports)
+            dbname.append(dbnames)
+            user.append(users)
+
+        stmt = 'sysbench oltp_point_select --tables=%s --table-size=%s --db-driver=%s --pgsql-host=%s --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s prepare > prepare.log' % (table, tableSize, driver, host[0], port[0], user[0], pwd[0], dbname[0])
+        print("======== now preparing sysbench data")
+        print(stmt)
+        run(stmt)
+        stmt = '/bin/bash pid.sh %s %s' % (host[0], port[0])
+        print(stmt)
+        run(stmt)
+        times = 1
+        while os.path.isfile('./pid.log'):
+            if times < 1500 :
+                print('%s:%s still running, plz wait %ss ...' % (host[0], port[0], times))
+                sleep(1)
+                run(stmt)
+                times = times + 1
+            elif times == 1500:
+                stmt = "ps -ef | grep sysbench | grep %s | grep %s | awk '{print $2}' | xargs kill -9" % (host[0], port[0])
+                print('running more than 50s, now kill sysbench process\n' + stmt)
+                run(stmt)
+                break
+        print('本次prepare时间为: %s s' % (times))
+
+        stmt = 'sysbench oltp_delete --tables=%s --table-size=%s --db-driver=%s --pgsql-host=%s --pgsql-port=%s --pgsql-user=%s --pgsql-db=%s --pgsql-password=%s cleanup' % (table, tableSize, driver, host[0], port[0], user[0], dbname[0], pwd[0])
+        print('======== 这个是你的sysbench clenaup命令, 本次不运行该条命令。')
+        print(stmt)
+
+    elif Prepare == 'n':
+        print("skip prepare sysbench data")
+
 if __name__ == '__main__':
     parse = argparse.ArgumentParser(description = 'a')
-    parse.add_argument("--config", default = 'config.yaml')
+    parse.add_argument("--config", default = 'config.yaml', help = 'configuartion file')
+    parse.add_argument("--prepare", default = 'n', help = '准备sysbench数据，有“n”和“y”，默认为“n”不准备sysbench数据')
     args = parse.parse_args()
+    Prepare = args.prepare
     config = args.config
 
     readFile()
+    prepare()
     runTest()
     for i in range(10):
         checkRerun()
