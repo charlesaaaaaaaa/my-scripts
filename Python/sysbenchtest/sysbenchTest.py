@@ -96,11 +96,11 @@ def runTest():
             sleep(1)
             
             #现在是到了指定的运行时间了，检查是否进程依旧存在
+            times = 1
             for hosts in host:
                 stmt = '/bin/bash pid.sh %s %s' % (hosts, port[num])
                 print(stmt)
                 run(stmt)
-                times = 1
                 while os.path.isfile('./pid.log'):
                     if times < 50 :
                         print('%s:%s still running, plz wait %ss ...' % (hosts, port[num], times))
@@ -167,11 +167,11 @@ def checkRerun():
             run(stmt)
             sleep(1)
             # 测试结束检查是否依旧存在进程
+            times = 1
             for hosts in host:
                 stmt = '/bin/bash pid.sh %s %s' % (hosts, ports[num])
                 print(stmt)
                 run(stmt)
-                times = 1
                 while os.path.isfile('./pid.log'):
                     if times < 50 :
                         print('%s:%s still running, plz wait %ss ...' % (hosts, ports[num], times))
