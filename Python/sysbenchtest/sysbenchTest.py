@@ -95,6 +95,7 @@ def runTest():
             run(stmt)
             sleep(1)
             
+            #现在是到了指定的运行时间了，检查是否进程依旧存在
             for hosts in host:
                 stmt = '/bin/bash pid.sh %s %s' % (hosts, port[num])
                 print(stmt)
@@ -106,6 +107,7 @@ def runTest():
                         sleep(1)
                         run(stmt)
                         times = times + 1
+                        #当超时到了50s直接杀进程
                     elif times >= 50:
                         stmt = "ps -ef | grep sysbench | grep %s | grep %s | awk '{print $2}' | xargs kill -9" % (hosts, port[num])
                         print('running more than 50s, now kill sysbench process\n' + stmt)
@@ -127,7 +129,7 @@ def checkRerun():
         stmt = 'cd %s && /bin/bash ./result.sh %s %s && /bin/bash ./check.sh %s %s && ls' % (dirs, sthd, slwk, sthd, slwk)
         print(stmt)
         subprocess.run(stmt, shell = True)
-
+    #检查是否存在测试失败的项
     for i in threads:
         if not os.path.exists('%scheck.yaml' % (i)):
             stmt = "rm -rf %scheck.yaml" % (i)
@@ -164,7 +166,7 @@ def checkRerun():
             print(stmt)
             run(stmt)
             sleep(1)
-            
+            # 测试结束检查是否依旧存在进程
             for hosts in host:
                 stmt = '/bin/bash pid.sh %s %s' % (hosts, ports[num])
                 print(stmt)
@@ -176,6 +178,7 @@ def checkRerun():
                         sleep(1)
                         run(stmt)
                         times = times + 1
+                        #进程超时50s直接杀掉对应进程
                     elif times >= 50:
                         stmt = "ps -ef | grep sysbench | grep %s | grep %s | awk '{print $2}' | xargs kill -9" % (hosts, ports[num])
                         print('running more than 50s, now kill sysbench process\n' + stmt)
@@ -225,7 +228,7 @@ def prepare():
             port.append(ports)
             dbname.append(dbnames)
             user.append(users)
-
+        #开始准备sysbench测试数据
         stmt = 'sysbench oltp_point_select --tables=%s --table-size=%s --db-driver=%s --pgsql-host=%s --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s prepare > prepare.log' % (table, tableSize, driver, host[0], port[0], user[0], pwd[0], dbname[0])
         print("======== now preparing sysbench data")
         print(stmt)
@@ -234,13 +237,15 @@ def prepare():
         print(stmt)
         run(stmt)
         times = 1
+        #检查当前准备数据进程是否存在
         while os.path.isfile('./pid.log'):
-            if times < 1500 :
+            if times < 9000 :
                 print('%s:%s still running, plz wait %ss ...' % (host[0], port[0], times))
                 sleep(1)
                 run(stmt)
                 times = times + 1
-            elif times == 1500:
+                #当进程超过9000s直接杀进程
+            elif times >= 9000:
                 stmt = "ps -ef | grep sysbench | grep %s | grep %s | awk '{print $2}' | xargs kill -9" % (host[0], port[0])
                 print('running more than 50s, now kill sysbench process\n' + stmt)
                 run(stmt)
