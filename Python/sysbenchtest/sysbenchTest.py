@@ -106,7 +106,7 @@ def runTest():
                         sleep(1)
                         run(stmt)
                         times = times + 1
-                    elif times == 50:
+                    elif times >= 50:
                         stmt = "ps -ef | grep sysbench | grep %s | grep %s | awk '{print $2}' | xargs kill -9" % (hosts, port[num])
                         print('running more than 50s, now kill sysbench process\n' + stmt)
                         run(stmt)
@@ -176,7 +176,7 @@ def checkRerun():
                         sleep(1)
                         run(stmt)
                         times = times + 1
-                    elif times == 50:
+                    elif times >= 50:
                         stmt = "ps -ef | grep sysbench | grep %s | grep %s | awk '{print $2}' | xargs kill -9" % (hosts, ports[num])
                         print('running more than 50s, now kill sysbench process\n' + stmt)
                         run(stmt)
