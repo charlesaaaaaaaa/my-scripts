@@ -77,10 +77,9 @@ def runTest():
     tis = '\n====================\n'
     #the first test
     for loadworkers in loadworker:
-        print('%s this is %s %s' % (tis, loadworkers, tis))
         for thd in threads:
             num = 0
-            print('%s this is %s %s' % (tis, thd, tis))
+            print('%s this is %s:%s %s' % (tis, loadworkers, thd, tis))
             for i in comp:
                 #这个是首次跑时的sysbench数据
                 stmt = "sysbench oltp_%s --tables=%d --table-size=%d --db-ps-mode=disable --db-driver=%s --pgsql-host=%s --report-interval=%d --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s --threads=%d --time=%s --rand-type=uniform run > ./%s/%s/%d_%s 2>&1 & \n" % (loadworkers, table, tableSize, driver, host[num], reportInterval, port[num], user[num], pwd[num], dbname[num], thd, runtime, i, loadworkers, thd, loadworkers)
@@ -130,13 +129,14 @@ def checkRerun():
         subprocess.run(stmt, shell = True)
 
     for i in threads:
-        if not os.path.getsize('%scheck.yaml' % (i)):
+        if not os.path.exists('%scheck.yaml' % (i)):
             stmt = "rm -rf %scheck.yaml" % (i)
             print(stmt)
         else:
             with open('%scheck.yaml' % (i),"r",encoding="utf-8") as f:
                 check = yaml.load(f, Loader=yaml.FullLoader)
             num = 0
+            host, ports = [], []
             for item in check.items():
                 sums = 0
                 for ip in comp:
@@ -146,8 +146,11 @@ def checkRerun():
                     user = comps['user']
                     pwd = comps['pwd']
                     dbname = comps['dbname']
+                    host.append(hosts)
+                    ports.append(port)
                     loadworker = str(item[0])
                     thd  = str(item[1])
+                    print('rerun %s:%s' % (loadworker, thd))
                 #这个是在检查发现有不成功重新跑的sysbench，会所有节点同时重跑失败的测试
                     stmt = "sysbench oltp_%s --tables=%s --table-size=%s --db-ps-mode=disable --db-driver=%s --pgsql-host=%s --report-interval=%s --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s --threads=%s --time=%s --rand-type=uniform run > ./%s/%s/%s_%s 2>&1 & \n" % (loadworker, table, tableSize, driver, hosts, reportInterval, str(port), user, pwd, dbname, thd, runtime, ip, loadworker, thd, loadworker)
                     print(stmt)
@@ -163,18 +166,18 @@ def checkRerun():
             sleep(1)
             
             for hosts in host:
-                stmt = '/bin/bash pid.sh %s %s' % (hosts, port[num])
+                stmt = '/bin/bash pid.sh %s %s' % (hosts, ports[num])
                 print(stmt)
                 run(stmt)
                 times = 1
                 while os.path.isfile('./pid.log'):
                     if times < 50 :
-                        print('%s:%s still running, plz wait %ss ...' % (hosts, port[num], times))
+                        print('%s:%s still running, plz wait %ss ...' % (hosts, ports[num], times))
                         sleep(1)
                         run(stmt)
                         times = times + 1
                     elif times == 50:
-                        stmt = "ps -ef | grep sysbench | grep %s | grep %s | awk '{print $2}' | xargs kill -9" % (hosts, port[num])
+                        stmt = "ps -ef | grep sysbench | grep %s | grep %s | awk '{print $2}' | xargs kill -9" % (hosts, ports[num])
                         print('running more than 50s, now kill sysbench process\n' + stmt)
                         run(stmt)
                         break
