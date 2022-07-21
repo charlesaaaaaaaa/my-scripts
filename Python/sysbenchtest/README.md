@@ -3,8 +3,9 @@
 ## 用法: python3 sysbenchTest.py --config config.yaml
 * 主要注意config.yaml和py脚本
 * config.yaml要符合yaml的语法
-* py脚本只有一个选择，--config。
-  * 后面跟着yaml配置文件就行
+* py脚本有两个选择，--config和--prepare。
+  * --config 后面跟着yaml配置文件就行
+  * --prepare 只有两个参数，‘n’,‘y’.注意是小写。默认为n，即不准备sysbench数据。
 
 ## 详细操作
 * 根据yaml配置文件运行对应的sysbench语句
