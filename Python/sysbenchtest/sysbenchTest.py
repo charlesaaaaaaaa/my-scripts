@@ -132,9 +132,11 @@ def checkRerun():
     #检查是否存在测试失败的项
     for i in threads:
         if not os.path.exists('%scheck.yaml' % (i)):
-            stmt = "rm -rf %scheck.yaml" % (i)
+            stmt = "%scheck.yaml does not exists, skip!" % (i)
             print(stmt)
         else:
+            stmt = "cp %scheck.yaml %scheck.yamlbak && cat %scheck.yamlbak | sort | uniq > %scheck.yaml && rm %scheck.yamlbak" % (i, i, i, i, i) 
+            run(stmt)
             with open('%scheck.yaml' % (i),"r",encoding="utf-8") as f:
                 check = yaml.load(f, Loader=yaml.FullLoader)
             num = 0
@@ -194,9 +196,9 @@ def checkRerun():
 
             
             num = num + 1
-    stmt = 'rm -rf *check.ymal'
-    print(stmt)
-    run(stmt)
+    #stmt = 'rm -rf *check.yaml'
+    #print(stmt)
+    #run(stmt)
 
 def date():
     global dirName
