@@ -4,7 +4,7 @@ do
                 #for i in 500 1000 1500
         do
 
-    		b=`cat result | grep -A 5 "=== $a" | grep "|| $i ||" | awk '{print $10}' | sed 's/...$//'`
+    		b=`cat result | grep -w -A 5 "=== $a" | grep "|| $i ||" | awk '{print $10}' | sed 's/...$//'`
                 if [[ "$b" -eq 0 ]]; then
 			echo $a: $i >> check.yaml
                 fi
