@@ -124,7 +124,10 @@ def runTest():
             
 def checkRerun():
     
-    stmt1 = 'rm -rf tmpcheck.txt\n ========================\n'
+    stmt1 = 'rm -rf *check.yaml'
+    print(stmt1)
+    run(stmt1)
+
     for dirs in comp:
         stmt = 'cd %s && /bin/bash ./result.sh %s %s && /bin/bash ./check.sh %s %s && ls' % (dirs, sthd, slwk, sthd, slwk)
         print(stmt)

@@ -1,3 +1,4 @@
+
 for a in $2
 do
 	for i in $1
@@ -5,8 +6,8 @@ do
         do
 
     		b=`cat result | grep -w -A 5 "=== $a" | grep "|| $i ||" | awk '{print $10}' | sed 's/...$//'`
-                if [[ "$b" -eq 0 ]]; then
-			echo $a: $i >> check.yaml
+                if [[ "$b" -eq "" ]]; then
+			echo $a: $i > check.yaml
                 fi
         done
 done
