@@ -12,11 +12,11 @@ do
 		for i in $*
 		do
 			num=`echo "scale=0;3+2" | bc -l`
-			export thd$i=`cat $i/result | grep -A $num "$sn" | grep -v "$sn" | grep -v threads | sed -n "${tn}p" | awk '{print $4}'`
-			export tps$i=`cat $i/result | grep -A $num "$sn" | grep -v "$sn" | grep -v threads | sed -n "${tn}p" | awk '{print $6}'`
-			export qps$i=`cat $i/result | grep -A $num "$sn" | grep -v "$sn" | grep -v threads | sed -n "${tn}p" | awk '{print $8}'`
-			export avg$i=`cat $i/result | grep -A $num "$sn" | grep -v "$sn" | grep -v threads | sed -n "${tn}p" | awk '{print $10}'`
-			export p95$i=`cat $i/result | grep -A $num "$sn" | grep -v "$sn" | grep -v threads | sed -n "${tn}p" | awk '{print $12}'`
+			export thd$i=`cat $i/result | grep -w -A $num "$sn" | grep -v "$sn" | grep -v threads | sed -n "${tn}p" | awk '{print $4}'`
+			export tps$i=`cat $i/result | grep -w -A $num "$sn" | grep -v "$sn" | grep -v threads | sed -n "${tn}p" | awk '{print $6}'`
+			export qps$i=`cat $i/result | grep -w -A $num "$sn" | grep -v "$sn" | grep -v threads | sed -n "${tn}p" | awk '{print $8}'`
+			export avg$i=`cat $i/result | grep -w -A $num "$sn" | grep -v "$sn" | grep -v threads | sed -n "${tn}p" | awk '{print $10}'`
+			export p95$i=`cat $i/result | grep -w -A $num "$sn" | grep -v "$sn" | grep -v threads | sed -n "${tn}p" | awk '{print $12}'`
 			var=`env | grep "p95$i" | awk -F= '{print $2}'`
 			ths=`env | grep "thd$i" | awk -F= '{print $2}'`
 			if [ ! -n "$var" ]
