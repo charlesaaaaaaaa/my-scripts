@@ -241,6 +241,7 @@ def prepare():
         stmt = '/bin/bash pid.sh %s %s' % (host[0], port[0])
         print(stmt)
         run(stmt)
+        sleep(1)
         times = 1
         #检查当前准备数据进程是否存在
         while os.path.isfile('./pid.log'):
