@@ -80,17 +80,18 @@ def runTest():
     for loadworkers in loadworker:
         for thd in threads:
             num = 0
-            print('%s this is %s:%s %s' % (tis, loadworkers, thd, tis))
+            print('%s this is %s:%s, wait %ss %s' % (tis, loadworkers, thd, runtime, tis))
             for i in comp:
                 #这个是首次跑时的sysbench数据
-                stmt = "date >> ./%s/%s/%d_%s && sysbench oltp_%s --tables=%d --table-size=%d --db-ps-mode=disable --db-driver=%s --pgsql-host=%s --report-interval=%d --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s --threads=%d --time=%s --rand-type=uniform run >> ./%s/%s/%d_%s 2>&1 & \n" % (i, loadworkers, thd, loadworkers, loadworkers, table, tableSize, driver, host[num], reportInterval, port[num], user[num], pwd[num], dbname[num], thd, runtime, i, loadworkers, thd, loadworkers)
+                stmt = "date > ./%s/%s/%d_%s " % (i, loadworkers, thd, loadworkers)
+                stmt = "sysbench oltp_%s --tables=%d --table-size=%d --db-ps-mode=disable --db-driver=%s --pgsql-host=%s --report-interval=%d --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s --threads=%d --time=%s --rand-type=uniform run >> ./%s/%s/%d_%s & \n" % (loadworkers, table, tableSize, driver, host[num], reportInterval, port[num], user[num], pwd[num], dbname[num], thd, runtime, i, loadworkers, thd, loadworkers)
                 print(stmt)
                 run(stmt)
                 num = num + 1
 
             #sleep(runtime)
             
-            num = 0
+            snum = 0
             stmt = 'rm -rf checktmp && touch checktmp'
             print(stmt)
             run(stmt)
@@ -100,30 +101,36 @@ def runTest():
             times = 1
             overtime = runtime + 50
             for hosts in host:
-                stmt = '/bin/bash pid.sh %s %s' % (hosts, port[num])
+                stmt = '/bin/bash pid.sh %s %s' % (hosts, port[snum])
                 print(stmt)
                 run(stmt)
+                sleep(1)
                 while os.path.isfile('./pid.log'):
                     if times <= runtime :
                         sleep(5)
                         times = times + 5
                         run(stmt)
                     if times < overtime and times >= runtime : 
-                        print('%s:%s still running, plz wait %ss ...' % (hosts, port[num], times))
+                        print('%s:%s still running, plz wait %ss ...' % (hosts, port[snum], times))
                         sleep(1)
                         run(stmt)
                         times = times + 1
                         #当超时到了50s直接杀进程
                     elif times >= overtime :
-                        stmt = "ps -ef | grep sysbench | grep %s | grep %s | awk '{print $2}' | xargs kill -9" % (hosts, port[num])
+                        stmt = "ps -ef | grep sysbench | grep %s | grep %s | awk '{print $2}' | xargs kill -9" % (hosts, port[snum])
                         print('running more than 50s, now kill sysbench process\n' + stmt)
                         run(stmt)
                         break
-                num = num + 1
-
+                snum = snum + 1
+            if times < runtime:
+                print('%s: %s use %ss, less than %s, failed' % (loadworkers, thd, times, runtime))
+            elif times >= runtime: 
+                print('%s: %s use %ss, more than %s, success' % (loadworkers, thd, times, runtime))
+            stmt = "rm -rf pid.log && ps -ef | grep -w sysbench | awk '{print $2}' | xargs kill -9"
+            print(stmt)
+            run(stmt)
 
             sleep(relaxTime)
-
             stmt = 'rm -rf checktmp'
             run(stmt)
             sleep(1)
@@ -170,8 +177,6 @@ def checkRerun():
                     run(stmt)
                     sums = sums + 1
             
-            #sleep(runtime)
-
             num = 0
             stmt = 'rm -rf checktmp && touch checktmp'
             print(stmt)
@@ -184,6 +189,7 @@ def checkRerun():
                 stmt = '/bin/bash pid.sh %s %s' % (hosts, ports[num])
                 print(stmt)
                 run(stmt)
+                sleep(1)
                 while os.path.isfile('./pid.log'):
                     if times < runtime:
                         sleep(5)
@@ -201,7 +207,13 @@ def checkRerun():
                         run(stmt)
                         break
                 num = num + 1
-
+            if times < runtime:
+                print('%s: %s use %ss, less than %s, fail' % (loadworkers, thd, times, runtime))
+            elif times >= runtime:
+                print('%s: %s use %ss, more than %s, success' % (loadworkers, thd, times, runtime))
+            stmt = "rm -rf pid.log && ps -ef | grep -w sysbench | awk '{print $2}' | xargs kill -9"
+            print(stmt)
+            run(stmt)
             sleep(relaxTime)
 
             stmt = 'rm -rf checktmp'
