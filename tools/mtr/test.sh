@@ -1,0 +1,2 @@
+./mtr --force --big-test --parallel=4 --suite-timeout=3000 --max-test-fail=10000 --mysqld="--ddc_mode=0" --mysqld="--print_extra_info_verbosity=0" --mysqld="--enable-fullsync=0" --testcase-timeout=300 >out1 2>&1
+#./mtr --force --big-test --parallel=4 --suite-timeout=3000 --max-test-fail=10000 --mysqld="--ddc_mode=0" --mysqld="--print_extra_info_verbosity=0" --mysqld="--enable-fullsync=0" --suite=rocksdb,rocksdb_rpl,rocksdb_stress,rocksdb_sys_vars --testcase-timeout=300 >out1 2>&1
