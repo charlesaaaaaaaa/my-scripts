@@ -84,4 +84,16 @@ EOF
 elif [[ "$role" == "node" ]]
 then
 	echo i am node
+	cat << EOF >> ./base/kunlun-cluster-node-1.0.1/conf/node_mgr.cnf
+meta_group_seeds = $groupSeeds
+brpc_http_port = 56002
+nodemgr_tcp_port = 56003
+local_ip = $ip
+program_binaries_path = /home/kunlun/base/program_binaries
+instance_binaries_path = /home/kunlun/base/instance_binaries
+prometheus_path = /home/kunlun/base/program_binaries/prometheus
+storage_prog_package_name = kunlun-storage-1.0.1
+computer_prog_package_name = kunlun-server-1.0.1
+prometheus_port_start = 56020
+EOF
 fi

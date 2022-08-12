@@ -80,16 +80,23 @@ then
 	metaIpR=`cat conf/metaIp.txt`
 	echo metaIpR = $metaIpR
 	/bin/bash change_conf.sh meta "$metaseeds" "$metaIpR"
-	#192.168.0.134:56001:0,192.168.0.140:56001:0,192.168.0.132:56001:0
+	
 	# 修改cluster_mgr配置文件
 	clusterSeeds=`cat conf/clusterSeed.txt`
 	echo `cat conf/clusterSeed.txt`
 	clusterMetaSeeds=`cat conf/metaClusterSeed.txt`
 	/bin/bash change_conf.sh cluster $selfIp "$clusterMetaSeeds" "$clusterSeeds"
+	
+	# 修改node_mgr配置文件
+	/bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
+
+	#安装
 	cd /home/kunlun/base/program_binaries/kunlun-storage-1.0.1/dba_tools
 	python2 install-mysql.py --config=/home/kunlun/mysql_meta.json --target_node_index=0 --cluster_id=meta --shard_id=meta --server_id=1 --ha_mode=mgr
 	cd /home/kunlun/base/kunlun-cluster-manager-1.0.1/bin
 	bash start_cluster_mgr.sh </dev/null >& start.log & 
+	cd /home/kunlun/base/kunlun-cluster-node--1.0.1/bin
+	bash start_cluster_mgr.sh </dev/null >& start.log &
 elif [[ "$selfRole" == "meta_data_node_replice" ]]
 then
 	metaseeds=`cat conf/metaSeed.txt`
@@ -98,8 +105,6 @@ then
         echo metaIpR = $metaIpR
         /bin/bash change_conf.sh meta "$metaseeds" "$metaIpR"
 
-        #python2 install-mysql.py --config=./mysql_meta.json --target_node_index=2 --cluster_id=meta --shard_id=meta --server_id=3 --ha_mode=mgr
-        cd /home/kunlun/base/program_binaries/kunlun-storage-1.0.1/dba_tools
         # =======================================================================
         n=2
         for i in `cat configure.txt | grep /self/hosts/meta_data_node-replica/ | grep /ip | awk '{print $2}'`
@@ -114,9 +119,19 @@ then
                         echo yes!! $serid
                 fi
         done
-
+	clusterSeeds=`cat conf/clusterSeed.txt`
+        echo `cat conf/clusterSeed.txt`
+        clusterMetaSeeds=`cat conf/metaClusterSeed.txt`
+        /bin/bash change_conf.sh cluster $selfIp "$clusterMetaSeeds" "$clusterSeeds"
+	/bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
         # =======================================================================
         tni=`echo "{$serid}-1" | bc -l`
+
+	cd /home/kunlun/base/program_binaries/kunlun-storage-1.0.1/dba_tools
 	python2 install-mysql.py --config=/home/kunlun/mysql_meta.json --target_node_index=$tni --cluster_id=meta --shard_id=meta --server_id=$serid --ha_mode=mgr
+	cd /home/kunlun/base/kunlun-cluster-manager-1.0.1/bin
+        bash start_cluster_mgr.sh </dev/null >& start.log &
+        cd /home/kunlun/base/kunlun-cluster-node--1.0.1/bin
+        bash start_cluster_mgr.sh </dev/null >& start.log &
 fi
 
