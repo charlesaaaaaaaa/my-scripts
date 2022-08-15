@@ -1,4 +1,5 @@
 import requests
+import pymysql
 import json
 import yaml
 import argparse
@@ -30,10 +31,32 @@ def readFile():
     nick_name = of["nick_name"]
     max_storage_size = str(of["max_storage_size"])
     max_connections = str(of["max_connections"])
-    mgrPort = of["clusterMgrInfo"]["port"]
-    mgrHost = of["clusterMgrInfo"]["host"]
+ #   mgrPort = of["clusterMgrInfo"]["port"]
+ #   mgrHost = of["clusterMgrInfo"]["host"]
     ha_mode = of["ha_mode"]
+    metaPort = of["MetaPrimaryNode"]["port"]
+    metaHost = of["MetaPrimaryNode"]["host"]
+    db = pymysql.connect(host = metaHost, port = int(metaPort), user = "pgx", password = "pgx_pwd", database = "kunlun_metadata_db")
+    cur = db.cursor()
+    cur.execute("select hostaddr from cluster_mgr_nodes where  member_state = 'source'")
+    MgrHost = cur.fetchone()
+    cur.execute("select port from cluster_mgr_nodes where  member_state = 'source'")
+    MgrPort = cur.fetchone()
+    db.commit()
+    cur.close()
+    db.close()
+    print(MgrPort)
+    print(MgrHost)
+    mgrPort = str(MgrPort)
+    mgrHost = str(MgrHost)
+    mgrPort = mgrPort.replace('(','')
+    mgrPort = mgrPort.replace(",)","")
+    mgrHost = mgrHost.replace("('","")
+    mgrHost = mgrHost.replace("',)","")
+    print(mgrPort)
+    print(mgrHost)
     postad = "http://%s:%s/HttpService/Emit" % (mgrHost, mgrPort)
+
 
 header = {
         "cookie": "cookie",

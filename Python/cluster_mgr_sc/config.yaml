@@ -5,7 +5,7 @@ clusterMgrInfo:
 
 MetaPrimaryNode:
         host: "192.168.0.132"
-        port: "5661"
+        port: "6003"
 
 # 要创建的computing node 对应的host，数量不限
 computer:
