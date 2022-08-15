@@ -101,7 +101,7 @@ then
 	python2 bootstrap.py --config=./conf/reg_meta.json --bootstrap_sql=/home/kunlun/base/program_binaries/kunlun-server-1.0.1/scripts/meta_inuse.sql --ha_mode=mgr
 	bash imysql.sh 6001 < dba_tools_db.sql
 	
-elif [[ "$selfRole" == "meta_data_node-replice" ]]
+elif [[ "$selfRole" == "meta_data_node-replica" ]]
 then
 	metaseeds=`cat conf/metaSeed.txt`
         echo metaseeds = $metaseeds
@@ -129,7 +129,7 @@ then
         /bin/bash change_conf.sh cluster $selfIp "$clusterMetaSeeds" "$clusterSeeds"
 	/bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
         # =======================================================================
-        tni=`echo "{$serid}-1" | bc -l`
+        tni=`echo "${serid}-1" | bc -l`
 	#/home/kunlun/base/program_binaries/kunlun-server-1.0.1/scripts/meta_inuse.sql
 
 	cd /home/kunlun/base/program_binaries/kunlun-storage-1.0.1/dba_tools
@@ -140,7 +140,7 @@ then
         bash start_node_mgr.sh </dev/null >& start.log &
 
 
-elif [[ "$selfRole" == "computer_node" ]]
+elif [[ "$selfRole" == "computing_node" ]]
 then
 	/bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
 	cd /home/kunlun/base/kunlun-node-manager-1.0.1/bin
@@ -152,7 +152,7 @@ then
         cd /home/kunlun/base/kunlun-node-manager-1.0.1/bin
         bash start_node_mgr.sh </dev/null >& start.log &
 
-elif [[ "$selfRole" == "data_node-replice" ]]
+elif [[ "$selfRole" == "data_node-replica" ]]
 then
         /bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
         cd /home/kunlun/base/kunlun-node-manager-1.0.1/bin
