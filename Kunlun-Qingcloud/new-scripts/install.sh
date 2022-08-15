@@ -92,11 +92,16 @@ then
 
 	#安装
 	cd /home/kunlun/base/program_binaries/kunlun-storage-1.0.1/dba_tools
-	python2 install-mysql.py --config=/home/kunlun/mysql_meta.json --target_node_index=0 --cluster_id=meta --shard_id=meta --server_id=1 --ha_mode=mgr
+	python2 install-mysql.py --config=/home/kunlun/conf/mysql_meta.json --target_node_index=0 --cluster_id=meta --shard_id=meta --server_id=1 --ha_mode=mgr
 	cd /home/kunlun/base/kunlun-cluster-manager-1.0.1/bin
 	bash start_cluster_mgr.sh </dev/null >& start.log & 
 	cd /home/kunlun/base/kunlun-cluster-node--1.0.1/bin
 	bash start_cluster_mgr.sh </dev/null >& start.log &
+	sleep 15
+	cd $HOME
+	python2 bootstrap.py --config=./conf/reg_meta.json --bootstrap_sql=/home/kunlun/base/program_binaries/kunlun-server-1.0.1/scripts/meta_inuse.sql --ha_mode=mgr
+	bash imysql.sh 6001 < dba_tools_db.sql
+	
 elif [[ "$selfRole" == "meta_data_node_replice" ]]
 then
 	metaseeds=`cat conf/metaSeed.txt`
@@ -126,12 +131,31 @@ then
 	/bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
         # =======================================================================
         tni=`echo "{$serid}-1" | bc -l`
+	#/home/kunlun/base/program_binaries/kunlun-server-1.0.1/scripts/meta_inuse.sql
 
 	cd /home/kunlun/base/program_binaries/kunlun-storage-1.0.1/dba_tools
-	python2 install-mysql.py --config=/home/kunlun/mysql_meta.json --target_node_index=$tni --cluster_id=meta --shard_id=meta --server_id=$serid --ha_mode=mgr
+	python2 install-mysql.py --config=/home/kunlun/conf/mysql_meta.json --target_node_index=$tni --cluster_id=meta --shard_id=meta --server_id=$serid --ha_mode=mgr
 	cd /home/kunlun/base/kunlun-cluster-manager-1.0.1/bin
         bash start_cluster_mgr.sh </dev/null >& start.log &
         cd /home/kunlun/base/kunlun-cluster-node--1.0.1/bin
         bash start_cluster_mgr.sh </dev/null >& start.log &
-fi
 
+
+elif [[ "$selfRole" == "computer_node" ]]
+then
+	/bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
+	cd /home/kunlun/base/kunlun-cluster-node--1.0.1/bin
+        bash start_cluster_mgr.sh </dev/null >& start.log &
+
+elif [[ "$selfRole" == "data_node" ]]
+then
+	/bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
+        cd /home/kunlun/base/kunlun-cluster-node--1.0.1/bin
+        bash start_cluster_mgr.sh </dev/null >& start.log &
+
+elif [[ "$selfRole" == "data_node_replice" ]]
+then
+        /bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
+        cd /home/kunlun/base/kunlun-cluster-node--1.0.1/bin
+        bash start_cluster_mgr.sh </dev/null >& start.log &
+fi

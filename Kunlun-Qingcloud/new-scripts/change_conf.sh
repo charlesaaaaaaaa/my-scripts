@@ -46,6 +46,10 @@ EOF
 	sed -i '0,/false/{s/false/true/}' conf/mysql_meta.json
 
 #生成reg_meta.json
+	cat << EOF > conf/reg_meta.json
+[
+    {
+EOF
 	for i in $ip
 	do
 		cat << EOF >> conf/reg_meta.json
