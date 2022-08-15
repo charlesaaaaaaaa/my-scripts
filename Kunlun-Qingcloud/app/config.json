@@ -187,54 +187,6 @@
                         	"min":10,
                         	"required":"yes"
 			}]
-		},{
-			"key":"cluster_mgr_node",
-			"label":"Cluster_mgr Node",
-			"description":"Cluster_mgr Node of Kunlun_Cluster",
-			"type":"array",
-			"properties":[{
-				"key":"instance_class",
-                        	"label":"Instance_class",
-                        	"description":" ",
-                        	"type":"integer",
-                        	"default":202,
-                        	"range":[101,202,301],
-                        	"required":"yes"
-                        },{
-                        	"key":"cpu",
-                        	"label":"Cpu",
-                        	"description":"Cpus of each Cluster_mgr Node",
-                        	"type":"integer",
-                        	"default":2,
-                        	"range":[1,2,4,8],
-                        	"required":"yes"
-                        },{
-                        	"key":"memory",
-                        	"label":"Memory",
-                        	"description":"Memory of each Cluster_mgr Node",
-                        	"type":"integer",
-                        	"default":2048,
-                        	"range":[1024,2048,4096,6144,8192],
-                        	"required":"yes"
-                        },{
-				"key":"count",
-                                "label":"Count",
-                                "description":"Number of Cluster_mgr Node, only one",
-                                "type":"integer",
-                                "default":1,
-                                "range":[1],
-                                "required":"yes"	
-
-			},{
-                        	"key":"volume_size",
-                        	"label":"Volume Size",
-                        	"description":"Volume Size of Cluster_mgr Node",
-                        	"type":"integer",
-                        	"default":10,
-                        	"min":10,
-                        	"required":"yes"
-		
-			}]
 		}]	
 	
 	},{

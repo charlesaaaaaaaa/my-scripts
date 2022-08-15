@@ -11,7 +11,7 @@
 		"loadbalancer": {{cluster.computing_node.loadbalancer}},
 		"container":{
 			"type":"kvm",
-			"image":"img-hxojxuzu",
+			"image":"img-p8yko5xk",
 			"zone":"sh1a"
 		},
 		"instance_class":{{cluster.computing_node.instance_class}},
@@ -45,7 +45,7 @@
 		"role":"meta_data_node",
 		"container":{
 			"type":"kvm",
-			"image":"img-hxojxuzu",
+			"image":"img-p8yko5xk",
 			"zone":"sh1a"
 		},
 		"instance_class":{{cluster.meta_data_node.instance_class}},
@@ -75,7 +75,7 @@
 		"role":"data_node",
 		"container":{
                         "type":"kvm",
-                        "image":"img-hxojxuzu",
+                        "image":"img-p8yko5xk",
                         "zone":"sh1a"
                 },
                 "instance_class":{{cluster.data_node.instance_class}},
@@ -101,37 +101,6 @@
 				"order":2,
                                 "cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh stop >> /home/ubuntu/stop.log"
                         }
-		}
-	},{
-		"role":"cluster_mgr_node",
-                "container":{
-                        "type":"kvm",
-                        "image":"img-hweqjtuw",
-                        "zone":"sh1a"
-                },
-                "instance_class":{{cluster.cluster_mgr_node.instance_class}},
-                "cpu": {{cluster.cluster_mgr_node.cpu}},
-                "memory":{{cluster.cluster_mgr_node.memory}},
-                "count":{{cluster.cluster_mgr_node.count}},
-		"volume":{
-                        "size":{{cluster.cluster_mgr_node.volume_size}},
-                        "mount_point":"/data",
-                        "filesystem":"xfs"
-                },
-		"user_access": true,
-		"services":{
-			"init":{
-				"order":1,
-				"cmd":"bash /home/ubuntu/kunlun/cluster_mgr_rel/resources/cluster-init.sh"
-			},
-			"start":{
-				"order":2,
-				"cmd":"bash /home/ubuntu/kunlun/cluster_mgr_rel/cluster-base.sh start >> /home/ubuntu/start.log"
-			},
-			"stop":{
-				"order":1,
-				"cmd":"bash /home/ubuntu/kunlun/cluster_mgr_rel/cluster-base.sh stop >> /home/ubuntu/stop.log"
-			}
 		}
 	}],
 "env":{
