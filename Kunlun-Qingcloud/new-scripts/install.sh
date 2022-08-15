@@ -97,9 +97,11 @@ then
 	cd /home/kunlun/base/kunlun-node-manager-1.0.1/bin
 	bash start_node_mgr.sh </dev/null >& start.log &
 	sleep 15
-	cd $HOME
+	cd /home/kunlun/base/program_binaries/kunlun-server-1.0.1/scripts/
 	python2 bootstrap.py --config=./conf/reg_meta.json --bootstrap_sql=/home/kunlun/base/program_binaries/kunlun-server-1.0.1/scripts/meta_inuse.sql --ha_mode=mgr
+	cd $HOME
 	bash imysql.sh 6001 < dba_tools_db.sql
+
 	
 elif [[ "$selfRole" == "meta_data_node-replica" ]]
 then
