@@ -1,3 +1,4 @@
+
 rm -rf conf && mkdir conf
 nets=`cat /etc/confd/confd.toml  | grep nodes | awk -F= '{print $2}' | sed 's/^...//' | sed 's/..$//'`
 curl $nets > configure.txt
