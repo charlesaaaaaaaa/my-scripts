@@ -88,7 +88,7 @@ EOF
 elif [[ "$role" == "node" ]]
 then
 	echo i am node
-	cat << EOF >> ./base/kunlun-cluster-node-1.0.1/conf/node_mgr.cnf
+	cat << EOF >> ./base/kunlun-node-manager-1.0.1/conf/node_mgr.cnf
 meta_group_seeds = $groupSeeds
 brpc_http_port = 56002
 nodemgr_tcp_port = 56003
