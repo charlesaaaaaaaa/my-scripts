@@ -102,7 +102,7 @@ then
 	python2 bootstrap.py --config=./conf/reg_meta.json --bootstrap_sql=/home/kunlun/base/program_binaries/kunlun-server-1.0.1/scripts/meta_inuse.sql --ha_mode=mgr
 	bash imysql.sh 6001 < dba_tools_db.sql
 	
-elif [[ "$selfRole" == "meta_data_node_replice" ]]
+elif [[ "$selfRole" == "meta_data_node-replice" ]]
 then
 	metaseeds=`cat conf/metaSeed.txt`
         echo metaseeds = $metaseeds
@@ -153,7 +153,7 @@ then
         cd /home/kunlun/base/kunlun-cluster-node--1.0.1/bin
         bash start_cluster_mgr.sh </dev/null >& start.log &
 
-elif [[ "$selfRole" == "data_node_replice" ]]
+elif [[ "$selfRole" == "data_node-replice" ]]
 then
         /bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
         cd /home/kunlun/base/kunlun-cluster-node--1.0.1/bin
