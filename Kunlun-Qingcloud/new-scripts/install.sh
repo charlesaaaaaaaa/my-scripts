@@ -96,7 +96,7 @@ then
 	cd /home/kunlun/base/kunlun-cluster-manager-1.0.1/bin
 	bash start_cluster_mgr.sh </dev/null >& start.log & 
 	cd /home/kunlun/base/kunlun-cluster-node--1.0.1/bin
-	bash start_cluster_mgr.sh </dev/null >& start.log &
+	bash start_node_mgr.sh </dev/null >& start.log &
 	sleep 15
 	cd $HOME
 	python2 bootstrap.py --config=./conf/reg_meta.json --bootstrap_sql=/home/kunlun/base/program_binaries/kunlun-server-1.0.1/scripts/meta_inuse.sql --ha_mode=mgr
@@ -138,24 +138,24 @@ then
 	cd /home/kunlun/base/kunlun-cluster-manager-1.0.1/bin
         bash start_cluster_mgr.sh </dev/null >& start.log &
         cd /home/kunlun/base/kunlun-cluster-node--1.0.1/bin
-        bash start_cluster_mgr.sh </dev/null >& start.log &
+        bash start_node_mgr.sh </dev/null >& start.log &
 
 
 elif [[ "$selfRole" == "computer_node" ]]
 then
 	/bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
 	cd /home/kunlun/base/kunlun-cluster-node--1.0.1/bin
-        bash start_cluster_mgr.sh </dev/null >& start.log &
+        bash start_node_mgr.sh </dev/null >& start.log &
 
 elif [[ "$selfRole" == "data_node" ]]
 then
 	/bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
         cd /home/kunlun/base/kunlun-cluster-node--1.0.1/bin
-        bash start_cluster_mgr.sh </dev/null >& start.log &
+        bash start_node_mgr.sh </dev/null >& start.log &
 
 elif [[ "$selfRole" == "data_node-replice" ]]
 then
         /bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
         cd /home/kunlun/base/kunlun-cluster-node--1.0.1/bin
-        bash start_cluster_mgr.sh </dev/null >& start.log &
+        bash start_node_mgr.sh </dev/null >& start.log &
 fi
