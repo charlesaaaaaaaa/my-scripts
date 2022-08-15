@@ -24,8 +24,6 @@ selfIp=`cat configure.txt | grep /self/host/ip | awk '{print $2}'`
 # data节点配置文件
 for i in $dataGid
 do
-	rm -rf conf/data${i}seed.txt
-	rm -rf conf/data${i}.txt
 	masterId=`cat configure.txt | grep "$i"$ | grep /self/hosts/data_node/ | grep gid | awk -F/ '{print $5}'`
 	master_dataip=`cat configure.txt | grep "$masterId" | grep /self/hosts/data_node/ | grep /ip | awk '{print $2}'`
 	repDataGId=`echo $dataRepGid | grep "$i"$ | grep /self/hosts/data_node-replica/ | grep gid | awk -F/ '{print $5}'`
@@ -95,7 +93,7 @@ then
 	python2 install-mysql.py --config=/home/kunlun/conf/mysql_meta.json --target_node_index=0 --cluster_id=meta --shard_id=meta --server_id=1 --ha_mode=mgr
 	cd /home/kunlun/base/kunlun-cluster-manager-1.0.1/bin
 	bash start_cluster_mgr.sh </dev/null >& start.log & 
-	cd /home/kunlun/base/kunlun-node-manager--1.0.1/bin
+	cd /home/kunlun/base/kunlun-node-manager-1.0.1/bin
 	bash start_node_mgr.sh </dev/null >& start.log &
 	sleep 15
 	cd $HOME
