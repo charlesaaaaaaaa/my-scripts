@@ -11,7 +11,7 @@
 		"loadbalancer": {{cluster.computing_node.loadbalancer}},
 		"container":{
 			"type":"kvm",
-			"image":"img-p8yko5xk",
+			"image":"img-3q5peu0x",
 			"zone":"sh1a"
 		},
 		"instance_class":{{cluster.computing_node.instance_class}},
@@ -26,26 +26,14 @@
 		"user_access": true,
 		"services":{
 			"init":{
-				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-init.sh"
-			},
-			"start":{
-				"order":3,
-				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh start"
-			},
-			"stop":{
-				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh stop"
-			},
-			"restart":{
-				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh restart"
-			},
-			"destroy":{
-				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh destory"}
+				"cmd":"bash /home/kunlun/install.sh"
+			}
 		}
 	},{
 		"role":"meta_data_node",
 		"container":{
 			"type":"kvm",
-			"image":"img-p8yko5xk",
+			"image":"img-3q5peu0x",
 			"zone":"sh1a"
 		},
 		"instance_class":{{cluster.meta_data_node.instance_class}},
@@ -61,21 +49,14 @@
 		"user_access": true,
 		"services":{
 			"init":{
-				"cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/meta-init.sh"
-			},
-			"start":{
-				"cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh start >> /home/ubuntu/start.log"
-			},
-			"stop":{
-				"order":3,
-				"cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh stop >> /home/ubuntu/stop.log"
+				"cmd":"bash /home/kunlun/install.sh"
 			}
 		}
 	},{
 		"role":"data_node",
 		"container":{
                         "type":"kvm",
-                        "image":"img-p8yko5xk",
+                        "image":"img-3q5peu0x",
                         "zone":"sh1a"
                 },
                 "instance_class":{{cluster.data_node.instance_class}},
@@ -91,16 +72,8 @@
 		"user_access": true,
 		"services":{
 			"init":{
-				"cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-init.sh"
-			},
-			"start":{
-				"order":1,
-                                "cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh start >> /home/ubuntu/start.log"
-                        },
-                        "stop":{
-				"order":2,
-                                "cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh stop >> /home/ubuntu/stop.log"
-                        }
+				"cmd":"bash /home/kunlun/install.sh"
+			}
 		}
 	}],
 "env":{
