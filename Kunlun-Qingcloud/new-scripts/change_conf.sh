@@ -55,9 +55,9 @@ EOF
 	do
 		cat << EOF >> conf/reg_meta.json
         "is_primary": true,
-        "data_dir_path": "/nvme2/compare/base/storage_datadir/6001",
+        "data_dir_path": "/home/kunlun/base/storage_datadir/6001",
         "user": "pgx",
-        "nodemgr_bin_path": "/nvme2/compare/base/kunlun-node-manager-1.0.1/bin",
+        "nodemgr_bin_path": "/home/kunlun/base/kunlun-node-manager-1.0.1/bin",
         "ip": "$i",
         "password": "pgx_pwd",
         "port": 6001
@@ -82,7 +82,7 @@ brpc_raft_port = 56001
 brpc_http_port = 56000
 local_ip = $ip
 raft_group_member_init_config = $clusterSeeds
-prometheus_path = /nvme2/compare/base/program_binaries/prometheus
+prometheus_path = /home/kunlun/base/program_binaries/prometheus
 prometheus_port_start = 56010
 EOF
 ## ======== node +++++++++
