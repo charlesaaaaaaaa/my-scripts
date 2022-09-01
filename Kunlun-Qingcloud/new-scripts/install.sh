@@ -235,8 +235,9 @@ elif [[ "$selfRole" == "xpanel" ]]
 then
 	port=`cat /home/kunlun/configure.txt | grep /self/env/xpanel_port | awk '{print $2}'`
 	cd /home/kunlun
-	rm -rf /home/kunlun/
 	sudo service docker start
-	sudo docker pull registry.cn-hangzhou.aliyuncs.com/kunlundb/kunlun-xpanel
+	#sudo docker pull registry.cn-hangzhou.aliyuncs.com/kunlundb/kunlun-xpanel
 	sudo docker run -itd --name xpanel1 -p $port:80 registry.cn-hangzhou.aliyuncs.com/kunlundb/kunlun-xpanel bash -c '/bin/bash /kunlun/start.sh'
+	for i in `ls base | grep -v app-agent-linux-amd64`; do echo rm -rf $i; done
+	rm -rf *sh *py cluster_mgr_sc *sql
 fi

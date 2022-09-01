@@ -23,7 +23,7 @@ echo "comps: $compNodeNum" >> /home/kunlun/config.yaml
 echo "total_mem: $dataMem" >> /home/kunlun/config.yaml
 echo "total_cpu_cores: $dataCpu" >> /home/kunlun/config.yaml
 cat << EOF >> /home/kunlun/config.yaml
-pgsql_port_range: "5431-7000"
+pgsql_port_range: "5000-7000"
 mysql_port_range: "8000-10000"
 ha_mode: "rbr"
 dbcfg: 0
