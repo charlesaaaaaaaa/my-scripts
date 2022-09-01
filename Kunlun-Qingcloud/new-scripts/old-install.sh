@@ -11,8 +11,6 @@ metaIp=`cat configure.txt | grep /self/hosts/meta_data_node/ | grep /ip | awk '{
 metaRepIp=`cat configure.txt | grep /self/hosts/meta_data_node-replica/ | grep /ip | awk '{print $2}'`
 selfRole=`cat configure.txt | grep /self/host/role | awk '{print $2}'`
 selfIp=`cat configure.txt | grep /self/host/ip | awk '{print $2}'`
-comp1Name=`cat configure.txt | grep /self/hosts/computing_node | grep /sid | grep 1$ | awk '{print $1}' | awk -F/ '{print $5}'`
-comp1Ip=`cat configure.txt | grep /self/hosts/ | grep $comp1Name | grep /ip | awk '{print $2}'`
 #for i in $compIp; do echo comp: $i; done
 #for i in $dataIp; do echo data: $i; done
 #echo $dataGid
@@ -112,7 +110,7 @@ then
 	
 	cd /home/kunlun/base/program_binaries/kunlun-server-1.0.1/scripts/
 	python2 bootstrap.py --config=/home/kunlun/conf/reg_meta.json --bootstrap_sql=/home/kunlun/base/program_binaries/kunlun-server-1.0.1/scripts/meta_inuse.sql --ha_mode=mgr
-	#a=`echo $?`
+	a=`echo $?`
 	if [[ $a == "0" ]] ; then for i in `cat /home/kunlun/configure.txt | grep /self/hosts | grep /ip | awk '{print $2}'` ; do cd /home/kunlun; bash ./send_ready.sh $i ready; done; else for i in `cat /home/kunlun/configure.txt | grep /self/hosts | grep /ip | awk '{print $2}'` ; do cd /home/kunlun; bash ./send_ready.sh $i noready; done; sleep 10; exit 1; fi
 	cd /home/kunlun/base/program_binaries/kunlun-storage-1.0.1/dba_tools/
 	bash ./imysql.sh 6001 < /home/kunlun/dba_tools_db.sql
@@ -120,13 +118,13 @@ then
 	cd /home/kunlun/base/kunlun-node-manager-1.0.1/bin && /bin/bash start_node_mgr.sh </dev/null >& start.log &
 	
 	cd /home/kunlun
-	#myReady=`echo "${selfIp}Ready"`
-	#bash ./send_ready.sh $metaIp $myReady
+	myReady=`echo "${selfIp}Ready"`
+	bash ./send_ready.sh $metaIp $myReady
 	#for i in `cat /home/kunlun/configure.txt | grep /self/hosts/meta_data_node-replica | grep /ip | awk '{print $2}'`; do python3 check.py --host $i --type kunlun; a=`echo $?`; while [[ "$a" != "0" ]]; do python3 check.py --host $i --type kunlun; a=`echo $?`; echo wait 1s...; sleep 1;  done; done
-	#for i in `cat /home/kunlun/configure.txt | grep /self/hosts | grep /ip | awk '{print $2}'`; do a=1; if [[ ! -f "${i}Ready" ]]; then a=1;echo $a; sleep 1; else a=0; fi; sleep 5; done
+	for i in `cat /home/kunlun/configure.txt | grep /self/hosts | grep /ip | awk '{print $2}'`; do a=1; if [[ ! -f "${i}Ready" ]]; then a=1;echo $a; sleep 1; else a=0; fi; sleep 5; done
 
 	# 发送api
-	#bash /home/kunlun/send_api.sh	
+	bash /home/kunlun/send_api.sh	
 
 elif [[ "$selfRole" == "meta_data_node-replica" ]]
 then
@@ -190,52 +188,53 @@ then
 	/bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
 	#cd /home/kunlun/base/kunlun-node-manager-1.0.1/bin
         #bash start_node_mgr.sh </dev/null >& start.log &
+	sleep 60
+	cd /home/kunlun
+	a=1
+	while [[ "$a" == "1" ]]; do if [[ ! -f "ready" && ! -f 'noready' ]]; then a=1;echo $a; sleep 1; else a=0; fi; sleep 1; done	
+	 
         cd /home/kunlun/
 	bash copyPgLdd.sh
         bash start_node_mgr.sh $selfIp
 	cd /home/kunlun
 	myReady=`echo "${selfIp}Ready"`
-        bash ./send_ready.sh $comp1Ip $myReady
-	
-	if [[ "$selfIp" == "$comp1Ip" ]]
-	then
-		echo $selfIp
-		for i in `cat /home/kunlun/configure.txt | grep /self/hosts/computing_node | grep /ip | awk '{print $2}'`; do a=1; if [[ ! -f "${i}Ready" ]]; then a=1;echo $a; sleep 1; else a=0; fi; sleep 5; done
-		for i in `cat /home/kunlun/configure.txt | grep /self/hosts/data_node/ | grep /ip | awk '{print $2}'`; do a=1; if [[ ! -f "${i}Ready" ]]; then a=1;echo $a; sleep 1; else a=0; fi; sleep 5; done
-		for i in `cat /home/kunlun/configure.txt | grep /self/hosts/data_node-replica | grep /ip | awk '{print $2}'`; do a=1; if [[ ! -f "${i}Ready" ]]; then a=1;echo $a; sleep 1; else a=0; fi; sleep 5; done
-		#重启clustermgr
-		for i in `cat /home/kunlun/configure.txt | grep /self/hosts/meta_data | grep /ip | awk '{print $2}'`; do echo $i; cd ; /bin/bash start_cluster.sh $i; done;
-		sleep 15
-		/bin/bash /home/kunlun/send_api.sh
-	fi
+        bash ./send_ready.sh $metaIp $myReady
 
 elif [[ "$selfRole" == "data_node" ]]
 then
 	clusterMetaSeeds=`cat conf/metaClusterSeed.txt`
         /bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
+        #cd /home/kunlun/base/kunlun-node-manager-1.0.1/bin
+        #bash start_node_mgr.sh </dev/null >& start.log &
+	sleep 60
+	a=1
+	while [[ "$a" == "1" ]]; do if [[ ! -f "ready" && ! -f 'noready' ]]; then a=1;echo $a; sleep 1; else a=0; fi; sleep 1; done	
 
         cd /home/kunlun/
 	bash start_node_mgr.sh $selfIp
 	cd /home/kunlun
 	myReady=`echo "${selfIp}Ready"`
-        bash ./send_ready.sh $comp1Ip $myReady
+        bash ./send_ready.sh $metaIp $myReady
 
 elif [[ "$selfRole" == "data_node-replica" ]]
 then	
 	clusterMetaSeeds=`cat conf/metaClusterSeed.txt`
         /bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
+	sleep 60
+	a=1
+	while [[ "$a" == "1" ]]; do if [[ ! -f "ready" && ! -f 'noready' ]]; then a=1;echo $a; sleep 1; else a=0; fi; sleep 1; done	
 
         cd /home/kunlun/
 	bash start_node_mgr.sh $selfIp
 	cd /home/kunlun
 	myReady=`echo "${selfIp}Ready"`
-        bash ./send_ready.sh $comp1Ip $myReady
+        bash ./send_ready.sh $metaIp $myReady
 
 elif [[ "$selfRole" == "xpanel" ]]
 then
 	port=`cat /home/kunlun/configure.txt | grep /self/env/xpanel_port | awk '{print $2}'`
 	cd /home/kunlun
-	rm -rf /home/kunlun/
+	rm -rf /home/kunlun/base
 	sudo service docker start
 	sudo docker pull registry.cn-hangzhou.aliyuncs.com/kunlundb/kunlun-xpanel
 	sudo docker run -itd --name xpanel1 -p $port:80 registry.cn-hangzhou.aliyuncs.com/kunlundb/kunlun-xpanel bash -c '/bin/bash /kunlun/start.sh'

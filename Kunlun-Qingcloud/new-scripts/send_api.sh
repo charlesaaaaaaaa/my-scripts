@@ -1,7 +1,7 @@
 #这个是用来发送api的脚本，包括修改文件
 
 # 编写配置文件
-metaPriHost=`cat configure.txt | grep self/host/ip | awk '{print $2}'`
+metaPriHost=`cat configure.txt | grep /self/hosts/meta_data_node/ | grep /ip | awk '{print $2}'`
 shardNum=`cat ~/configure.txt | grep /self/hosts/data_node/ | grep /gid  | awk '{print $2}' | sort | uniq | tail -1`
 echo 'MetaPrimaryNode:' > /home/kunlun/config.yaml
 echo "  host: \"$metaPriHost\"" >> /home/kunlun/config.yaml
@@ -11,7 +11,9 @@ for i in `cat ~/configure.txt | grep /self/hosts/computing_node/ | grep /ip | aw
 echo 'storage:' >> /home/kunlun/config.yaml
 for i in `cat ~/configure.txt | grep /self/hosts/data_node | grep /ip | awk '{print $2}'`; do echo "  - $i" >> /home/kunlun/config.yaml; done
         #sed -i 's/|//g' /home/kunlun/config.yaml
-dataNodeNum=`cat configure.txt | grep /self/hosts/data_node  | grep role | wc -l`
+maxGid=`cat configure.txt | grep /self/hosts/data | grep gid | awk '{print $2}' | sort -n | uniq | tail -1`
+maxSid=`cat configure.txt | grep /self/hosts/data | grep /sid | awk '{print $2}' | sort -n | uniq | tail -1`
+dataNodeNum=`echo "scale=0;$maxSid/$maxGid" | bc -l`
 compNodeNum=`cat configure.txt | grep /self/hosts/computing_node/  | grep role | wc -l`
 dataCpu=`cat configure.txt | grep /cpu | grep -v cpu_model | grep self/hosts/data_node | awk '{print $2}' | uniq`
 dataMem=`cat configure.txt | grep memory | grep self/hosts/data_node | awk '{print $2}' | uniq`
@@ -21,7 +23,7 @@ echo "comps: $compNodeNum" >> /home/kunlun/config.yaml
 echo "total_mem: $dataMem" >> /home/kunlun/config.yaml
 echo "total_cpu_cores: $dataCpu" >> /home/kunlun/config.yaml
 cat << EOF >> /home/kunlun/config.yaml
-pgsql_port_range: "5000-7000"
+pgsql_port_range: "5431-7000"
 mysql_port_range: "8000-10000"
 ha_mode: "rbr"
 dbcfg: 0
