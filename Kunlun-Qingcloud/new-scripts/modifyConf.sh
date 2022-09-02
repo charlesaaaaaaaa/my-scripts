@@ -1,3 +1,4 @@
+cd /home/kunlun
 selfRole=`cat /home/kunlun/configure.txt | grep /self/host/role | awk '{print $2}'`
 serDir=/home/kunlun/base/server_datadir/5432/postgresql.conf
 stoDir=/home/kunlun/base/storage_datadir/8001/data/8001.cnf
@@ -14,29 +15,16 @@ then
 	else
 		touch /home/kunlun/base/first
 	fi
-elif [[ "$selfRole" == "data_node" ]]
-then
-	if [[ -e '/home/kunlun/base/first' ]]
-        then
-		for i in lock_timeout innodb_lock_wait_timeout lock_wait_timeout
-		do
-                        sed -i '$d' $stoDir
-                done
-        else
-                touch /home/kunlun/base/first
-        fi
 
-elif [[ "$selfRole" == "data_node-replica" ]]
-then
-        if [[ -e '/home/kunlun/base/first' ]]
-        then
-                for i in lock_timeout innodb_lock_wait_timeout lock_wait_timeout
-                do
-                        sed -i '$d' $stoDir
-                done
-        else
-                touch /home/kunlun/base/first
-        fi
+	for i in max_connections  shared_buffers temp_buffers log_min_duration_statement statement_timeout mysql_connect_timeout mysql_read_timeout mysql_write_timeout
+	do
+		values=`cat configure.txt | grep /self/env/$i | awk '{print $2}'`
+		echo "$i: $values" >> $serDir
+	done
+
+	cd /home/kunlun/base/instance_binaries/computer/5432/kunlun-server-1.0.1/bin
+	./pg_ctl -D /home/kunlun/base/server_datadir/5432 reload
+
 elif [[ "$selfRole" == "meta_data_node" ]]
 then
 
@@ -91,7 +79,7 @@ EOF
 	do
 		values=`cat configure.txt | grep /self/env/$i | awk '{print $2}'`
 		cat << EOF >> /home/kunlun/configure/configure.json
-                        "$i":values
+                        "$i":$values
 EOF
 	done
 
@@ -119,5 +107,3 @@ EOF
 	cd /home/kunlun/configure/
 	python3 configure.py --defuser kunlun --install install_xc.json --config configure.json --component storage
 fi
-
-

@@ -13,6 +13,7 @@ selfRole=`cat configure.txt | grep /self/host/role | awk '{print $2}'`
 selfIp=`cat configure.txt | grep /self/host/ip | awk '{print $2}'`
 comp1Name=`cat configure.txt | grep /self/hosts/computing_node | grep /sid | grep 1$ | awk '{print $1}' | awk -F/ '{print $5}'`
 comp1Ip=`cat configure.txt | grep /self/hosts/ | grep $comp1Name | grep /ip | awk '{print $2}'`
+xpanelIp=`cat configure.txt | grep self/hosts/xpanel | grep /ip | awk '{print $2}'`
 #for i in $compIp; do echo comp: $i; done
 #for i in $dataIp; do echo data: $i; done
 #echo $dataGid
@@ -195,19 +196,7 @@ then
         bash start_node_mgr.sh $selfIp
 	cd /home/kunlun
 	myReady=`echo "${selfIp}Ready"`
-        bash ./send_ready.sh $comp1Ip $myReady
-	
-	if [[ "$selfIp" == "$comp1Ip" ]]
-	then
-		echo $selfIp
-		for i in `cat /home/kunlun/configure.txt | grep /self/hosts/computing_node | grep /ip | awk '{print $2}'`; do a=1; if [[ ! -f "${i}Ready" ]]; then a=1;echo $a; sleep 1; else a=0; fi; sleep 5; done
-		for i in `cat /home/kunlun/configure.txt | grep /self/hosts/data_node/ | grep /ip | awk '{print $2}'`; do a=1; if [[ ! -f "${i}Ready" ]]; then a=1;echo $a; sleep 1; else a=0; fi; sleep 5; done
-		for i in `cat /home/kunlun/configure.txt | grep /self/hosts/data_node-replica | grep /ip | awk '{print $2}'`; do a=1; if [[ ! -f "${i}Ready" ]]; then a=1;echo $a; sleep 1; else a=0; fi; sleep 5; done
-		#重启clustermgr
-		for i in `cat /home/kunlun/configure.txt | grep /self/hosts/meta_data | grep /ip | awk '{print $2}'`; do echo $i; cd ; /bin/bash start_cluster.sh $i; done;
-		sleep 15
-		/bin/bash /home/kunlun/send_api.sh
-	fi
+        bash ./send_ready.sh $xpanelIp $myReady
 
 elif [[ "$selfRole" == "data_node" ]]
 then
@@ -218,7 +207,7 @@ then
 	bash start_node_mgr.sh $selfIp
 	cd /home/kunlun
 	myReady=`echo "${selfIp}Ready"`
-        bash ./send_ready.sh $comp1Ip $myReady
+        bash ./send_ready.sh $xpanelIp	 $myReady
 
 elif [[ "$selfRole" == "data_node-replica" ]]
 then	
@@ -229,15 +218,50 @@ then
 	bash start_node_mgr.sh $selfIp
 	cd /home/kunlun
 	myReady=`echo "${selfIp}Ready"`
-        bash ./send_ready.sh $comp1Ip $myReady
+        bash ./send_ready.sh $xpanelIp $myReady
 
 elif [[ "$selfRole" == "xpanel" ]]
 then
+	#启动xpanel
 	port=`cat /home/kunlun/configure.txt | grep /self/env/xpanel_port | awk '{print $2}'`
 	cd /home/kunlun
 	sudo service docker start
 	#sudo docker pull registry.cn-hangzhou.aliyuncs.com/kunlundb/kunlun-xpanel
 	sudo docker run -itd --name xpanel1 -p $port:80 registry.cn-hangzhou.aliyuncs.com/kunlundb/kunlun-xpanel bash -c '/bin/bash /kunlun/start.sh'
+	
+	#检查nodemgr是否都启动完成并发送安装集群命令
+	for i in `cat /home/kunlun/configure.txt | grep /self/hosts/computing_node | grep /ip | awk '{print $2}'`; do a=1; while [[ ! -f "${i}Ready" ]]; do a=1;echo $a; sleep 1; else a=0; done;  done
+        for i in `cat /home/kunlun/configure.txt | grep /self/hosts/data_node/ | grep /ip | awk '{print $2}'`; do a=1; while [[ ! -f "${i}Ready" ]]; do a=1;echo $a; sleep 1; else a=0; done;  done
+        for i in `cat /home/kunlun/configure.txt | grep /self/hosts/data_node-replica | grep /ip | awk '{print $2}'`; do a=1; while [[ ! -f "${i}Ready" ]]; do a=1;echo $a; sleep 1; else a=0; done; done
+                #重启clustermgr
+        for i in `cat /home/kunlun/configure.txt | grep /self/hosts/meta_data | grep /ip | awk '{print $2}'`; do echo $i; cd ; /bin/bash start_cluster.sh $i; done;
+        sleep 15
+        /bin/bash /home/kunlun/send_api.sh
+
+	#检查 群集是否安装完成
+	echo "select status from cluster_general_job_log where job_type = 'create_cluster'" > /home/kunlun/a.txt
+	clusterStatus=`mysql -h $metaIp -ppgx_pwd -upgx -P6001 kunlun_metadata_db < /home/kunlun/a.txt | grep -v status`
+	while [[ "$clusterStatus" != "done" ]]
+	do
+		sleep 1
+		clusterStatus=`mysql -h $metaIp -ppgx_pwd -upgx -P6001 kunlun_metadata_db < /home/kunlun/a.txt | grep -v status`
+	done
+
+	# 开始运行修改配置文件脚本
+	/bin/bash /home/kunlun/modifyConf.sh	
+
+	for i in `cat /home/kunlun/configure.txt | grep self/hosts/computing_node/ | grep /ip | awk '{print $2}'`
+	do
+		expect -c "
+    			spawn ssh $i '/home/kunlun/modifyConf.sh'
+    			expect {
+        			\"yes/no\" {send \"yes\r\";exp_continue;}
+        			\"*password\" {set timeout 500;send \"Kunlun1#\r\";}
+    			}
+		expect eof"
+	done
+
+
 	for i in `ls base | grep -v app-agent-linux-amd64`; do echo rm -rf $i; done
 	rm -rf *sh *py cluster_mgr_sc *sql
 fi
