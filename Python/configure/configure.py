@@ -124,7 +124,7 @@ def chInfo(stmt):
     stmt = '\n========================================================================\nsetting %s...\n========================================================================\n'% (stmt)
     print(stmt)
 
-def configs():
+def configComp():
     
     # setting computing node ========================================================================
     CIPN = 0
@@ -153,6 +153,7 @@ def configs():
         WFile(stmt, 'n')
         CIPN+=1
 
+def configData():
     #setting Metadata nodes ========================================================================
     chInfo('Metadatas')
     n = 0
@@ -198,8 +199,7 @@ def configs():
 
         n = n + 1
 
-    chInfo('computing nodes')
-    subprocess.run("bash ./config.sh",shell=True)
+    #subprocess.run("bash ./config.sh",shell=True)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Configure')
@@ -207,6 +207,7 @@ if __name__ == '__main__':
     parser.add_argument('--version', type = str, default = '0.9.3', help = 'Version of computer node')
     parser.add_argument('--install', type = str, default = './install.json', help = 'The original configuration file for the Kunlun_cluster')
     parser.add_argument('--config', type = str, default = './configure.json', help = 'the configuration file')
+    parser.add_argument('--component', type = str, default = 'all', help = 'all, server, storage')
     args = parser.parse_args()
     print (args)
 
@@ -214,6 +215,16 @@ if __name__ == '__main__':
     install = args.install
     config = args.config
     version = args.version
+    component = args.component
     readJsonFile()
-    configs()
+    if component == 'all':
+        configComp()
+        configData()
+    elif component == 'server':
+        configComp()
+    elif component == 'storage':
+        configData()
+
+    subprocess.run("bash ./config.sh",shell=True)
+
 
