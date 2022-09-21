@@ -1,8 +1,3 @@
-#你cluster_mgr的ip地址和对应端口
-clusterMgrInfo:
-        host: "192.168.0.132"
-        port: "12212"
-
 MetaPrimaryNode:
         host: "192.168.0.132"
         port: "6003"
