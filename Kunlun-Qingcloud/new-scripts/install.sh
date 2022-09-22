@@ -227,7 +227,9 @@ then
 	cd /home/kunlun
 	sudo service docker start
 	#sudo docker pull registry.cn-hangzhou.aliyuncs.com/kunlundb/kunlun-xpanel
-	sudo docker run -itd --name xpanel1 -p $port:80 registry.cn-hangzhou.aliyuncs.com/kunlundb/kunlun-xpanel bash -c '/bin/bash /kunlun/start.sh'
+	metaCluster=`cat /home/kunlun/conf/metaClusterSeed.txt`
+	#sudo docker run -itd --env METASEEDS=192.168.0.134:6661,192.168.0.140:6661,192.168.0.132:6661 --name xpanel_58080 -p 58080:80 registry.cn-hangzhou.aliyuncs.com/kunlundb/kunlun-xpanel:1.1.1 bash -c '/bin/bash /kunlun/start.sh'
+	sudo docker run -itd --env METASEEDS=$metaCluster --name xpanel1 -p $port:80 registry.cn-hangzhou.aliyuncs.com/kunlundb/kunlun-xpanel:1.1.1 bash -c '/bin/bash /kunlun/start.sh'
 	
 	#检查nodemgr是否都启动完成并发送安装集群命令
 	for i in `cat /home/kunlun/configure.txt | grep /self/hosts/computing_node | grep /ip | awk '{print $2}'`; do while [[ ! -f "${i}Ready" ]]; do echo $a; sleep 1; done;  done
