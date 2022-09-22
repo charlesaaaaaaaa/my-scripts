@@ -1,0 +1,13 @@
+user_name: "kunlun"
+mysql_port_range: "8000-10000"
+datadir: "/home/kunlun/data"
+logdir: "/home/kunlun/log"
+wal_log_dir: "/home/kunlun/wal_log_dir"
+total_mem: 1024
+total_cpu_cores: 1
+shards: 1
+nodes: 3
+dataHost:
+        - 192.168.0.100
+        - 192.168.0.110
+        - 192.168.0.111

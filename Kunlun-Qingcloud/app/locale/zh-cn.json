@@ -77,5 +77,15 @@
 "Innodb_lock_wait_timeout":"innodb锁超时等待时间",
 "innodb_lock_wait_timeout,1s - 1000s":"innodb锁超时等待时间，以秒为单位",
 "Lock_wait_timeout":"锁等待超时时间",
-"lock_wait_timeout,1s - 1000s":"锁待超时时间，以秒为单位"
+"lock_wait_timeout,1s - 1000s":"锁待超时时间，以秒为单位",
+"XPanel of Kunlun_Cluster": "kunlunBase管理工具XPanel，不用太高的配置",
+"Cpus of each XPanel":"XPanel的cpu核心数",
+"Memory of XPanel":"XPanel内存大小",
+"Number of XPanel":"XPanel个数，只1个",
+"Volume Size of XPanel":"XPanel硬盘大小",
+"xpanel_port ,10000 - 59999":"XPanel端口，10000 - 59999",
+"xpanel_port": "XPanel端口",
+"addcluster": "增加集群",
+"addshards": "增加存储分片",
+"addcomps": "增加计算节点"
 }

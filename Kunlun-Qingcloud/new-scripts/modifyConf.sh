@@ -22,7 +22,7 @@ then
 		echo "$i: $values" >> $serDir
 	done
 
-	cd /home/kunlun/base/instance_binaries/computer/5432/kunlun-server-1.0.1/bin
+	cd /home/kunlun/base/instance_binaries/computer/5432/kunlun-server-$VERSION/bin
 	./pg_ctl -D /home/kunlun/base/server_datadir/5432 reload
 
 elif [[ "$selfRole" == "meta_data_node" ]]
@@ -43,8 +43,8 @@ EOF
 		cat << EOF >>/home/kunlun/configure/install_xc.json
                     "ip":"192.168.0.132",
                     "port":8881,
-                    "user":"abc",
-                    "password":"abc"
+                    "user":"pwd2",
+                    "password":"pwd2"
                 },
                 {
 EOF

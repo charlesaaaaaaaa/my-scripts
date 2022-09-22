@@ -1,0 +1,125 @@
+import requests
+import pymysql
+import json
+import yaml
+import argparse
+from time import sleep
+
+def readFile():
+    global shards, dataHost, nodes, datadir, user_name, fullsync_level, table_list, pgsql_port_range, comps
+    global logdir, wal_log_dir, comp_datadir, total_mem, total_cpu_cores, dbcfg, postad, mysql_port_range
+    global nick_name, max_storage_size, max_connections, mgrPort, mgrHost, ha_mode, innodb_size
+    f = open(files,encoding='utf-8')
+    of = yaml.safe_load(f.read())
+    #table_list = of["table_list"]
+    dataHost = of["dataHost"]
+    #shards = str(of["shards"])
+    user_name = of["user_name"]
+    #dbcfg = str(of["dbcfg"])
+    #nodes = str(of["nodes"])
+    comps = str(of["comps"])
+    #mysql_port_range = of["mysql_port_range"]
+    pgsql_port_range = of["pgsql_port_range"]
+    #datadir = of["datadir"]
+    #logdir = of["logdir"]
+    #wal_log_dir = of["wal_log_dir"]
+    comp_datadir = of ["comp_datadir"]
+    total_mem = str(of["total_mem"])
+    #fullsync_level = str(of["fullsync_level"])
+    total_cpu_cores = str(of["total_cpu_cores"])
+    #innodb_size = str(of["innodb_size"])
+    #nick_name = of["nick_name"]
+    #max_storage_size = str(of["max_storage_size"])
+    #max_connections = str(of["max_connections"])
+    #ha_mode = of["ha_mode"]
+    metaPort = of["MetaPrimaryNode"]["port"]
+    metaHost = of["MetaPrimaryNode"]["host"]
+    db = pymysql.connect(host = metaHost, port = int(metaPort), user = "pgx", password = "pgx_pwd", database = "kunlun_metadata_db")
+    cur = db.cursor()
+    cur.execute("select hostaddr from cluster_mgr_nodes where  member_state = 'source'")
+    MgrHost = cur.fetchone()
+    cur.execute("select port from cluster_mgr_nodes where  member_state = 'source'")
+    MgrPort = cur.fetchone()
+    db.commit()
+    cur.close()
+    db.close()
+    print(MgrPort)
+    print(MgrHost)
+    mgrPort = str(MgrPort)
+    mgrHost = str(MgrHost)
+    mgrPort = mgrPort.replace('(','')
+    mgrPort = mgrPort.replace(",)","")
+    mgrHost = mgrHost.replace("('","")
+    mgrHost = mgrHost.replace("',)","")
+    print(mgrPort)
+    print(mgrHost)
+    postad = "http://%s:%s/HttpService/Emit" % (mgrHost, mgrPort)
+
+
+header = {
+        "cookie": "cookie",
+        "Accept": "*/*",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Accept-Language": "zh-CN,zh;q=0.9",
+        "Connection": "keep-alive",
+        "Content-Type": "application/json",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36"
+}
+
+def createComputing(user_name, hostaddr, port_range, comp_datadir, total_mem, total_cpu_cores):
+    create_storage = json.dumps({
+    "version":"1.0",
+    "job_id":"",
+    "job_type":"create_machine",
+    "timestamp":"1435749309",
+    "user_name": user_name,
+    "paras":{
+        "hostaddr": hostaddr,
+        "machine_type": "computer",
+        "port_range": port_range,
+        "rack_id": "1",
+        "comp_datadir": comp_datadir,
+        "total_mem": total_mem,
+        "total_cpu_cores":total_cpu_cores
+    }
+})
+    #print(create_storage + '\n')
+    #res = requests.post(postad, data=create_storage, headers=header)
+    res = requests.post(postad, data=create_storage)
+    print("create storage machine host = %s, port_range = %s" % (hostaddr, port_range))
+    print(res.status_code, res.reason)
+    print(res.text)
+
+def addShards(user_name, comps, hostaddr):
+    add_shards = json.dumps({
+    "version":"1.0",
+    "job_id":"",
+    "job_type":"add_comps",
+    "timestamp":"1435749309",
+    "user_name":user_name,
+    "paras":{
+        "cluster_id":"1",
+        "comps":comps,
+        "computer_iplists":
+            hostaddr
+	}
+})
+
+    res = requests.post(postad, data=add_shards)
+    print(res.status_code, res.reason)
+    print(res.text)
+
+def add_comps():
+    for i in dataHost:
+        createComputing(user_name, i, pgsql_port_range, comp_datadir, total_mem, total_cpu_cores)
+
+    addShards(user_name, comps, dataHost)
+    
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description = 'install')
+    parser.add_argument('--config', default='addShards.ymal', help = 'the configure yaml file')
+    args = parser.parse_args()
+    files = args.config
+    readFile()
+    add_comps()

@@ -57,7 +57,7 @@ EOF
         "is_primary": true,
         "data_dir_path": "/home/kunlun/base/storage_datadir/6001",
         "user": "pgx",
-        "nodemgr_bin_path": "/home/kunlun/base/kunlun-node-manager-1.0.1/bin",
+        "nodemgr_bin_path": "/home/kunlun/base/kunlun-node-manager-$VERSION/bin",
         "ip": "$i",
         "password": "pgx_pwd",
         "port": 6001
@@ -75,8 +75,8 @@ EOF
 elif [[ "$role" == "cluster" ]]
 then
 	echo i am cluster
-	#cat << EOF >> /home/kunlun/base/kunlun-cluster-manager-1.0.1/conf/cluster_mgr.cnf
-	cat << EOF >> ./base/kunlun-cluster-manager-1.0.1/conf/cluster_mgr.cnf
+	#cat << EOF >> /home/kunlun/base/kunlun-cluster-manager-$VERSION/conf/cluster_mgr.cnf
+	cat << EOF >> ./base/kunlun-cluster-manager-$VERSION/conf/cluster_mgr.cnf
 meta_group_seeds = $groupSeeds
 brpc_raft_port = 56001
 brpc_http_port = 56000
@@ -89,7 +89,7 @@ EOF
 elif [[ "$role" == "node" ]]
 then
 	echo i am node
-	cat << EOF >> ./base/kunlun-node-manager-1.0.1/conf/node_mgr.cnf
+	cat << EOF >> ./base/kunlun-node-manager-$VERSION/conf/node_mgr.cnf
 meta_group_seeds = $groupSeeds
 brpc_http_port = 56002
 nodemgr_tcp_port = 56003
@@ -97,8 +97,8 @@ local_ip = $ip
 program_binaries_path = /home/kunlun/base/program_binaries
 instance_binaries_path = /home/kunlun/base/instance_binaries
 prometheus_path = /home/kunlun/base/program_binaries/prometheus
-storage_prog_package_name = kunlun-storage-1.0.1
-computer_prog_package_name = kunlun-server-1.0.1
+storage_prog_package_name = kunlun-storage-$VERSION
+computer_prog_package_name = kunlun-server-$VERSION
 prometheus_port_start = 56020
 EOF
 fi

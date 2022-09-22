@@ -92,14 +92,14 @@ then
 	/bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
 
 	#安装 -- bootstarp
-	cd /home/kunlun/base/program_binaries/kunlun-storage-1.0.1/dba_tools
+	cd /home/kunlun/base/program_binaries/kunlun-storage-$VERSION/dba_tools
 	python2 install-mysql.py --config=/home/kunlun/conf/mysql_meta.json --target_node_index=0 --cluster_id=meta --shard_id=meta --server_id=1 --ha_mode=mgr
 	a=`echo $?`
 	cd /home/kunlun
 	for i in `cat configure.txt | grep /self/hosts/meta_data_node-replica/ | grep /ip | awk '{print $2}'`; do bash send_ready.sh $i metaReady; done
-	cd /home/kunlun/base/kunlun-cluster-manager-1.0.1/bin
+	cd /home/kunlun/base/kunlun-cluster-manager-$VERSION/bin
 	bash start_cluster_mgr.sh </dev/null >& start.log & 
-	#cd /home/kunlun/base/kunlun-node-manager-1.0.1/bin
+	#cd /home/kunlun/base/kunlun-node-manager-$VERSION/bin
 	#bash start_node_mgr.sh </dev/null >& start.log &
 	
 	cd /home/kunlun
@@ -108,14 +108,14 @@ then
 	for i in `cat configure.txt | grep /self/hosts/meta_data_node-replica/ | grep /ip | awk '{print $2}'`; do while [[ "$a" == "1" ]]; do if [[ ! -f "${i}metaRepReady" && ! -f "repNoready" ]]; then a=1;echo $a; sleep 1; else a=0; fi; done; sleep 5; done
 	sleep 5
 	
-	cd /home/kunlun/base/program_binaries/kunlun-server-1.0.1/scripts/
-	python2 bootstrap.py --config=/home/kunlun/conf/reg_meta.json --bootstrap_sql=/home/kunlun/base/program_binaries/kunlun-server-1.0.1/scripts/meta_inuse.sql --ha_mode=mgr
+	cd /home/kunlun/base/program_binaries/kunlun-server-$VERSION/scripts/
+	python2 bootstrap.py --config=/home/kunlun/conf/reg_meta.json --bootstrap_sql=/home/kunlun/base/program_binaries/kunlun-server-$VERSION/scripts/meta_inuse.sql --ha_mode=mgr
 	a=`echo $?`
 	if [[ $a == "0" ]] ; then for i in `cat /home/kunlun/configure.txt | grep /self/hosts | grep /ip | awk '{print $2}'` ; do cd /home/kunlun; bash ./send_ready.sh $i ready; done; else for i in `cat /home/kunlun/configure.txt | grep /self/hosts | grep /ip | awk '{print $2}'` ; do cd /home/kunlun; bash ./send_ready.sh $i noready; done; sleep 10; exit 1; fi
-	cd /home/kunlun/base/program_binaries/kunlun-storage-1.0.1/dba_tools/
+	cd /home/kunlun/base/program_binaries/kunlun-storage-$VERSION/dba_tools/
 	bash ./imysql.sh 6001 < /home/kunlun/dba_tools_db.sql
-	cd /home/kunlun/base/kunlun-cluster-manager-1.0.1/bin && /bin/bash restart_cluster_mgr.sh </dev/null >& start.log &
-	cd /home/kunlun/base/kunlun-node-manager-1.0.1/bin && /bin/bash start_node_mgr.sh </dev/null >& start.log &
+	cd /home/kunlun/base/kunlun-cluster-manager-$VERSION/bin && /bin/bash restart_cluster_mgr.sh </dev/null >& start.log &
+	cd /home/kunlun/base/kunlun-node-manager-$VERSION/bin && /bin/bash start_node_mgr.sh </dev/null >& start.log &
 	
 	cd /home/kunlun
 	myReady=`echo "${selfIp}Ready"`
@@ -155,16 +155,16 @@ then
 	/bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
         # =======================================================================
         tni=`echo "${serid}-1" | bc -l`
-	#/home/kunlun/base/program_binaries/kunlun-server-1.0.1/scripts/meta_inuse.sql
+	#/home/kunlun/base/program_binaries/kunlun-server-$VERSION/scripts/meta_inuse.sql
 	
 	cd /home/kunlun
 	a=1
         while [[ "$a" == "1" ]]; do if [[ ! -f "metaReady" ]]; then a=1;echo $a; sleep 1; else a=0; fi; sleep 5; done
-	cd /home/kunlun/base/program_binaries/kunlun-storage-1.0.1/dba_tools
+	cd /home/kunlun/base/program_binaries/kunlun-storage-$VERSION/dba_tools
 	python2 install-mysql.py --config=/home/kunlun/conf/mysql_meta.json --target_node_index=$tni --cluster_id=meta --shard_id=meta --server_id=$serid --ha_mode=mgr
-	cd /home/kunlun/base/kunlun-cluster-manager-1.0.1/bin
+	cd /home/kunlun/base/kunlun-cluster-manager-$VERSION/bin
         bash start_cluster_mgr.sh </dev/null >& start.log &
-        #cd /home/kunlun/base/kunlun-node-manager-1.0.1/bin
+        #cd /home/kunlun/base/kunlun-node-manager-$VERSION/bin
         #bash start_node_mgr.sh </dev/null >& start.log &
 	cd /home/kunlun
 	myReady=`echo "${selfIp}metaRepReady"`
@@ -175,8 +175,8 @@ then
 	while [[ "$a" == "1" ]]; do if [[ ! -f "ready" && ! -f 'noready' ]]; then a=1;echo $a; sleep 5; else a=0; fi; sleep 5; done
 		
 	sleep 5
-	cd /home/kunlun/base/kunlun-cluster-manager-1.0.1/bin && /bin/bash restart_cluster_mgr.sh </dev/null >& start.log &
-        cd /home/kunlun/base/kunlun-node-manager-1.0.1/bin && /bin/bash start_node_mgr.sh </dev/null >& start.log &
+	cd /home/kunlun/base/kunlun-cluster-manager-$VERSION/bin && /bin/bash restart_cluster_mgr.sh </dev/null >& start.log &
+        cd /home/kunlun/base/kunlun-node-manager-$VERSION/bin && /bin/bash start_node_mgr.sh </dev/null >& start.log &
 	cd /home/kunlun
 	myReady=`echo "${selfIp}Ready"`
         bash ./send_ready.sh $metaIp $myReady
@@ -186,7 +186,7 @@ then
 	
 	clusterMetaSeeds=`cat conf/metaClusterSeed.txt`
 	/bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
-	#cd /home/kunlun/base/kunlun-node-manager-1.0.1/bin
+	#cd /home/kunlun/base/kunlun-node-manager-$VERSION/bin
         #bash start_node_mgr.sh </dev/null >& start.log &
 	sleep 60
 	cd /home/kunlun
@@ -204,7 +204,7 @@ elif [[ "$selfRole" == "data_node" ]]
 then
 	clusterMetaSeeds=`cat conf/metaClusterSeed.txt`
         /bin/bash change_conf.sh node $selfIp "$clusterMetaSeeds"
-        #cd /home/kunlun/base/kunlun-node-manager-1.0.1/bin
+        #cd /home/kunlun/base/kunlun-node-manager-$VERSION/bin
         #bash start_node_mgr.sh </dev/null >& start.log &
 	sleep 60
 	a=1

@@ -11,10 +11,9 @@
 		"loadbalancer": {{cluster.computing_node.loadbalancer}},
 		"container":{
 			"type":"kvm",
-			"image":"img-exv98rfr",
+			"image":"img-p8yko5xk",
 			"zone":"sh1a"
 		},
-		"advanced_actions": ["scale_horizontal"],
 		"instance_class":{{cluster.computing_node.instance_class}},
 		"count":{{cluster.computing_node.count}},
 		"cpu": {{cluster.computing_node.cpu}},
@@ -27,33 +26,26 @@
 		"user_access": true,
 		"services":{
 			"init":{
-				"cmd":"/bin/bash /home/kunlun/init.sh > /home/kunlun/log.log 2>&1",
-				"order": 3
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-init.sh"
 			},
-			"add_cluster":{
-				"type":"custom",
-                                "cmd":"/bin/bash /home/kunlun/addCluster.sh > /home/kunlun/addCluster.log 2>&1",
-                                "service_params":{
-					"instance_class":{{cluster.computing_node.instance_class}},
-					"count":{{cluster.computing_node.count}},
-					"cpu": {{cluster.computing_node.cpu}},
-					"memory":{{cluster.computing_node.memory}},
-					"volume":{
-						"size":{{cluster.computing_node.volume_size}},
-						"mount_point":"/data",
-						"filesystem":"xfs"
-					}
-				}
-                        },
-			"scale_out":{
-				"cmd":"/bin/bash /home/kunlun/init.sh > /home/kunlun/log.log 2>&1"
-			}
+			"start":{
+				"order":3,
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh start"
+			},
+			"stop":{
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh stop"
+			},
+			"restart":{
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh restart"
+			},
+			"destroy":{
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-computing/scripts/computing-base.sh destory"}
 		}
 	},{
 		"role":"meta_data_node",
 		"container":{
 			"type":"kvm",
-			"image":"img-exv98rfr",
+			"image":"img-p8yko5xk",
 			"zone":"sh1a"
 		},
 		"instance_class":{{cluster.meta_data_node.instance_class}},
@@ -69,27 +61,21 @@
 		"user_access": true,
 		"services":{
 			"init":{
-				"cmd":"/bin/bash /home/kunlun/init.sh > /home/kunlun/log.log 2>&1",
-				"order": 1
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/meta-init.sh"
 			},
-			"addshards":{
-				"type":"custom",
-				"cmd":"/bin/bash /home/kunlun/scaleOutandIn.sh addshards > /home/kunlun/addshards.log 2>&1" 
+			"start":{
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh start >> /home/ubuntu/start.log"
 			},
-			"addcomps":{
-				"type":"custom",
-                                "cmd":"/bin/bash /home/kunlun/scaleOutandIn.sh addcomps > /home/kunlun/addcomps.log 2>&1"
-			},
-			"addcluster":{
-				"type":"custom",
-                                "cmd":"/bin/bash /home/kunlun/scaleOutandIn.sh addcluster > /home/kunlun/addcluster.log 2>&1"
+			"stop":{
+				"order":3,
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh stop >> /home/ubuntu/stop.log"
 			}
 		}
 	},{
 		"role":"data_node",
 		"container":{
                         "type":"kvm",
-                        "image":"img-exv98rfr",
+                        "image":"img-p8yko5xk",
                         "zone":"sh1a"
                 },
                 "instance_class":{{cluster.data_node.instance_class}},
@@ -101,44 +87,23 @@
                         "mount_point":"/data",
                         "filesystem":"xfs"
                 },
-		"advanced_actions": ["scale_horizontal"],
 		"replica":{{cluster.data_node.replica}},
 		"user_access": true,
 		"services":{
 			"init":{
-				"cmd":"/bin/bash /home/kunlun/init.sh > /home/kunlun/log.log 2>&1",
-				"order": 2
+				"cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-init.sh"
 			},
-			"scale_out":{
-				"cmd":"/bin/bash /home/kunlun/init.sh > /home/kunlun/log.log 2>&1"
-			}
-		}
-	},{
-		"role":"xpanel",
-                "container":{
-                        "type":"kvm",
-                        "image":"img-rjtu0itv",
-                        "zone":"sh1a"
-                },
-                "instance_class":{{cluster.xpanel.instance_class}},
-                "count":{{cluster.xpanel.count}},
-                "cpu": {{cluster.xpanel.cpu}},
-                "memory":{{cluster.xpanel.memory}},
-                "volume":{
-                        "size":{{cluster.xpanel.volume_size}},
-                        "mount_point":"/data",
-                        "filesystem":"xfs"
-                },
-                "user_access": true,
-                "services":{
-                        "init":{
-                                "cmd":"/bin/bash /home/kunlun/init.sh > /home/kunlun/log.log 2>&1",
-				"order": 4
+			"start":{
+				"order":1,
+                                "cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh start >> /home/ubuntu/start.log"
+                        },
+                        "stop":{
+				"order":2,
+                                "cmd":"bash /home/ubuntu/kunlun/kunlun-storage/dba_tools/storage-base.sh stop >> /home/ubuntu/stop.log"
                         }
-                }
+		}
 	}],
 "env":{
-	"xpanel_port": {{env.xpanel_port}},
 	"max_connections": {{env.max_connections}},
 	"shared_buffers":{{env.shared_buffers}},
 	"temp_buffers":{{env.temp_buffers}},

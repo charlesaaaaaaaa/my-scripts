@@ -1,0 +1,10 @@
+user_name: "kunlun"
+pgsql_port_range: "5431-8000"
+comp_datadir: "/home/kunlun/compdata"
+total_mem: 1024
+total_cpu_cores: 1
+comps: 3
+dataHost:
+        - 192.168.0.100
+        - 192.168.0.110
+        - 192.168.0.111

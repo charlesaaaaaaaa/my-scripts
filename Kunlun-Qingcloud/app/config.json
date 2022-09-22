@@ -35,7 +35,7 @@
 				"label":"Loadbalabcer Services",
 				"description": "Choose a loadbalancer service to use",
                 		"type": "loadbalancer",
-                		"port": 5401,
+                		"port": 5432,
                 		"default": [],
                 		"required": "no"
 			},{
@@ -68,7 +68,7 @@
 				"description":"Number of Computing Node, ideally, 3 or more",
 				"type":"integer",
 				"default":3,
-				"range":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+				"min":1,
 				"required":"yes"
 			},{
 				"key":"volume_size",
@@ -115,15 +115,15 @@
                         	"type":"integer",
                         	"default":1,
                         	"range":[1],
-                        	"required":"yes"
+                        	"required":"no"
                         },{
 				"key":"replica",
                                 "label":"Replica",
-                                "description":"The Replica of each Meta-Data Master Node, it is best of 2 or more",
+                                "description":"The Replica of each Meta-Data Master Node, only two",
                                 "type":"integer",
                                 "default":2,
-                                "range":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
-                                "required":"yes"
+                                "range":[2],
+                                "required":"no"
 			},{
                         	"key":"volume_size",
                         	"label":"Volume Size",
@@ -167,8 +167,8 @@
                         	"label":"Count",
                         	"description":"Number of Data Master Node, it is best of 2 or more",
                         	"type":"integer",
-                        	"default":3,
-                        	"range":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+                        	"default":2,
+                        	"min":1,
                         	"required":"yes"
 			},{
 				"key":"replica",
@@ -176,7 +176,7 @@
 				"description":"The Replica of each Data Master Node, it is best of 2 or more",
 				"type":"integer",
 				"default":2,
-				"range":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20],
+				"min":1,
 				"required":"yes"
 			},{
                         	"key":"volume_size",
@@ -187,8 +187,53 @@
                         	"min":10,
                         	"required":"yes"
 			}]
-		}]	
-	
+		},{
+			"key":"xpanel",
+                        "label":"XPanel",
+                        "description":"XPanel of Kunlun_Cluster",
+                        "type":"array",
+                        "properties":[{
+                                "key":"instance_class",
+                                "label":"Instance_class",
+                                "description":" ",
+                                "type":"integer",
+                                "default":101,
+                                "range":[101],
+                                "required":"yes"
+                        },{
+                                "key":"cpu",
+                                "label":"Cpu",
+                                "description":"Cpus of each XPanel",
+                                "type":"integer",
+                                "default":2,
+                                "range":[1,2,4,8],
+                                "required":"yes"
+                        },{
+                                "key":"memory",
+                                "label":"Memory",
+                                "description":"Memory of XPanel",
+                                "type":"integer",
+                                "default":2048,
+                                "range":[2048,4096,6144,8192,12288,16384,24576,32768,40960,49152,65536,81920,98304,114688,131072],
+                                "required":"yes"
+                        },{
+                                "key":"count",
+                                "label":"Count",
+                                "description":"Number of XPanel",
+                                "type":"integer",
+                                "default":1,
+				"range": [1],
+                                "required":"no"
+			},{
+                                "key":"volume_size",
+                                "label":"Volume Size",
+                                "description":"Volume Size of XPanel",
+                                "type":"integer",
+                                "default":10,
+                                "min":10,
+                                "required":"yes"
+                        }]
+		}]
 	},{
 
 		"key":"env",
@@ -213,6 +258,15 @@
 	                "min": 1,
 	                "required": "no"
 	        },{
+			"key": "xpanel_port",
+                        "label": "xpanel_port",
+                        "description": "xpanel_port ,10000 - 59999",
+                        "type": "integer",
+                        "default": 17000,
+                        "max": 59999,
+                        "min": 1000,
+                        "required": "no"
+		},{
 	                "key": "temp_buffers",
 	                "label": "Temp_buffers",
 	                "description": "temp_buffers of computing node, 1mb - 128mb",
