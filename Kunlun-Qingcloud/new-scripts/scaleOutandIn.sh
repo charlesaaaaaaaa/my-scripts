@@ -13,7 +13,7 @@ action=$1
 startCluster(){
 	for i in `cat scale.txt | grep /self | grep meta_data | grep /ip | awk '{print $2}'`
 	do
-		bash start_cluster.sh $i
+		bash start_cluster.sh kunlun@$i
 	done
 }
 
