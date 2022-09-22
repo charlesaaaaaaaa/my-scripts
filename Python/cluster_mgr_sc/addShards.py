@@ -93,8 +93,8 @@ def createStorage(user_name, hostaddr, port_range, datadir, logdir, wal_log_dir,
 
 def addShards(user_name, shards, nodes, hostaddr):
     add_shards = json.dumps({
-    "version":"1.0",
-    "job_id":"",
+    "version":"1.0",
+    "job_id":"",
     "job_type":"add_shards",
     "timestamp":"1435749309",
     "user_name":user_name,
@@ -103,9 +103,8 @@ def addShards(user_name, shards, nodes, hostaddr):
         "shards":shards,
         "nodes":nodes,
 
-        "storage_iplists":[
+        "storage_iplists":
             hostaddr
-        ]
     }
 })
 
@@ -115,18 +114,18 @@ def addShards(user_name, shards, nodes, hostaddr):
 
 def scaleOut(user_name, dst_shard_id, src_shard_id, table_list):
     scale_out = json.dumps({
-  "version": "1.0",
-  "job_id":"",
-  "job_type": "expand_cluster",
-  "timestamp" : "1435749309",
-  "user_name":user_name,
-  "paras": {
-    "cluster_id": "1",
-    "dst_shard_id": dst_shard_id,
-    "src_shard_id": src_shard_id,
-    "table_list": 
-      table_list
-  }
+    "version": "1.0",
+    "job_id":"",
+    "job_type": "expand_cluster",
+    "timestamp" : "1435749309",
+    "user_name":user_name,
+    "paras": {
+        "cluster_id": "1",
+        "dst_shard_id": dst_shard_id,
+        "src_shard_id": src_shard_id,
+        "table_list": 
+            table_list
+    }
 })
 
 def add_shards():
