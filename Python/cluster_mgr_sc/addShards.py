@@ -65,7 +65,7 @@ header = {
                       "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36"
 }
 
-def createStorage(user_name, hostaddr, port_range, datadir, logdir, wal_log_dir, comp_datadir, total_mem, total_cpu_cores):
+def createStorage(user_name, hostaddr, port_range, datadir, logdir, wal_log_dir, total_mem, total_cpu_cores):
     create_storage = json.dumps({
     "version":"1.0",
     "job_id":"",
@@ -124,9 +124,8 @@ def scaleOut(user_name, dst_shard_id, src_shard_id, table_list):
     "cluster_id": "1",
     "dst_shard_id": dst_shard_id,
     "src_shard_id": src_shard_id,
-    "table_list": [
+    "table_list": 
       table_list
-    ]
   }
 })
 

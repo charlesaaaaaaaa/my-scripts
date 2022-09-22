@@ -6,23 +6,24 @@ import argparse
 from time import sleep
 
 def readFile():
-    global shards, dataHost, nodes, datadir, user_name, fullsync_level, table_list
+    global shards, dataHost, nodes, datadir, user_name, fullsync_level, table_list, pgsql_port_range, comps
     global logdir, wal_log_dir, comp_datadir, total_mem, total_cpu_cores, dbcfg, postad, mysql_port_range
     global nick_name, max_storage_size, max_connections, mgrPort, mgrHost, ha_mode, innodb_size
     f = open(files,encoding='utf-8')
     of = yaml.safe_load(f.read())
     #table_list = of["table_list"]
     dataHost = of["dataHost"]
-    shards = str(of["shards"])
+    #shards = str(of["shards"])
     user_name = of["user_name"]
     #dbcfg = str(of["dbcfg"])
-    nodes = str(of["nodes"])
+    #nodes = str(of["nodes"])
+    comps = str(of["comps"])
     #mysql_port_range = of["mysql_port_range"]
     pgsql_port_range = of["pgsql_port_range"]
-    datadir = of["datadir"]
-    logdir = of["logdir"]
-    wal_log_dir = of["wal_log_dir"]
-    #comp_datadir = of ["comp_datadir"]
+    #datadir = of["datadir"]
+    #logdir = of["logdir"]
+    #wal_log_dir = of["wal_log_dir"]
+    comp_datadir = of ["comp_datadir"]
     total_mem = str(of["total_mem"])
     #fullsync_level = str(of["fullsync_level"])
     total_cpu_cores = str(of["total_cpu_cores"])
@@ -90,22 +91,19 @@ def createComputing(user_name, hostaddr, port_range, comp_datadir, total_mem, to
     print(res.status_code, res.reason)
     print(res.text)
 
-def addShards(user_name, shards, nodes, hostaddr):
+def addShards(user_name, comps, hostaddr):
     add_shards = json.dumps({
-    "version":"1.0",
-    "job_id":"",
-    "job_type":"add_shards",
-    "timestamp":"1435749309",
-    "user_name":user_name,
-    "paras":{
-        "cluster_id":"1",
-        "shards":shards,
-        "nodes":nodes,
-
-        "storage_iplists":[
-            hostaddr
-        ]
-    }
+    "version":"1.0",
+    "job_id":"",
+    "job_type":"add_comps",
+    "timestamp":"1435749309",
+    "user_name":user_name,
+    "paras":{
+        "cluster_id":"1",
+        "comps":comps,
+        "computer_iplists":
+            hostaddr
+	}
 })
 
     res = requests.post(postad, data=add_shards)
@@ -116,7 +114,7 @@ def add_comps():
     for i in dataHost:
         createComputing(user_name, i, pgsql_port_range, comp_datadir, total_mem, total_cpu_cores)
 
-    addShards(user_name, shards, nodes, dataHost)
+    addShards(user_name, comps, dataHost)
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'install')
