@@ -41,8 +41,8 @@ total_cpu_cores: "$total_cpu_cores"
 shards: $shards
 nodes: $nodes
 MetaPrimaryNode:
-	host: "$metaIp"
-	port: "6001"
+        host: $metaIp
+        port: "6001"
 dataHost:
 EOF
 		for i in `cat difftmp.txt | grep /self/hosts/data_node | grep /ip | awk '{print $2}'`
@@ -114,8 +114,8 @@ EOF
 pgsql_port_range: "5431-8000"
 mysql_port_range: "8000-10000"
 MetaPrimaryNode:
-        host: "$metaIp"
-	port: "6001"
+        host: $metaIp
+        port: "6001"
 ha_mode: "rbr"
 dbcfg: "1"
 user_name: "kunlun"
@@ -138,7 +138,7 @@ EOF
 		for i in `cat /home/kunlun/difftmp.txt | grep /self/hosts/computing | grep /ip | awk '{print $2}'`
 		do
 			cat << EOF >> /home/kunlun/cluster_mgr_sc/addcluster.yaml
-	- $i
+        - $i
 EOF
 		done
 
