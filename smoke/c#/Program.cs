@@ -11,7 +11,7 @@ namespace mysql
         static void Main(string[] args)
         {
 		//server=127.0.0.1;port=3306;user=root;password=root; database=minecraftdb;
-            	string cs = "server=" + args[0] + ";user=abc;password=abc;port=" + args[1] + ";database=postgres";
+            	string cs = "server=" + args[0] + ";user=abc;password=abc;port=" + args[1] + ";database=postgres;SslMode=None";
                 Console.WriteLine("testing mysql: " + cs);
 		
 		MySqlConnection conn = null;
