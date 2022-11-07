@@ -54,12 +54,14 @@ def readJsonFile():
     Medavalues=list(MedaConf.values())
     Datakeys=list(DataConf.keys())
     Datavalues=list(DataConf.values())
-    global CompNum, sCompNum, MedaNum, DataNum
+    global CompNum, sCompNum, MedaNum, DataNum, compNums
     CompNum=len(Compkeys)
     sCompNum = str(CompNum)
     MedaNum=len(Medakeys)
     DataNum=len(Datakeys)
-
+    compNums = 0
+    for i in CompTotal:
+        compNums = compNums + 1
 
     try:
         os.remove('config.sh')
@@ -94,9 +96,11 @@ def WFile(stmt, es):
     of.close()
 
 def myconn(host, port, sql):
+    global tmpVars
     conn = pymysql.connect(host = host, user = "pgx",port = int(port), password = "pgx_pwd", database = "mysql")
     cursor = conn.cursor()
     cursor.execute(sql)
+    tmpVars = cursor.fetchone()
     cursor.close()
     conn.close()
 
@@ -121,11 +125,11 @@ def varHost():
         host.append(srow)
 
 def chInfo(stmt):
-    stmt = '\n========================================================================\nsetting %s...\n========================================================================\n'% (stmt)
+    stmt = '\n========================================================================\n%s...\n========================================================================\n'% (stmt)
     print(stmt)
 
 def configComp():
-    
+    chInfo('setting Computing_nodes')
     # setting computing node ========================================================================
     CIPN = 0
     for i in CompIp:
@@ -153,9 +157,11 @@ def configComp():
         WFile(stmt, 'n')
         CIPN+=1
 
+    subprocess.run("bash ./config.sh",shell=True)
+
 def configData():
     #setting Metadata nodes ========================================================================
-    chInfo('Metadatas')
+    chInfo('setting Metadatas')
     n = 0
     for i in Medakeys:
         hostSql = 'select hostaddr from pg_cluster_meta_nodes'
@@ -177,7 +183,7 @@ def configData():
 
         n = n + 1
     
-    chInfo('Datanodes')
+    chInfo('setting Datanodes')
     #setting Datanodes ========================================================================
     n = 0
     for i in Datakeys:
@@ -199,7 +205,71 @@ def configData():
 
         n = n + 1
 
+def Verdata():
+    chInfo('check data_nodes')
+    n = 0
+    for i in Datakeys:
+        hostSql = 'select hostaddr from pg_shard_node'
+        portSql = 'select port from pg_shard_node'
+        pgconn(CompIp[0], CompPort[0], CompUser[0], CompPwd[0], portSql)
+        varPort()
+        pgconn(CompIp[0], CompPort[0], CompUser[0], CompPwd[0], hostSql)
+        varHost()
+        num = 0
+        sql = "show variables like '%s';" % (i)
+        print('========\n' + sql + '\n========')
+        
+        for hosts in host:
+            showKeys = "show variables like '%s' " % (i)
+            wf = 'mysql -h %s -P %s -upgx -ppgx_pwd "%s"' % (hosts, port[num], showKeys)
+            myconn(hosts, port[num], showKeys)
+            print('mysql -h %s -P %s : %s' % (hosts, port[num], tmpVars[1]))
+            srcConfigure = str(Datavalues[n])
+            dstVariables = str(tmpVars[1])
+            if srcConfigure != dstVariables:
+                print(srcConfigure != dstVariables)
+            num = num + 1
+
+        n = n + 1
+
+    chInfo('check meta_nodes')
+    n = 0
+    for i in Medakeys:
+        hostSql = 'select hostaddr from pg_shard_node'
+        portSql = 'select port from pg_shard_node'
+        pgconn(CompIp[0], CompPort[0], CompUser[0], CompPwd[0], portSql)
+        varPort()
+        pgconn(CompIp[0], CompPort[0], CompUser[0], CompPwd[0], hostSql)
+        varHost()
+        num = 0
+        print("========\nshow variables like '%s';\n========" % (i))
+        for hosts in host:
+            showKeys = "show variables like '%s' " % (i)
+            wf = 'mysql -h %s -P %s -upgx -ppgx_pwd "%s"' % (hosts, port[num], showKeys)
+            myconn(hosts, port[num], showKeys)
+            print('mysql -h %s -P %s : %s' % (hosts, port[num], tmpVars[1]))
+            srcConfigure = str(Medavalues[n])
+            dstVariables = str(tmpVars[1])
+            if srcConfigure != dstVariables:
+                print(srcConfigure != dstVariables)
+            num = num + 1
+
+        n = n + 1
+
     #subprocess.run("bash ./config.sh",shell=True)
+
+def Vercomp():
+    chInfo('check comp_nodes')
+    for i in range(0, compNums):
+        print('========\npsql -h %s -p %s -d postgres\n========' % (CompIp[i], CompPort[i]))
+
+        for var in Compkeys:
+            sql = 'show %s;' % (var)
+            pgconn(CompIp[i], CompPort[i], CompUser[i], CompPwd[i], sql)
+            tmpVar = str(lists)
+            tmpVar = tmpVar.replace("[('", '')
+            tmpVar = tmpVar.replace("',)]", '')
+            print('%s = %s' % (var, tmpVar))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Configure')
@@ -220,11 +290,15 @@ if __name__ == '__main__':
     if component == 'all':
         configComp()
         configData()
+        Verdata()
+        Vercomp()
     elif component == 'server':
         configComp()
+        Vercomp()
     elif component == 'storage':
         configData()
+        Verdata()
 
-    subprocess.run("bash ./config.sh",shell=True)
+    #subprocess.run("bash ./config.sh",shell=True)
 
 
