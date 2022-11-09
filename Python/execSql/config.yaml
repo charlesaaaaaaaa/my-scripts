@@ -1,0 +1,25 @@
+pgSqls:
+        #这里在是放pg的sql语句
+        - "show mysql_port"
+
+mySqls:
+        #这里放mysql的sql语句
+        - "show variables like 'enable_fullsync'"
+
+computing_nodes:
+        #这里是放计算节点的信息
+        comp1:
+                ip: "192.168.0.132"
+                port: 30001
+                user: "abc"
+                pwd: "abc"
+        comp2:
+                ip: "192.168.0.134"
+                port: 30001
+                user: "abc"
+                pwd: "abc"
+        comp3:
+                ip: "192.168.0.140"
+                port: 30001
+                user: "abc"
+                pwd: "abc"
