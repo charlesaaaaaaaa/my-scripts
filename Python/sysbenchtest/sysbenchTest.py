@@ -84,7 +84,12 @@ def runTest():
             for i in comp:
                 #这个是首次跑时的sysbench数据
                 stmt = "date > ./%s/%s/%d_%s " % (i, loadworkers, thd, loadworkers)
-                stmt = "sysbench oltp_%s --tables=%d --table-size=%d --db-ps-mode=disable --db-driver=%s --pgsql-host=%s --report-interval=%d --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s --threads=%d --time=%s --rand-type=uniform run >> ./%s/%s/%d_%s & \n" % (loadworkers, table, tableSize, driver, host[num], reportInterval, port[num], user[num], pwd[num], dbname[num], thd, runtime, i, loadworkers, thd, loadworkers)
+                if driver == 'pgsql':
+                    stmt = "sysbench oltp_%s --tables=%d --table-size=%d --db-ps-mode=disable --db-driver=%s --pgsql-host=%s --report-interval=%d --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s --threads=%d --time=%s --rand-type=uniform run >> ./%s/%s/%d_%s & \n" % (loadworkers, table, tableSize, driver, host[num], reportInterval, port[num], user[num], pwd[num], dbname[num], thd, runtime, i, loadworkers, thd, loadworkers)
+                elif driver == 'mysql':
+                    stmt = "sysbench oltp_%s --tables=%d --table-size=%d --db-ps-mode=disable --db-driver=%s --mysql-host=%s --report-interval=%d --mysql-port=%s --mysql-user=%s --mysql-password=%s --mysql-db=%s --threads=%d --time=%s --rand-type=uniform run >> ./%s/%s/%d_%s & \n" % (loadworkers, table, tableSize, driver, host[num], reportInterval, port[num], user[num], pwd[num], dbname[num], thd, runtime, i, loadworkers, thd, loadworkers)
+                else:
+                    print('driver error, driver can be "pgsql" or "mysql"')
                 print(stmt)
                 run(stmt)
                 num = num + 1
@@ -147,16 +152,20 @@ def checkRerun():
         subprocess.run(stmt, shell = True)
     #检查是否存在测试失败的项
     for i in threads:
+        #FileSize = os.path.getsize('%scheck.yaml' % (i))
         if not os.path.exists('%scheck.yaml' % (i)):
-            stmt = "%scheck.yaml does not exists, skip!" % (i)
+            stmt = "%scheck.yaml is not exist, skip!" % (i)
             print(stmt)
         else:
+            #FileSize = os.path.getsize('%scheck.yaml' % (i))
+            #if FileSize = 0:                
             stmt = "cp %scheck.yaml %scheck.yamlbak && cat %scheck.yamlbak | sort | uniq > %scheck.yaml && rm %scheck.yamlbak" % (i, i, i, i, i) 
             run(stmt)
             with open('%scheck.yaml' % (i),"r",encoding="utf-8") as f:
                 check = yaml.load(f, Loader=yaml.FullLoader)
             num = 0
             host, ports = [], []
+            print(check.items())
             for item in check.items():
                 sums = 0
                 for ip in comp:
@@ -172,7 +181,10 @@ def checkRerun():
                     thd  = str(item[1])
                     print('rerun %s:%s' % (loadworker, thd))
                 #这个是在检查发现有不成功重新跑的sysbench，会所有节点同时重跑失败的测试
-                    stmt = "date > ./%s/%s/%s_%s && sysbench oltp_%s --tables=%s --table-size=%s --db-ps-mode=disable --db-driver=%s --pgsql-host=%s --report-interval=%s --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s --threads=%s --time=%s --rand-type=uniform run >> ./%s/%s/%s_%s 2>&1 & \n" % (ip, loadworker, thd, loadworker, loadworker, table, tableSize, driver, hosts, reportInterval, str(port), user, pwd, dbname, thd, runtime, ip, loadworker, thd, loadworker)
+                    if driver == 'pgsql':
+                        stmt = "date > ./%s/%s/%s_%s && sysbench oltp_%s --tables=%s --table-size=%s --db-ps-mode=disable --db-driver=%s --pgsql-host=%s --report-interval=%s --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s --threads=%s --time=%s --rand-type=uniform run >> ./%s/%s/%s_%s 2>&1 & \n" % (ip, loadworker, thd, loadworker, loadworker, table, tableSize, driver, hosts, reportInterval, str(port), user, pwd, dbname, thd, runtime, ip, loadworker, thd, loadworker)
+                    elif driver == 'mysql':
+                        stmt = "date > ./%s/%s/%s_%s && sysbench oltp_%s --tables=%s --table-size=%s --db-ps-mode=disable --db-driver=%s --mysql-host=%s --report-interval=%s --mysql-port=%s --mysql-user=%s --mysql-password=%s --mysql-db=%s --threads=%s --time=%s --rand-type=uniform run >> ./%s/%s/%s_%s 2>&1 & \n" % (ip, loadworker, thd, loadworker, loadworker, table, tableSize, driver, hosts, reportInterval, str(port), user, pwd, dbname, thd, runtime, ip, loadworker, thd, loadworker)
                     print(stmt)
                     run(stmt)
                     sums = sums + 1
@@ -208,9 +220,9 @@ def checkRerun():
                         break
                 num = num + 1
             if times < runtime:
-                print('%s: %s use %ss, less than %s, fail' % (loadworkers, thd, times, runtime))
+                print('%s: %s use %ss, less than %s, fail' % (loadworker, thd, times, runtime))
             elif times >= runtime:
-                print('%s: %s use %ss, more than %s, success' % (loadworkers, thd, times, runtime))
+                print('%s: %s use %ss, more than %s, success' % (loadworker, thd, times, runtime))
             stmt = "rm -rf pid.log && ps -ef | grep -w sysbench | awk '{print $2}' | xargs kill -9"
             print(stmt)
             run(stmt)
