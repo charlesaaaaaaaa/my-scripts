@@ -9,8 +9,8 @@
 * 脚本主体是congfigure.py,可以通过`python3 configure.py --help` 来查看需要传递什么参数
   * --defuser 集群的使用者,default `kunlun`，前提是这个用户要在`所有计算节点做好了免密互信`,就是不用密码可以直接登录对应的服务器
   * --version 计算节点的版本,默认 `1.1.1`，如果是其它的就要指定
-  * --install 集群的json配置文件, default `install_xc.json`
-  * --config  集群配置的文件，defualt `configure.json`
+  * --install 集群**计算节点信息**的json配置文件, default `install_xc.json`
+  * --config  集群**配置参数**的文件，defualt `configure.json`
   * --component 三个参数, default `all`:
     * `all` 代表修改计算节点、元数据节点和存储节点
     * `server` 只修改计算节点
