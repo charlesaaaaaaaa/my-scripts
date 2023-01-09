@@ -235,8 +235,8 @@ def Verdata():
     chInfo('check meta_nodes')
     n = 0
     for i in Medakeys:
-        hostSql = 'select hostaddr from pg_shard_node'
-        portSql = 'select port from pg_shard_node'
+        hostSql = 'select hostaddr from pg_cluster_meta_nodes'
+        portSql = 'select port from pg_cluster_meta_nodes'
         pgconn(CompIp[0], CompPort[0], CompUser[0], CompPwd[0], portSql)
         varPort()
         pgconn(CompIp[0], CompPort[0], CompUser[0], CompPwd[0], hostSql)
