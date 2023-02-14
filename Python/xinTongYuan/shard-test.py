@@ -125,7 +125,6 @@ def test():
     shardTotalDataRow = 0
     shardTip = ""
     num = 0
-    sleep(5)
     for i in shardid:
         tmpHost = t2str(host_list[num])
         tmpPort = int(t2str(port_list[num]))
