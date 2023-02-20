@@ -67,12 +67,12 @@ def test():
     connect_pg(Host, Port, User, Pwd, 'postgres' , 'y')
     cur.execute("select distinct(shard_id) from pg_shard_node order by shard_id");
     shardid = close_pg('all')
-    shardid = t2str(shardid)
+    shardid = len(shardid)
     num = 0
     host_list, port_list, sid_list = [], [], []
     
     print("\n1）	新建一张分片表，并插入一定量数据，设法展示或证明数据都分布到各个分片上")
-    for i in str(shardid): #现在就是在查找对应的shard主节点，把对应的信息放到数组里面好后面拿取
+    for i in range(shardid): #现在就是在查找对应的shard主节点，把对应的信息放到数组里面好后面拿取
         connect_pg(Host, Port, User, Pwd, 'postgres', 'y')
         Hos = 'select hostaddr from pg_shard_node where shard_id = (select distinct(shard_id) from pg_shard_node order by shard_id limit '+ str(num) + ',1) limit 1'
         Por = 'select port from pg_shard_node where shard_id = (select distinct(shard_id) from pg_shard_node order by shard_id limit %s,1) limit 1' % (str(num))
@@ -85,30 +85,34 @@ def test():
         connect_pg(Host, Port, User, Pwd, 'postgres', 'y')
         cur.execute(Sid)
         Si = close_pg('one')
-        host_list.append(Ho)
-        port_list.append(Po)
-        sid_list.append(Si)
+        if Si == None:
+            print('shard_id == None')
+        else :
+            host_list.append(Ho)
+            port_list.append(Po)
+            sid_list.append(Si)
         print("shard_%s node info: %s, %s" % (sid_list[num], host_list[num], port_list[num]))
         num = num + 1
+    print(sid_list)
 
     connect_pg(Host, Port, User, Pwd, 'postgres', 'y')
     cur.execute("drop database if exists shard")
     cur.execute("create database shard")
     close_pg('pass')
     connect_pg(Host, Port, User, Pwd, 'postgres', 'y')
-    cur.execute('select count(shard_id) from pg_shard_node')
+    cur.execute('select count(distinct(shard_id)) from pg_shard_node')
     shardNum = close_pg('one')
     shardNum = t2str(shardNum)
     shardNum = shardNum.replace('L','')
 
     connect_pg(Host, Port, User, Pwd, 'shard', 'y')
-    sql1 = "create table item(id int, name text) partition by Hash(id)"
+    sql1 = "create table item(id int, name text) partition by Hash(id)" #创建分区表，以id为分片字段
     print("use shard; \n",sql1)
     cur.execute(sql1)
     for i in range(0, int(shardNum)):
         shard = t2str(sid_list[i])
         shard = int(shard)
-        part = "CREATE TABLE item_%s PARTITION OF item FOR VALUES WITH (MODULUS %s, REMAINDER %s) with (shard = %s);" % (str(i), shardNum, str(i), shard)
+        part = "CREATE TABLE item_%s PARTITION OF item FOR VALUES WITH (MODULUS %s, REMAINDER %s) with (shard = %s);" % (str(i), shardNum, str(i), shard) ##创建分区表
         cur.execute(part)
         print(part)
     close_pg('pass')
@@ -116,7 +120,6 @@ def test():
     print('load 1000 row data ...')
     connect_pg(Host, Port, User, Pwd, 'shard', 'y')
     for i in range(1,1001):
-        ranNum = random.randint(15,20)
         ranStr = random.choice(['liangzai','is','llc','charles','trn','jgh','fhrq','fhxe','gewb'])
         cur.execute("insert into item values(%s, '%s')" % (str(i), ranStr))
     close_pg('pass')
@@ -125,7 +128,7 @@ def test():
     shardTotalDataRow = 0
     shardTip = ""
     num = 0
-    for i in shardid:
+    for i in range(shardid):
         tmpHost = t2str(host_list[num])
         tmpPort = int(t2str(port_list[num]))
         shardDataRow = connect_my(tmpHost, tmpPort, 'select count(*) from item_%s' % (str(num)))
@@ -148,7 +151,7 @@ def test():
 
     print("\n2）	采用where条件对分片字段过滤，查询单条数据；")
     num = 0
-    for i in shardid:
+    for i in range(shardid):
         ranStr = random.choice(['liangzai','is','llc','charles','trn','jgh','fhrq','fhxe','gewb'])
         tmpHost = t2str(host_list[num])
         tmpPort = int(t2str(port_list[num]))
@@ -160,7 +163,7 @@ def test():
 
     print("\n3）	对分片字段范围查询，且排序；")
     num = 0
-    for i in shardid:
+    for i in range(shardid):
         ranStr = random.choice(['liangzai','is','llc','charles','trn','jgh','fhrq','fhxe','gewb'])
         tmpHost = t2str(host_list[num])
         tmpPort = int(t2str(port_list[num]))
@@ -172,7 +175,7 @@ def test():
 
     print("\n4）	对分片字段进行分组查询，并统计各个分组相同值的个数；")
     num = 0
-    for i in shardid:
+    for i in range(shardid):
         ranStr = random.choice(['liangzai','is','llc','charles','trn','jgh','fhrq','fhxe','gewb'])
         tmpHost = t2str(host_list[num])
         tmpPort = int(t2str(port_list[num]))
