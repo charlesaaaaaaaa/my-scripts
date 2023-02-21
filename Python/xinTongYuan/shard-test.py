@@ -37,13 +37,6 @@ def t2str(value):
     values = values.replace(')', '')
     values = values.replace(' ', '')
     values = values.replace('\'', '')
-    for i in values:
-        try:
-            int(i)
-        except:
-            pass
-        finally:
-            pass
     return values
 
 def write_yaml(key, values, names):
@@ -104,24 +97,26 @@ def test():
     shardNum = close_pg('one')
     shardNum = t2str(shardNum)
     shardNum = shardNum.replace('L','')
-
     connect_pg(Host, Port, User, Pwd, 'shard', 'y')
-    sql1 = "create table item(id int, name text) partition by Hash(id)" #创建分区表，以id为分片字段
+    sql1 = "create table item(id int, name text, grp int) partition by range(grp)" #创建分区表，以id为分片字段
     print("use shard; \n",sql1)
     cur.execute(sql1)
     for i in range(0, int(shardNum)):
         shard = t2str(sid_list[i])
         shard = int(shard)
-        part = "CREATE TABLE item_%s PARTITION OF item FOR VALUES WITH (MODULUS %s, REMAINDER %s) with (shard = %s);" % (str(i), shardNum, str(i), shard) ##创建分区表
+        timNum = 5 * i
+        part = "CREATE TABLE item_%s PARTITION OF item FOR VALUES FROM (%d) TO (%d) with (shard = %s);" % (str(i), 1+timNum, 6+timNum, shard) ##创建分区表
         cur.execute(part)
         print(part)
     close_pg('pass')
 
     print('load 1000 row data ...')
     connect_pg(Host, Port, User, Pwd, 'shard', 'y')
-    for i in range(1,1001):
-        ranStr = random.choice(['liangzai','is','llc','charles','trn','jgh','fhrq','fhxe','gewb'])
-        cur.execute("insert into item values(%s, '%s')" % (str(i), ranStr))
+    for grp in range(1,11):
+        for Id in range(1, 101):
+            Ids = Id + (grp -1) * 100
+            ranStr = random.choice(['liangzai','is','llc','charles','trn','jgh','fhrq','fhxe','gewb'])
+            cur.execute("insert into item values(%d, '%s', %d)" % (Ids, ranStr, grp))
     close_pg('pass')
 
     print("\n检查数据是否正确分布,数据是否无误")
@@ -151,39 +146,31 @@ def test():
 
     print("\n2）	采用where条件对分片字段过滤，查询单条数据；")
     num = 0
-    for i in range(shardid):
-        ranStr = random.choice(['liangzai','is','llc','charles','trn','jgh','fhrq','fhxe','gewb'])
-        tmpHost = t2str(host_list[num])
-        tmpPort = int(t2str(port_list[num]))
-        sql = "select * from item_%s where name = '%s' limit 1" % (str(num), str(ranStr))
-        print("%s: %s : %s "% (tmpHost, tmpPort, sql))
-        shardDataRow = connect_my(tmpHost, tmpPort, sql)
-        print("result: %s"% (shardDataRow))
-        num = num + 1
+    ranInt = random.randint(1, 10)
+    ran100 = random.randint(1, 100)
+    sql = "select * from item where grp = %d limit %d,1" % (ranInt, ran100)
+    print('%s:%s : %s:' % (Host, Port, sql))
+    connect_pg(Host, Port, User, Pwd, 'shard', 'y')
+    cur.execute(sql)
+    shardDataRow = close_pg('one')
+    print("result: %s"% (str(shardDataRow)))
 
     print("\n3）	对分片字段范围查询，且排序；")
-    num = 0
-    for i in range(shardid):
-        ranStr = random.choice(['liangzai','is','llc','charles','trn','jgh','fhrq','fhxe','gewb'])
-        tmpHost = t2str(host_list[num])
-        tmpPort = int(t2str(port_list[num]))
-        sql = "select * from item_%s where name = '%s' order by id" % (str(num), str(ranStr))
-        print("%s: %s : %s "% (tmpHost, tmpPort, sql))
-        shardDataRow = connect_my(tmpHost, tmpPort, sql)
-        print(shardDataRow)
-        num = num + 1
+    ranInt = random.randint(1, 10)
+    sql = "select * from item where grp = %d order by id" % (ranInt)
+    print("%s: %s : %s "% (tmpHost, tmpPort, sql))
+    connect_pg(Host, Port, User, Pwd, 'shard', 'y')
+    cur.execute(sql)
+    shardDataRow = close_pg('all')
+    print(str(shardDataRow))
 
     print("\n4）	对分片字段进行分组查询，并统计各个分组相同值的个数；")
-    num = 0
-    for i in range(shardid):
-        ranStr = random.choice(['liangzai','is','llc','charles','trn','jgh','fhrq','fhxe','gewb'])
-        tmpHost = t2str(host_list[num])
-        tmpPort = int(t2str(port_list[num]))
-        sql = "select name, count(name) from item_%s group by name order by name" % (str(num))
-        print("%s: %s : %s "% (tmpHost, tmpPort, sql))
-        shardDataRow = connect_my(tmpHost, tmpPort, sql)
-        print(shardDataRow)
-        num = num + 1
+    sql = "select grp, count(grp) from item group by grp"
+    print("%s: %s : %s "% (tmpHost, tmpPort, sql))
+    connect_pg(Host, Port, User, Pwd, 'shard', 'y')
+    cur.execute(sql)
+    shardDataRow = close_pg('all')
+    print(str(shardDataRow))
 
 if __name__ == '__main__':
     ps = argparse.ArgumentParser(description='Kunlun sharding test')

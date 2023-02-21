@@ -1,0 +1,73 @@
+{
+   "machines": [
+      {
+         "ip": "192.168.0.132",
+         "basedir": "/nvme2/compare/base",
+         "user": "kunlun"
+      },
+      {
+         "ip": "192.168.0.134",
+         "basedir": "/nvme2/compare/base",
+         "user": "kunlun"
+      },
+      {
+         "ip": "192.168.0.140",
+         "basedir": "/nvme2/compare/base",
+         "user": "kunlun"
+      }
+   ],
+   "meta": {
+      "ha_mode": "rbr",
+      "nodes": [
+         {
+            "ip": "192.168.0.134",
+	    "port": 18882
+         },
+	 {
+            "ip": "192.168.0.132",
+            "port": 18882
+	 },
+         {
+            "ip": "192.168.0.140",
+            "port": 18882
+         }
+      ]
+   },
+   "cluster_manager": {
+      "nodes": [
+         {
+            "ip": "192.168.0.132",
+	    "port": 18811
+         },
+         {
+            "ip": "192.168.0.134",
+            "port": 18811
+         },
+	 {
+            "ip": "192.168.0.140",
+            "port": 18811
+         }
+      ]
+   },
+   "node_manager": {
+      "nodes": [
+         {
+            "ip": "192.168.0.132",
+            "port": 18821
+         },
+         {
+            "ip": "192.168.0.134",
+            "port": 18821
+         },
+	 {
+            "ip": "192.168.0.140",
+            "port": 18821
+         }
+      ]
+   },
+   "xpanel": {
+      "ip": "192.168.0.132",
+      "image": "registry.cn-hangzhou.aliyuncs.com/kunlundb/kunlun-xpanel:1.1.1",
+      "port": 18851
+   }
+}
