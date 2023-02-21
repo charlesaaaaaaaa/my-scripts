@@ -76,7 +76,8 @@ def test():
     result = close_pg("all")
     print(result)
     seconds = str(result[1:8])
-    shardNum = seconds[12:13]
+    shardNum = seconds.split(':')[1].split('\\')[0]
+    shardNum = t2str(shardNum)
     print("================\n该条sql影响到 shard_%s\n================\n" % (shardNum))
 
     print("3）	执行这条跨库语句。")
