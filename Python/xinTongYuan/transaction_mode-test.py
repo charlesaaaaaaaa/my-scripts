@@ -4,6 +4,22 @@ import random
 import argparse
 from multiprocessing import Process, Value, Manager
 import time
+import os
+
+try:
+    os.remove('./total_result.txt')
+except:
+    pass
+
+def wFile(tran_mode, res):
+    num = 1
+    with open("total_result.txt", "a") as F:
+        F.write('========\n%s\n========\n'% (tran_mode))
+        F.write('|| times || [(单次事务首次查询R1), (单次事务二次查询R1), (单次事务首次查询R1与R2之和), (单次事务二查询R1与R2之和) ||\n')
+        for i in res:
+            F.write('|| %d || %s ||\n' % (num, str(i)))
+            num = num+1
+        F.write('\n')
 
 def connect_pg1(host, port, user, pwd):
     global conn1, cur1
@@ -117,8 +133,8 @@ def simple_test(tran_mode):
 
 def T1Exec(tran_mode):
     connect_pg1(Host, Port, User, Pwd)
-    print('T1线程在疯狂insert中...')
     print('3.2)	T1线程，产生一个新的整型的范围在1到100的随机数，在分布式数据库开启事务，扣减R1的C1字段该随机值数值，增加R2的C1字段该随机值数值，提交事务；然后T1线程循环执行此过程；')
+    print('<< T1线程对数据 R1=%d && R2=%d 疯狂update中... >>' % (R1Id, R2Id))
     while True:
         RD1 = random.randint(1, 100)#生成1到100的随机数
         setSql = "set transaction isolation level %s" % (tran_mode)
@@ -142,6 +158,7 @@ def T2Exec(tran_mode):
     connT2 = psycopg2.connect(host=Host, port=Port, user=User, password=Pwd, database='postgres')
     autocommit = False
     curT2 = connT2.cursor()
+    print('3.3) T2线程，休眠0.1秒，开启事务，查询R1与R2行的C1字段及其和并记录结果，休眠0.1秒，查询R1与R2行的C1字段及其和并记录结果，提交事务；>然后T2线程循环执行此过程1000次;')
     while T2Times != 1000:
         sleep(0.1)
         curT2.execute('begin')
@@ -180,18 +197,18 @@ def full_test(trans_mode):
     while R1Id == R2Id : #当两个随机数相同时R2Id再随机一次，直到两个随机数不相等
         R2Id = random.randint(1, 1000)
     #把id列与随机数相同的数据的c1列值改成0
-    print('生产随机id：R1 = %d; R2 = %d' % (R1Id, R2Id))
+    print('<< 生产随机id：R1 = %d; R2 = %d >>' % (R1Id, R2Id))
     updateR1C1 = 'update item set C1 = 0 where id = %d' % (R1Id)
     updateR2C1 = 'update item set C1 = 0 where id = %d' % (R2Id)
-    selectR1C1 = 'select C1 from item where id = %d'% (R1Id)
+    selectR1C1 = 'select C1 from item where id = %d'% (R1Id)#这一行是为了获取当c1值为0时，psycopg2返回的值，就是该行后三行的chTmpValue这个变量
     print('正在初始化对应数据\n%s\n%s' % (updateR1C1, updateR2C1))
     connect_pg2(Host, Port, User, Pwd, updateR1C1)
     chTmpValue = connect_pg2(Host, Port, User, Pwd, selectR1C1)
     connect_pg2(Host, Port, User, Pwd, updateR2C1)
-    print(trans_mode)
     T1 = Process(target=T1Exec, args=(('%s' %trans_mode),))
     T2 = Process(target=T2Exec, args=(('%s' %trans_mode),))
     T1.start()
+    sleep(0.2)
     T2.start()
     sleep(10)
     while True: 
@@ -204,15 +221,21 @@ def full_test(trans_mode):
             continue
     listNum = 1
     wrgNum = 0
-    print('\n检查所有R1、R2之和是否为0')
+    print('\n--------\n检查%s汇总结果\n--------' % (trans_mode))
+    print('检查所有R1、R2之和是否为0')
     for sumNum in totalResultList:
         if sumNum[2] != chTmpValue[0] or sumNum[3] != chTmpValue[0]:
             wrgNum = wrgNum+1
-            print('第%d次事务查询，其R1、R2值之和不为0："%s" : %s'% (listNum, sumNum[2], sumNum[3]))
+            print('第%d次事务查询，其R1、R2值："%s" : %s'% (listNum, sumNum[2], sumNum[3]))
         listNum = listNum + 1
-    print('本次检查中，有%d组R1与R2之和不为0的结果' % (wrgNum))
-    print('\n检查R1值与R2值是否符合预期结果')
+    if wrgNum != 0:
+        print('<< 本次检查中，有%d组R1与R2之和不为0的结果，与预期不符合 >>' % (wrgNum))
+    else :
+        print('<< 本次检查中，所有R1及R2之和都为0，与预期符合 >>')
+
+    print('<< 检查R1值与R2值是否符合预期结果 >>')
     listNum = 0
+    errNum = 0
     if trans_mode == 'repeatable read' or trans_mode == 'serializable':
         print('2.3)	在repeatable read与serializable的情况下，T2线程在事务中的读取，一次都不出现字段和不为0的现象，并且一次都不出现一个事务中两次查询R1的C1字段值发生变化的现象，可能并且应该出现，两个事务之间查询到的R1的C1字段值发生变化，若满足则repeatable read隔离级别大概率正确。')
         while listNum > 1000:
@@ -221,6 +244,7 @@ def full_test(trans_mode):
                 R2Fro = totalResultList[listNum][1]
                 if R1Fro != R2Fro:
                     print('第1次事务查询中，R1值%s和R2值%s不同，fail！'% (R1Fro, R2Fro))
+                    errNum = errNum + 1
                 listNum = listNum + 1
                 
             else:
@@ -228,16 +252,25 @@ def full_test(trans_mode):
                 R2Bak = totalResultList[listNum][1]
                 if R1Fro != R2Fro:
                     print('第%s次事务查询中，R1值%s和R2值%s不同，fail！' % (listNum, R1Fro, R2Fro))
+                    errNum = errNum + 1
                 elif R1Bak != R2Bak:
                     print('第%s次事务查询中，R1值%s和R2值%s不同，fail！' % (listNum+1, R1Fro, R2Fro))
+                    errNum = errNum + 1
                 if R1Bak == R1Fro:
                     print("第%d次查询R1行C1值和第%d次R1行C1值相同，失败" %(listNum, listNum+1))
+                    errNum = errNum + 1
                 elif R2Bak == R2Fro:
                     print("第%d次查询R2行C1值和第%d次R2行C1值相同，失败" %(listNum, listNum+1))
+                    errNum = errNum + 1
                 R1Fro = R1Bak
                 R2Fro = R2Bak
                 listNum = listNum+1
-                print('\r检查汇总结果进度 - %d:1000' % (listNum+1), end='')
+        if errNum == 0:
+            print('<< 当前充分测试所有R1及R2的C1值的汇总结果与预期相符 >>')
+        else :
+            print('<< 当前充分测试失败，请检查 >>')
+        wFile(trans_mode, totalResultList)
+
     else:
         print('2.2)	在read commited的情况下，T2线程在事务中的读取，一次都不出现字段和不为0的现象，可能并且应该出现一个事务中两次查询R1的C1字段值发生变化，若满足则read commited隔离级别大概率正确。')
         while listNum > 1000:
@@ -245,9 +278,13 @@ def full_test(trans_mode):
             R2C1v = totalResultList[listNum][1]
             if R1Fro == R1Bak:
                 print('第%d次查询中，R1行C1列值%s与R2行C1列值%s相同, fail' % (listNum+1, R1C1v, R2C1v))
+                errNum = errNum + 1
             listNum = listNum+1
-            print('\r检查汇总结果进度 - %d:1000'% (listNum+1), end='')
-
+        if errNum == 0:
+            print('<< 当前充分测试所有R1及R2的C1值的所有汇总结果与预期相符 >>')
+        else :
+            print('<< 当前充分测试失败，请检查 >>')
+        wFile(trans_mode, totalResultList)
 
 def Drop_Table():
     dropSql = 'drop table if exists item'
@@ -279,7 +316,7 @@ if __name__ == '__main__':
         totalResultList = Manager().list()
         end_target = full_test(full_transaction_mode)
         endTime = time.time()
-        print('本次充分测试%s使用了 %.2f 秒' % (full_transaction_mode, endTime - startTime))
+        print('<< 本次充分测试%s使用了 %.2f 秒 >>' % (full_transaction_mode, endTime - startTime))
     Drop_Table()
     total_end_time = time.time()
-    print('本次测试一共用了 %.2f 秒' % (total_end_time - total_start_time))
+    print('<< 本次测试一共用了 %.2f 秒 >>' % (total_end_time - total_start_time))
