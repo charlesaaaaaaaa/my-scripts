@@ -53,7 +53,7 @@ if __name__ == '__main__':
     print(args)
     start_time = time.time()
     deploy_cluster()
-
+    #subprocess.run('Xvfb -ac :7 -screen 0 1280x1024x8 -nolisten tcp & export DISPLAY=:7; python3 Xpanel_install_cluster.py', shell=True)
     end_time = time.time()
     spend_time = end_time - start_time
     print("本次安装部署花费了：%.2f 秒" % (spend_time))

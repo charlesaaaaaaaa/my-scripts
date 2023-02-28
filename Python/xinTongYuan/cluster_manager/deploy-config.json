@@ -53,15 +53,21 @@
       "nodes": [
          {
             "ip": "192.168.0.132",
-            "port": 18821
+            "port": 18821,
+	    "server_portrange": "58880-58900",
+	    "storage_portrange": "56660-56700"
          },
          {
             "ip": "192.168.0.134",
-            "port": 18821
+            "port": 18821,
+            "server_portrange": "58880-58900",
+            "storage_portrange": "56660-56700"
          },
 	 {
             "ip": "192.168.0.140",
-            "port": 18821
+            "port": 18821,
+            "server_portrange": "58880-58900",
+            "storage_portrange": "56660-56700"
          }
       ]
    },
