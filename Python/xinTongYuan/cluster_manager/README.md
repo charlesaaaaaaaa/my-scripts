@@ -12,8 +12,8 @@ sudo yum install pango.x86_64 libXcomposite.x86_64 libXcursor.x86_64 libXdamage.
 ```
 
 ## 安装chrome
-`sudo yum install google-chrome-stable_current_x86_64.rpm -y`
-`unzip chromedriver_linux64.zip`
+* `sudo yum install google-chrome-stable_current_x86_64.rpm -y`
+* `unzip chromedriver_linux64.zip`
 * driver放在当前目录下就可以了，尽量不要改变系统环境
 
 ## 运行Xvfb
