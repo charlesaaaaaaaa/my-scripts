@@ -6,11 +6,33 @@ from selenium.webdriver.common.keys import Keys
 from selenium import webdriver
 import random
 
+def InfoMation(Str): #这个就是动态展示正在做什么用的而已，去掉影响也不大，需要用到多进程
+    Values = '%s中...' % (Str)
+    Count = 1
+    while True:
+        Values = '%s' % (Values)
+        if Count <= 3:
+            print('\r%s' % (Values), end='')
+            Count = Count + 1
+            sleep(1)
+        elif Count > 3 and Count < 10 :
+            Values = '%s%s' % (Values, '.')
+            print('\r%s' % (Values), end='')
+            Count = Count + 1
+            sleep(1)
+        else :
+            Values = '%s中...         ' % (Str)
+            print('\r%s' % (Values), end='')
+            Values = '%s中...' % (Str)
+            print('\r%s' % (Values), end='')
+            Count = 0;
+            sleep(1)
+
 def open_windows(host, port):
     global driver
     options = ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-automation'])
-    driver = webdriver.Chrome(executable_path='chromedriver')
+    driver = webdriver.Chrome(executable_path='./chromedriver')
     driver.implicitly_wait(30)
     url = 'http://%s:%d/KunlunXPanel/' % (host, port)
     driver.get(url)

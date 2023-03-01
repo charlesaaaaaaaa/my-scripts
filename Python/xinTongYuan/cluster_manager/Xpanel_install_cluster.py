@@ -24,6 +24,8 @@ def InfoMation(Str): #这个就是动态展示正在做什么用的而已，去�
             Count = Count + 1
             sleep(1)
         else :
+            Values = '%s中...         ' % (Str)
+            print('\r%s' % (Values), end='')
             Values = '%s中...' % (Str)
             print('\r%s' % (Values), end='')
             Count = 0;
@@ -42,7 +44,7 @@ def start(host, port):#开启driver
     driver = webdriver.Chrome(service=s)
     '''
     #这部分是linux的无头模式
-    s=Service('/home/charles/File/python/xinTongYuan/chrome/chromedriver')
+    s=Service('./chromedriver')
     ch_options = Options()
     #ch_options.add_argument("--headless")
     ch_options.add_argument('--no-sandbox')

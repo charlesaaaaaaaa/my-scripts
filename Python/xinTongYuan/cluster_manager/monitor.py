@@ -8,6 +8,28 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 import argparse
 
+def InfoMation(Str): #这个就是动态展示正在做什么用的而已，去掉影响也不大，需要用到多进程
+    Values = '%s中...' % (Str)
+    Count = 1
+    while True:
+        Values = '%s' % (Values)
+        if Count <= 3:
+            print('\r%s' % (Values), end='')
+            Count = Count + 1
+            sleep(1)
+        elif Count > 3 and Count < 10 :
+            Values = '%s%s' % (Values, '.')
+            print('\r%s' % (Values), end='')
+            Count = Count + 1
+            sleep(1)
+        else :
+            Values = '%s中...         ' % (Str)
+            print('\r%s' % (Values), end='')
+            Values = '%s中...' % (Str)
+            print('\r%s' % (Values), end='')
+            Count = 0;
+            sleep(1)
+
 def open(host, port):
     global driver
     options = ChromeOptions()
