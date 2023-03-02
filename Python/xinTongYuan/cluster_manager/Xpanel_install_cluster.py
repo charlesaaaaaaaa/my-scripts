@@ -9,7 +9,7 @@ from selenium.webdriver.common.keys import Keys
 import argparse
 from multiprocessing import Process
 
-def InfoMation(Str): #这个就是动态展示正在做什么用的而已，去掉影响也不大，需要用到多进程
+def InfoMations(Str): #这个就是动态展示正在做什么用的而已，去掉影响也不大，需要用到多进程
     Values = '%s中...' % (Str)
     Count = 1
     while True:
@@ -30,6 +30,17 @@ def InfoMation(Str): #这个就是动态展示正在做什么用的而已，去�
             print('\r%s' % (Values), end='')
             Count = 0;
             sleep(1)
+
+def InfoMation(Str):
+    while True:
+        print('\r%s中////////'% (Str), end='')
+        sleep(0.1)
+        print('\r%s中--------'% (Str), end='')
+        sleep(0.1)
+        print('\r%s中\\\\\\\\\\\\\\\\'% (Str), end='')
+        sleep(0.1)
+        print('\r%s中||||||||'% (Str), end='')
+        sleep(0.1)
 
 def start(host, port):#开启driver
     global driver
@@ -74,14 +85,14 @@ def change_pwd():
         thread0.terminate()
     except:
         thread0.terminate()
-        print('非首次登录，跳过...', end='')
+        print('\r修改密码中 ...非首次登录，跳过...', end='')
         driver.refresh()
         for i in range(10):
             driver.find_element(By.NAME, 'username').send_keys(Keys.BACK_SPACE)
             driver.find_element(By.NAME, 'password').send_keys(Keys.BACK_SPACE)
         sleep(0.5)
     finally:
-        print('完成')
+        print('\r修改密码中 ...完成...          ')
     sleep(1)
 
 def load_xpanel():
@@ -93,7 +104,7 @@ def load_xpanel():
     driver.find_element(By.XPATH, '//*[@id="app"]/div/div/form/button/span').click()
     sleep(1)
     thread1.terminate()
-    print('完成')
+    print('\r登录中 完成     ')
 
 def create_cluster():
     #sreach_window = driver.current_window_handle
@@ -137,13 +148,13 @@ def create_cluster():
         try:
             assert txt == '新增集群成功'
             thread2.terminate()
-            print(txt)
+            print('\r创建集群中 %s        ' % (txt))
             return(txt)
             break
         except:
             if txt == '新增集群失败':
                 thread2.terminate()
-                print(txt)
+                print('\r创建集群中 %s     ' % (txt))
                 return(txt)
                 break
             else:
@@ -152,7 +163,7 @@ def create_cluster():
             Count = Count + 1
             if Count == 900:
                 thread2.terminate()
-                print('新建集群超时(15m), 失败')
+                print('\r创建集群中 新建集群超时(15m), 失败             ')
             sleep(1)
 
 if __name__ == '__main__':
