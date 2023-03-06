@@ -7,7 +7,7 @@ import argparse
 
 start_time = time.time()
 def deploy_cluster():
-    subprocess.run("rm -rf *gz* && rm -rf cloudnative", shell=True)
+    subprocess.run("rm -rf cloudnative", shell=True)
     start_cloud_time = time.time()
     print('start clone cloudnative ...')
     subprocess.run("git clone https://gitee.com/zettadb/cloudnative.git", shell=True)
@@ -23,12 +23,12 @@ def deploy_cluster():
         print("\ndownloading %s ..."% (i))
         wget.download(Url)
     for i in kunlun_downList:
-        Url = "http://zettatech.tpddns.cn:14000/dailybuilds/enterprise/%s" % (str(i))
-        print("\ndownloading %s ..." % (i))
+        Url = "%s%s" % (Link, str(i))
+        print("\ndownloading %s ..." % (Url))
         wget.download(Url)
     end_downl_time = time.time()
     final_downl_time = end_downl_time - start_downl_time
-    print('download component : %.2f s' % (final_downl_time))
+    print('\ndownload component : %.2f s' % (final_downl_time))
     subprocess.run("mv *gz* cloudnative/cluster/clustermgr", shell=True)
     subprocess.run("cp %s cloudnative/cluster" % (Deploy), shell=True)
     start_deploy_time = time.time()
@@ -45,15 +45,14 @@ if __name__ == '__main__':
     ps = argparse.ArgumentParser(description='deploy&install KunlunBase cluster')
     ps.add_argument("--depoly", default='deploy-config.json', type=str, help='KunlunBase deploy config file, default value = "deploy-config.json"')
     ps.add_argument("--user", default='kunlun', type=str, help='KunlunBase user')
-    #ps.add_argument("--install", type=str, help='KunlunBase install config file')
+    ps.add_argument("--link", default='http://zettatech.tpddns.cn:14000/dailybuilds/enterprise/', type=str, help='Kunlun-component download link')
     args = ps.parse_args()
     User = args.user
     Deploy = args.depoly
-    #Install = args.install
+    Link = args.link
     print(args)
     start_time = time.time()
     deploy_cluster()
-    #subprocess.run('Xvfb -ac :7 -screen 0 1280x1024x8 -nolisten tcp & export DISPLAY=:7; python3 Xpanel_install_cluster.py', shell=True)
     end_time = time.time()
     spend_time = end_time - start_time
     print("本次安装部署花费了：%.2f 秒" % (spend_time))
