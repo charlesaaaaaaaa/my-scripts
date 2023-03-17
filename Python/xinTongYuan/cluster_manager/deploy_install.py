@@ -9,8 +9,8 @@ start_time = time.time()
 def deploy_cluster():
     subprocess.run("rm -rf cloudnative", shell=True)
     start_cloud_time = time.time()
-    print('start clone cloudnative ...')
-    subprocess.run("git clone https://gitee.com/zettadb/cloudnative.git", shell=True)
+    print("git clone -b %s https://gitee.com/zettadb/cloudnative.git" % (Version))
+    subprocess.run("git clone -b %s https://gitee.com/zettadb/cloudnative.git" % (Version), shell=True)
     end_cloud_time = time.time()
     final_cloud_time = end_cloud_time - start_cloud_time 
     print('clone cloudnative: %.2f s' % (final_cloud_time))
@@ -19,7 +19,7 @@ def deploy_cluster():
     print('download component ...')
     start_downl_time = time.time()
     for i in thirdPart_downList:
-        Url = "http://zettatech.tpddns.cn:14000/thirdparty/%s" % (str(i))
+        Url = "%s%s" % (Link, str(i))
         print("\ndownloading %s ..."% (i))
         wget.download(Url)
     for i in kunlun_downList:
@@ -46,7 +46,9 @@ if __name__ == '__main__':
     ps.add_argument("--depoly", default='deploy-config.json', type=str, help='KunlunBase deploy config file, default value = "deploy-config.json"')
     ps.add_argument("--user", default='kunlun', type=str, help='KunlunBase user')
     ps.add_argument("--link", default='http://zettatech.tpddns.cn:14000/dailybuilds/enterprise/', type=str, help='Kunlun-component download link')
+    ps.add_argument("--version", default='1.1', type=str, help='cloudnative version')
     args = ps.parse_args()
+    Version = args.version
     User = args.user
     Deploy = args.depoly
     Link = args.link
