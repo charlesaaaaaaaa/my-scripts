@@ -70,6 +70,7 @@ def start(host, port):#开启driver
     return driver
 
 def change_pwd():
+    CP_startTime = time.time()
     thread0 = Process(target=InfoMation, args=(('修改密码'),))
     thread0.start()
     driver.find_element(By.NAME, "username").send_keys('super_dba')
@@ -94,9 +95,12 @@ def change_pwd():
     finally:
         print('\r修改密码中 ...完成...          ')
     sleep(1)
-
+    CP_endTime = time.time()
+    print('修改密码使用了%.2f秒' % (CP_endTime - CP_startTime))
+    
 def load_xpanel():
     sleep(5)
+    load_startTime = time.time()
     thread1 = Process(target=InfoMation, args=(('登录'),))
     thread1.start()
     driver.find_element(By.NAME, "username").send_keys('super_dba')
@@ -104,10 +108,13 @@ def load_xpanel():
     driver.find_element(By.XPATH, '//*[@id="app"]/div/div/form/button/span').click()
     sleep(1)
     thread1.terminate()
+    load_endTime = time.time()
     print('\r登录中 完成     ')
+    print('本次登录使用了 %.2f 秒' % (load_endTime - load_startTime))
 
 def create_cluster():
     #sreach_window = driver.current_window_handle
+    create_startTime = time.time()
     thread2 = Process(target=InfoMation, args=(('创建集群'),))
     thread2.start()
     driver.find_element(By.XPATH, '//*[@id="pane-second"]/div/div[1]/div/button[3]').click()
@@ -119,7 +126,7 @@ def create_cluster():
             eleStorageM = driver.find_element(By.XPATH, '/html/body/div[3]/div[1]/div[1]/ul/li[%s]/span' % (str(i)))
             driver.execute_script("arguments[0].click", eleStorageM)
         except Exception as r:
-            print('pass, %s' (r))
+            print('pass, %s' % (r))
     sleep(1)
     driver.find_element(By.XPATH, '//*[@id="pane-second"]/div/div[4]/div/div[2]/form/div[2]/div/div[1]/div/div[2]/span/span/i').click()
     #select computing node
@@ -149,6 +156,9 @@ def create_cluster():
             assert txt == '新增集群成功'
             thread2.terminate()
             print('\r创建集群中 %s        ' % (txt))
+            create_endTime = time.time()
+            create_spendTime = create_endTime-create_startTime
+            print('本次创建集群花费了 %.2f 秒' % (create_spendTime))
             return(txt)
             break
         except:
@@ -164,7 +174,11 @@ def create_cluster():
             if Count == 900:
                 thread2.terminate()
                 print('\r创建集群中 新建集群超时(15m), 失败             ')
+                break
             sleep(1)
+    
+    create_endTime = time.time()
+    create_spendTime = create_endTime-create_startTime
 
 if __name__ == '__main__':
     ps = argparse.ArgumentParser(description='install KunlunBase cluster with Xpanel')
