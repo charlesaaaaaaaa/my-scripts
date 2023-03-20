@@ -2,6 +2,8 @@ import argparse
 from time import sleep
 from selenium.webdriver.common.by import By
 from selenium.webdriver import ChromeOptions
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium import webdriver
 import random
@@ -32,7 +34,19 @@ def open_windows(host, port):
     global driver
     options = ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-automation'])
-    driver = webdriver.Chrome(executable_path='./chromedriver')
+    options.add_experimental_option('useAutomationExtension', False)
+    #这部分是linux的无头模式
+    s=Service('./chromedriver')
+    ch_options = Options()
+    #ch_options.add_argument("--headless")
+    ch_options.add_argument('--no-sandbox')
+    ch_options.add_argument('--disable-gpu')
+    ch_options.add_argument('--disable-dev-shm-usage')
+    driver = webdriver.Chrome(options=ch_options)
+    
+    #options = ChromeOptions()
+    #options.add_experimental_option('excludeSwitches', ['enable-automation'])
+    #driver = webdriver.Chrome(executable_path='./chromedriver')
     driver.implicitly_wait(30)
     url = 'http://%s:%d/KunlunXPanel/' % (host, port)
     driver.get(url)
