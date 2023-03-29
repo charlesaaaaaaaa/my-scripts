@@ -123,8 +123,8 @@ def create_cluster():
     driver.find_element(By.XPATH, '//*[@id="pane-second"]/div/div[4]/div/div[2]/form/div[2]/div/div[1]/div/div[2]/input').click()
     for i in range(1, StorageNum + 1):
         try :
-            eleStorageM = driver.find_element(By.XPATH, '/html/body/div[3]/div[1]/div[1]/ul/li[%s]/span' % (str(i)))
-            driver.execute_script("arguments[0].click", eleStorageM)
+            eleStorageM = driver.find_element(By.XPATH, '/html/body/div[3]/div[1]/div[1]/ul/li[%s]' % str(i))
+            driver.execute_script("arguments[0].click();", eleStorageM)
         except Exception as r:
             print('pass, %s' % (r))
     sleep(1)
@@ -133,8 +133,8 @@ def create_cluster():
     driver.find_element(By.XPATH,'/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[2]/div/div[2]/div/div[2]/span').click()
     for i in range(1, ServerNum + 1):
         try:
-            eleCompM = driver.find_element(By.XPATH, '/html/body/div[4]/div[1]/div[1]/ul/li[%s]/span' % (i))
-            driver.execute_script("arguments[0].click", eleCompM)
+            eleCompM = driver.find_element(By.XPATH, '/html/body/div[4]/div[1]/div[1]/ul/li[%s]' % (i))
+            driver.execute_script("arguments[0].click();", eleCompM)
         except:
             print('computer Num more then machine Num, pass')
 
