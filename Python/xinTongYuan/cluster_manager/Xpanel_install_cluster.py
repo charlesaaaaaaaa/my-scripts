@@ -155,6 +155,8 @@ def create_cluster():
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[6]/div/div/input').send_keys('%d' % (ReplicaNum))
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[7]/div/div/input').send_keys(Keys.BACK_SPACE)
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[7]/div/div/input').send_keys('%d' % (ServerNum))
+    driver.find_element(By.XPATH, '//*[@id="pane-second"]/div/div[4]/div/div[2]/form/div[11]/div/div[1]/input').send_keys('1024')
+    driver.find_element(By.XPATH, '//*[@id="pane-second"]/div/div[4]/div/div[2]/form/div[12]/div/div[1]/input').send_keys('1024')
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[3]/div/button[2]/span').click()
 
     Count = 1
