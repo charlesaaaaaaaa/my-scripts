@@ -76,7 +76,7 @@ wget -q http://zettatech.tpddns.cn:14000/util/1.1/mydumper
 wget -q http://zettatech.tpddns.cn:14000/util/1.2/ddl2kunlun-linux
 chmod 755 mydumper ddl2kunlun-linux
 echo -e "========\n灌数据中。。。\n========"
-sysbench oltp_point_select --tables=1 --table-size=5250000 --db-ps-mode=disable --db-driver=mysql --mysql-host=$1 --report-interval=1 --mysql-port=12388 --mysql-user=root --mysql-password=root --mysql-db=mydumper --rand-type=uniform prepare
+sysbench oltp_point_select --tables=1 --table-size=50000 --db-ps-mode=disable --db-driver=mysql --mysql-host=$1 --report-interval=1 --mysql-port=12388 --mysql-user=root --mysql-password=root --mysql-db=mydumper --rand-type=uniform prepare
 ldd mydumper  | grep 'not found' | awk -F= '{print $1}' > tmp.txt
 ldd ddl2kunlun-linux | grep 'not found' | awk -F= '{print $1}' >> tmp.txt
 for i in `cat tmp.txt`
