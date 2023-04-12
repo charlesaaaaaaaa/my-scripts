@@ -1,3 +1,7 @@
+if [[ $* -eq 0 ]]
+then
+	echo 请给三个参数，分别是 安装mysql的ip地址、已安装好的计算节点ip地址与port
+fi
 mkdir -p mysql2Kunlun
 Home=`readlink -f mysql2Kunlun`
 ps -ef | grep $Home | sed '$d' | awk '{print $2}' | xargs kill -9
