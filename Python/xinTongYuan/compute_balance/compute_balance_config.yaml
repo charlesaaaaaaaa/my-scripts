@@ -1,0 +1,28 @@
+defuser: "kunlun"
+#所有要测试的服务器的默认用户
+interval: 1
+#以秒记，每几秒检查一次
+runtime: 60
+#以秒记，sysbench运行几秒后停止
+threshold: 50
+#阈值：单次检查cpu或者内存，最大值与最小值相差最多百分之几。超过这个阈值就会记录下来
+#最大100，最小1
+
+#haproxy相关设置
+haproxy_port: 12345
+haproxy_host: 192.168.0.113
+
+#集群实例相关设置, 如果某个实例没安装计算节点但也属于集群的一部分，请不要写port user pwd三个参数
+instance:
+        comp1:
+                host: 192.168.0.132
+                port: 58881
+                user: "abc"
+                pwd:  "abc"
+        com2:
+                host: 192.168.0.134
+                port: 58881
+                user: "abc"
+                pwd:  "abc"
+        comp3: 
+                host: 192.168.0.140
