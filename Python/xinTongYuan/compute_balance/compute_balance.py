@@ -77,5 +77,5 @@ if __name__ == '__main__':
     args = ps.parse_args()
     print(args)
     config = args.config
-    #test()
+    test()
     check()
