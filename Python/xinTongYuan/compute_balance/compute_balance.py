@@ -46,10 +46,10 @@ def test():
             pwd  = conf['instance'][i]['pwd']
             break
     Time = conf['runtime']
-    execClear = "sysbench oltp_point_select --tables=10 --table-size=525000 --db-driver=pgsql --pgsql-host=%s --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=postgres --threads=10 clearup" % (conf['haproxy_host'], conf['haproxy_port'], user, pwd)
+    execClean = "sysbench oltp_point_select --tables=10 --table-size=525000 --db-driver=pgsql --pgsql-host=%s --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=postgres --threads=10 cleanup" % (conf['haproxy_host'], conf['haproxy_port'], user, pwd)
     execPrepare = "sysbench oltp_point_select --tables=10 --table-size=525000 --db-driver=pgsql --pgsql-host=%s --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=postgres --threads=10 prepare" % (conf['haproxy_host'], conf['haproxy_port'], user, pwd)
     try:
-        subrun(execClear)
+        subrun(execClean)
         sleep(5)
     except:
         print("skip clear")
