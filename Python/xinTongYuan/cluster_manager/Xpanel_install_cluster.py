@@ -67,8 +67,7 @@ def start(host, port):#开启driver
     ch_options.add_argument('--disable-dev-shm-usage')
     #driver = webdriver.Chrome(options=ch_options)
     driver = webdriver.Chrome()
-
-    driver.implicitly_wait(10)
+    driver.implicitly_wait(180)
     urls = 'http://%s:%d/KunlunXPanel' % (host, port)
     print(urls)
     driver.get(urls)
@@ -88,6 +87,10 @@ def change_pwd():
         driver.find_element(By.NAME, 'password').send_keys('Qwer1234.')
         driver.find_element(By.NAME, 'confirmPassword').send_keys('Qwer1234.')
         driver.find_element(By.XPATH, '/html/body/div[1]/div/div/form/button/span').click()
+        #txt = driver.find_element(By.XPATH, '/html/body/div[1]/div/div/form/button/span').text
+        #while wrg == '修改密码':
+            #driver.find_element(By.XPATH, '/html/body/div[1]/div/div/form/button/span').click()
+
         thread0.terminate()
     except:
         thread0.terminate()
@@ -121,34 +124,30 @@ def create_cluster():
     create_startTime = time.time()
     thread2 = Process(target=InfoMation, args=(('创建集群'),))
     thread2.start()
-    driver.find_element(By.XPATH, '//*[@id="pane-second"]/div/div[1]/div/button[3]').click()
-    driver.find_element(By.XPATH, '//*[@id="pane-second"]/div/div[4]/div/div[2]/form/div[1]/div/div/input').send_keys('Temp_test')
-    # select storage node
-    driver.find_element(By.XPATH, '//*[@id="pane-second"]/div/div[4]/div/div[2]/form/div[2]/div/div[1]/div/div[2]/input').click()
-    #sleep(2)
-    for i in range(1, StorageNum + 1):
+    sleep(2)
+    #driver.find_element(By.XPATH,'/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[2]/div/div/div[1]/div/div/div/div[1]').click() #点击本地集群
+    driver.find_element(By.XPATH,'/html/body/div/div/div[2]/section/div/div/div[2]/div[1]/div/div[1]/div/button[3]').click() #点击新增
+    driver.find_element(By.XPATH,'/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[1]/div/div[1]/input').send_keys('test') #写入业务名称
+    driver.find_element(By.XPATH,'/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[2]/div/div/div[2]/div[1]/div[1]/div/div[2]/input').click() #点击存储
+    for i in range(1, StorageNum + 1): # 开始选择对应的存储节点
         try:
-            eleStorageM1 = driver.find_element(By.XPATH, "/html/body/div[3]/div[1]/div[1]/ul/li[%s]"% str(i))
-            driver.execute_script("arguments[0].click();", eleStorageM1)
+            eleStorageM1 = driver.find_element(By.XPATH, '/html/body/div[3]/div[1]/div[1]/ul/li[%s]' % str(i))
+            driver.execute_script('arguments[0].click();', eleStorageM1)
         except Exception as r:
             print("无法找到第%d个storage_node" % (i))
             print(sys.exc_info())
     sleep(1)
-    driver.find_element(By.XPATH, '//*[@id="pane-second"]/div/div[4]/div/div[2]/form/div[2]/div/div[1]/div/div[2]/span/span/i').click()
-    #select computing node
-    driver.find_element(By.XPATH,'/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[2]/div/div[2]/div/div[2]/span').click()
-    sleep(2)
+    driver.find_element(By.XPATH,'/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[2]/div/div/div[2]/div[1]/div[1]/div/div[2]/span/span/i').click() #缩回下拉框
+    driver.find_element(By.XPATH,'/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[2]/div/div/div[2]/div[1]/div[2]/div/div[2]/input').click() #点击计算节点
     for i in range(1, ServerNum + 1):
         try:
-            sleep(0.5)
             eleCompM = driver.find_element(By.XPATH, '/html/body/div[4]/div[1]/div[1]/ul/li[%s]' % (i))
-            #/html/body/div[4]/div[1]/div[1]/ul/li[1]/span
             driver.execute_script("arguments[0].click();", eleCompM)
-        except:
-            print('computer Num more then machine Num, pass')
-
-    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[2]/div/div[2]/div/div[2]/span').click()
-    #input shard info
+        except Exception as r:
+            print("无法找到第%d个server_node" % (i))
+            print(sys.exc_info())
+    sleep(1)
+     #input shard info
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[5]/div/div/div/input').send_keys(Keys.BACKSPACE)
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[5]/div/div/div/input').send_keys('%d' % (ShardNum))
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[6]/div/div/input').send_keys(Keys.BACK_SPACE)
@@ -162,6 +161,7 @@ def create_cluster():
         print('\nconnot find element -- storage log num, skip')
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[3]/div/button[2]/span').click()
 
+    # 这部分是在等待并检测集群是否新建成功
     Count = 1
     while True:
         texts = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[13]/div/div[2]/div/div/div[3]/div[2]/div[1]')
@@ -196,11 +196,11 @@ def create_cluster():
 
 if __name__ == '__main__':
     ps = argparse.ArgumentParser(description='install KunlunBase cluster with Xpanel')
-    ps.add_argument('--host', help="Xpanel host", default='192.168.0.132', type=str)
+    ps.add_argument('--host', help="Xpanel host", default='192.168.0.125', type=str)
     ps.add_argument('--port', help='Xpanel port', default=18851, type=int)
-    ps.add_argument('--shardNum', help='KunlunBase cluster shard num, shard num >= 1', type=int, default=3)
+    ps.add_argument('--shardNum', help='KunlunBase cluster shard num, shard num >= 1', type=int, default=2)
     ps.add_argument('--replicaNum', help='KunlunBase cluster replica Num, replica num >=3', type=int, default=3)
-    ps.add_argument('--serverNum', help='KunlunBase cluster Kunlun-server num >= 1', type=int, default=2)
+    ps.add_argument('--serverNum', help='KunlunBase cluster Kunlun-server num >= 1', type=int, default=3)
     ps.add_argument('--storageNum', help='拿出多少台服务器给存储节点使用，数量大于等于1', type=int, default=3)
     args = ps.parse_args()
     Host = args.host
