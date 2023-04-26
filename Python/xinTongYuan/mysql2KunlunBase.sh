@@ -11,7 +11,7 @@ echo $Home
 #Home=`pwd`
 echo -e "========\n安装mysql\n========"
 echo download mysql ...
-wget -q https://downloads.mysql.com/archives/get/p/23/file/mysql-8.0.31-linux-glibc2.17-x86_64-minimal.tar.xz
+wget -q http://zettatech.tpddns.cn:14000/thirdparty/cloud/mysql-8.0.31-linux-glibc2.17-x86_64-minimal.tar.xz
 tar -xf mysql-8.0.31-linux-glibc2.17-x86_64-minimal.tar.xz
 cd mysql-8.0.31-linux-glibc2.17-x86_64-minimal
 mysqlHome=`pwd`
@@ -81,8 +81,8 @@ ldd mydumper  | grep 'not found' | awk -F= '{print $1}' > tmp.txt
 ldd ddl2kunlun-linux | grep 'not found' | awk -F= '{print $1}' >> tmp.txt
 for i in `cat tmp.txt`
 do
-sudo find / -name $i > tmp.log 2> /dev/null
-cp `head -1 tmp.log` .
+	find / -name $i > tmp.log 2> /dev/null
+	cp `head -1 tmp.log` .
 done
 export LD_LIBRARY_PATH=`pwd`:$LD_LIBRARY_PATH
 ./mydumper -h $1 -u root -p root -P 12388 -B mydumper -o $Home/myDumperData
