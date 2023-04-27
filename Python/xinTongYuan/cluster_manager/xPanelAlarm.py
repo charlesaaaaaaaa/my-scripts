@@ -36,8 +36,7 @@ def start(host, port):  # 开启driver
     ch_options.add_argument('--disable-dev-shm-usage')
     #driver = webdriver.Chrome(options=ch_options)
     driver = webdriver.Chrome()
-    
-    driver.implicitly_wait(10)
+    driver.implicitly_wait(5)
     urls = 'http://%s:%d/KunlunXPanel' % (host, port)
     print(urls)
     driver.get(urls)
@@ -122,9 +121,11 @@ def test():
     #开始查找接受处理人为空（因为上一步删除了test用户，故如果之前存在test的告警应该在用户处为空）且告警类型为存储节点异常的告警并删除，无则不做任何事
     try:
         cru_alarm_types = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[1]/div/div[3]/table/tbody/tr/td[1]/div/span').text
+        print(cru_alarm_types, atti_type)
         num = 1
         while cru_alarm_types != atti_type:
             cru_alarm_types = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[1]/div/div[3]/table/tbody/tr[%s]/td[1]/div/span' % (num)).text
+            print(cru_alarm_types, atti_type)
             num = num + 1
         print(num)
         if num == 1:
@@ -137,12 +138,14 @@ def test():
             driver.execute_script("arguments[0].click();", button_del)
         errCode = driver.find_element(By.XPATH, '/html/body/div[2]/div/div[2]/div[1]/div[2]/p').text
         errCode = re.findall('0|[0-9][0-9][0-9][0-9]', errCode)
+        print(errCode)
         errCode = errCode[0]
+        print(errCode)
         driver.find_element(By.XPATH, '/html/body/div[2]/div/div[2]/div[2]/div[1]/input').send_keys(errCode)
         driver.find_element(By.XPATH, '/html/body/div[2]/div/div[3]/button[2]/span').click()
     except Exception as a:
         print('当前没有旧的告警管理配置')
-        print(a)
+        #print(a)
     driver.find_element(By.XPATH,
                             '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/header/button/i').click()  # 点击关闭
     #点击新增
@@ -152,48 +155,73 @@ def test():
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[1]/div/div[2]/form/div[1]/div/div/div/input').click()
     #开始逐个查找类型为 存储节点异常 的选择
     for i in range(1, 17):
-        alType = driver.find_element(By.XPATH, '/html/body/div[4]/div[1]/div[1]/ul/li[%s]/span' % (i))
-        alTypeTxt = alType.text
+        for j in range(3, 6):
+            print(j)
+            try:
+                alType = driver.find_element(By.XPATH, '/html/body/div[%s]/div[1]/div[1]/ul/li[%s]/span' % (j, i))
+                alTypeTxt = alType.text
+                if alTypeTxt == atti_type:
+                    alType.click()
+                    break
+            except:
+                pass
         if alTypeTxt == atti_type:
-            alType.click()
+            break
+        else:
+            print(i)
+
     #逐个查找test用户
-    sleep(1)
-    element = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[1]/div/div[2]/form/div[2]/div/div/div/input')
-    driver.execute_script("arguments[0].click()", element)
+    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[1]/div/div[2]/form/div[2]/div/div/div/input').click()
     for i in range(1, iTotalNum + 1):
-        sleUser = driver.find_element(By.XPATH, '/html/body/div[5]/div[1]/div[1]/ul/li[%s]/span' % (i))
-        sleUserTxt = sleUser.get_attribute('innerHTML')
+        sleep(1)
+        findEls = 0
+        a = j + 1
+        while findEls == 0:
+            try:
+                sleUser = driver.find_element(By.XPATH, '/html/body/div[%s]/div[1]/div[1]/ul/li[%s]/span' % (a, i))
+                sleUserTxt = sleUser.text
+                findEls == 1
+                print(sleUserTxt)
+                break
+            except:
+                findEls == 0
+                print(a)
+                a = a + 1
         if sleUserTxt == 'test':
             sleUser.click()
+            break
+    if sleUserTxt != 'test':
+        print('未找到test用户')
+        exit(1)
     # 是否生效，是
     sleep(1)
+    j = a + 1
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[1]/div/div[2]/form/div[4]/div/div/div/input').click()
-    driver.find_element(By.XPATH, '/html/body/div[6]/div[1]/div[1]/ul/li[1]/span').click()
+    driver.find_element(By.XPATH, '/html/body/div[%s]/div[1]/div[1]/ul/li[1]/span' % (j)).click()
     #提醒方式, 邮件
     sleep(1)
+    a = j + 1
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[1]/div/div[2]/form/div[3]/div/div/div[2]/input').click()
-    driver.find_element(By.XPATH, '/html/body/div[7]/div[1]/div[1]/ul/li[3]/span').click()
+    driver.find_element(By.XPATH, '/html/body/div[%s]/div[1]/div[1]/ul/li[3]/span' % (a)).click()
     sleep(1)
     #点击确定
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[1]/div/div[3]/div/button[2]/span').click()
 
     #增加告警发送邮箱 -- 告警管理 -- 配置管理 -- 阿里云邮箱 -- 配置key和邮箱
-    sleep(1)
     print('开始配置发件邮箱信息')
-    element = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[3]/div[1]/button[4]/span')
-    driver.execute_script("arguments[0].click()", element)
+    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[3]/div[1]/button[4]/span').click()
     sleep(1)
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[1]/div/div/div/div[3]').click()
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[1]/div/div/div/div[3]').click()
     AccessKeyId = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[2]/form/div[1]/div/div/input')
     AccessKeyId.clear()
-    AccessKeyId.send_keys(AccessKeyId)
+    AccessKeyId.send_keys(AccessKeyId1)
     SecretKey = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[2]/form/div[2]/div/div/input')
     SecretKey.clear()
-    SecretKey.send_keys(SecretKey)
+    SecretKey.send_keys(SecretKey1)
     sendEMail = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[2]/form/div[3]/div/div/input')
     sendEMail.clear()
-    sendEMail.send_keys(Email)
+    sendEMail.send_keys(Email1)
     sleep(1)
     #点击保存
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[2]/form/div[4]/div/button/span').click()
@@ -209,6 +237,7 @@ def test():
     end_time = time.time()
     print(end_time - start_time)
 
+    sleep(30)
     #开始检查是否存在’存储节点异常‘, 告警终端管理 -- 逐个检查是否存在存储节点异常
     driver.refresh()
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[5]/div/span[2]/div/div/span/span/i').click()#点击页数下拉框
@@ -247,10 +276,7 @@ def check_email():
     print('========\n检查邮件。。。')
 #查看邮件标题是啥
     lines = linecache.getline('tmp.txt', 5)
-    linesplit = lines.split(' ')
-    attitus = linesplit[1]
-    attitus = attitus.split('s')
-    attitus = attitus[0]
+    attitus = lines.split(' ')[1].split('s')[0]
     if attitus == atti_type:
         print('========\n查找到当前邮件为 %s 告警\n进行下一步检查...' % (atti_type))
     else:
@@ -259,19 +285,9 @@ def check_email():
 #查看对应的内容
     lines = linecache.getline('tmp.txt', 11)
     linesplit = lines.split(',')
-#查找host
-    cStorage_host = linesplit[4]
-    cStorage_host = storage_host.split(':')
-    cStorage_host = storage_host[1]
-    cStorage_host = storage_host.replace('"', '')
-#查找port
-    cStorage_port = linesplit[5]
-    cStorage_port = storage_port.split(':')
-    cStorage_port = storage_port[1]
-    cStorage_port = storage_port.split('}')
-    cStorage_port = storage_port[0]
-    cStorage_port = storage_port.replace('"', '')
-
+#查找host、port
+    cStorage_host = linesplit[4].split(':')[1].replace('"', '')
+    cStorage_port = linesplit[5].split(':')[1].split('}')[0].replace('"', '')
     print('当前邮件提及的节点为: %s:%s'% (cStorage_host, cStorage_port))
 
 #检查是否为正确的host和port
@@ -299,9 +315,9 @@ if __name__ == '__main__':
     Host = args.host
     Port = args.port
     User = args.user
-    AccessKeyId = args.AccessKeyId
-    SecretKey = args.SecretKey
-    Email = args.Email
+    AccessKeyId1 = args.AccessKeyId
+    SecretKey1 = args.SecretKey
+    Email1 = args.Email
     print(args)
     start(Host, Port)
     load_xpanel()
