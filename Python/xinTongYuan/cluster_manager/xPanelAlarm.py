@@ -187,13 +187,13 @@ def test():
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[1]/div/div/div/div[3]').click()
     AccessKeyId = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[2]/form/div[1]/div/div/input')
     AccessKeyId.clear()
-    AccessKeyId.send_keys('LTAI5tJeKKXuWUzYvY3ULKzr')
+    AccessKeyId.send_keys(AccessKeyId)
     SecretKey = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[2]/form/div[2]/div/div/input')
     SecretKey.clear()
-    SecretKey.send_keys('JY32MeZR6HSe0USpaSSnh2dEAAiLd2')
+    SecretKey.send_keys(SecretKey)
     sendEMail = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[2]/form/div[3]/div/div/input')
     sendEMail.clear()
-    sendEMail.send_keys('admin@pushmail.kunlunbase.com')
+    sendEMail.send_keys(Email)
     sleep(1)
     #点击保存
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[2]/form/div[4]/div/button/span').click()
@@ -292,10 +292,16 @@ if __name__ == '__main__':
     ps.add_argument('--host', help="Xpanel host", default='192.168.0.125', type=str)
     ps.add_argument('--port', help='Xpanel port', default=18851, type=int)
     ps.add_argument('--user', help="所有涉及到的服务器的通用用户，必须要有ssh互信免密权限",default='kunlun', type=str)
+    ps.add_argument('--AccessKeyId', help="阿里云email的AccessKeyId", type=str)
+    ps.add_argument('--SecretKey', help="阿里云email的SecretKey", type=str)
+    ps.add_argument('--Email', help="阿里云email账号", type=str)
     args = ps.parse_args()
     Host = args.host
     Port = args.port
     User = args.user
+    AccessKeyId = args.AccessKeyId
+    SecretKey = args.SecretKey
+    Email = args.Email
     print(args)
     start(Host, Port)
     load_xpanel()
