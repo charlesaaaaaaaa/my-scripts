@@ -316,7 +316,7 @@ if __name__ == '__main__':
     Port = args.port
     User = args.user
     AccessKeyId1 = args.AccessKeyId
-    SecretKey1 = args.SecretKey
+    SecretKey1 = args.AccessKeySecret
     Email1 = args.Email
     print(args)
     start(Host, Port)
