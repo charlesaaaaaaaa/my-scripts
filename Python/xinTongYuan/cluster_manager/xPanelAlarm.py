@@ -309,7 +309,7 @@ if __name__ == '__main__':
     ps.add_argument('--port', help='Xpanel port', default=18851, type=int)
     ps.add_argument('--user', help="所有涉及到的服务器的通用用户，必须要有ssh互信免密权限",default='kunlun', type=str)
     ps.add_argument('--AccessKeyId', help="阿里云email的AccessKeyId", type=str)
-    ps.add_argument('--SecretKey', help="阿里云email的SecretKey", type=str)
+    ps.add_argument('--AccessKeySecret', help="阿里云email的AccessKeySecret", type=str)
     ps.add_argument('--Email', help="阿里云email账号", type=str)
     args = ps.parse_args()
     Host = args.host
