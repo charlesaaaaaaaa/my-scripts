@@ -2,17 +2,17 @@
    "machines": [
       {
          "ip": "192.168.0.167",
-         "basedir": "/nvme2/compare/base",
+         "basedir": "/home/kunlun/base",
          "user": "kunlun"
       },
       {
          "ip": "192.168.0.170",
-         "basedir": "/nvme2/compare/base",
+         "basedir": "/home/kunlun/base",
          "user": "kunlun"
       },
       {
          "ip": "192.168.0.173",
-         "basedir": "/nvme2/compare/base",
+         "basedir": "/home/kunlun/base",
          "user": "kunlun"
       }
    ],
