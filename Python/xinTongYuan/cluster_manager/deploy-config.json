@@ -1,17 +1,17 @@
 {
    "machines": [
       {
-         "ip": "192.168.0.132",
+         "ip": "192.168.0.167",
          "basedir": "/nvme2/compare/base",
          "user": "kunlun"
       },
       {
-         "ip": "192.168.0.134",
+         "ip": "192.168.0.170",
          "basedir": "/nvme2/compare/base",
          "user": "kunlun"
       },
       {
-         "ip": "192.168.0.140",
+         "ip": "192.168.0.173",
          "basedir": "/nvme2/compare/base",
          "user": "kunlun"
       }
@@ -20,15 +20,15 @@
       "ha_mode": "rbr",
       "nodes": [
          {
-            "ip": "192.168.0.134",
+            "ip": "192.168.0.170",
 	    "port": 18882
          },
 	 {
-            "ip": "192.168.0.132",
+            "ip": "192.168.0.167",
             "port": 18882
 	 },
          {
-            "ip": "192.168.0.140",
+            "ip": "192.168.0.173",
             "port": 18882
          }
       ]
@@ -36,19 +36,19 @@
    "cluster_manager": {
       "nodes": [
          {
-            "ip": "192.168.0.132",
+            "ip": "192.168.0.167",
 	    "brpc_http_port": 18885,
 	    "brpc_raft_port": 18887,
 	    "prometheus_port_start": 18889
          },
          {
-            "ip": "192.168.0.134",
+            "ip": "192.168.0.170",
             "brpc_http_port": 18885,
             "brpc_raft_port": 18887,
             "prometheus_port_start": 18889
          },
 	 {
-            "ip": "192.168.0.140",
+            "ip": "192.168.0.173",
             "brpc_http_port": 18885,
             "brpc_raft_port": 18887,
             "prometheus_port_start": 18889
@@ -58,21 +58,21 @@
    "node_manager": {
       "nodes": [
          {
-            "ip": "192.168.0.132",
+            "ip": "192.168.0.167",
 	    "brpc_http_port": 18823,
 	    "tcp_port": 18825,
 	    "server_portrange": "58880-58900",
 	    "storage_portrange": "56660-56700"
          },
          {
-            "ip": "192.168.0.134",
+            "ip": "192.168.0.170",
             "brpc_http_port": 18823,
             "tcp_port": 18825,
             "server_portrange": "58880-58900",
             "storage_portrange": "56660-56700"
          },
 	 {
-            "ip": "192.168.0.140",
+            "ip": "192.168.0.173",
             "brpc_http_port": 18823,
             "tcp_port": 18825,
             "server_portrange": "58880-58900",
@@ -81,7 +81,7 @@
       ]
    },
    "xpanel": {
-      "ip": "192.168.0.132",
+      "ip": "192.168.0.167",
       "image": "registry.cn-hangzhou.aliyuncs.com/kunlundb/kunlun-xpanel:1.2.1",
       "port": 18851
    }
