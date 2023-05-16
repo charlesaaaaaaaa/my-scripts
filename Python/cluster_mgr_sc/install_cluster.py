@@ -7,10 +7,12 @@ from time import sleep
 
 def readFile():
     global shards, compHost, dataHost, nodes, comps, pgsql_port_range, datadir, user_name, fullsync_level
-    global logdir, wal_log_dir, comp_datadir, total_mem, total_cpu_cores, dbcfg, postad, mysql_port_range
-    global nick_name, max_storage_size, max_connections, mgrPort, mgrHost, ha_mode, innodb_size
+    global logdir, wal_log_dir, comp_datadir, total_mem, total_cpu_cores, dbcfg, postad, mysql_port_range, log_storage_size
+    global nick_name, max_storage_size, max_connections, mgrPort, mgrHost, ha_mode, innodb_size, data_storage_size
     f = open(files,encoding='utf-8')
     of = yaml.safe_load(f.read())
+    data_storage_size = of["data_storage_size"]
+    log_storage_size = of["log_storage_size"]
     compHost = of["computer"]
     dataHost = of["storage"]
     shards = str(of["shards"])
@@ -31,8 +33,6 @@ def readFile():
     nick_name = of["nick_name"]
     max_storage_size = str(of["max_storage_size"])
     max_connections = str(of["max_connections"])
- #   mgrPort = of["clusterMgrInfo"]["port"]
- #   mgrHost = of["clusterMgrInfo"]["host"]
     ha_mode = of["ha_mode"]
     metaPort = of["MetaPrimaryNode"]["port"]
     metaHost = of["MetaPrimaryNode"]["host"]
@@ -88,8 +88,6 @@ def createComputer(user_name, host, port_range, datadir, logdir, wal_log_dir, co
             "total_cpu_cores": total_cpu_cores
         }
     })
-    #print(create_computer + '\n')
-    #res = requests.post(postad, data=create_computer, headers=header)
     res = requests.post(postad, data=create_computer)
     print("create computer machine host = %s, port_range = %s" % (host, port_range))
     print(res.status_code, res.reason)
@@ -116,14 +114,12 @@ def createStorage(user_name, hostaddr, port_range, datadir, logdir, wal_log_dir,
         "total_cpu_cores":total_cpu_cores
     }
 })
-    #print(create_storage + '\n')
-    #res = requests.post(postad, data=create_storage, headers=header)
     res = requests.post(postad, data=create_storage)
     print("create storage machine host = %s, port_range = %s" % (hostaddr, port_range))
     print(res.status_code, res.reason)
     print(res.text)
 
-def createCluster(user_name, nick_name, ha_mode, shards, nodes, comps, max_storage_size, max_connections, cpu_cores, innodb_size, dbcfg, fullsync_level, storage_iplists, computer_iplists):
+def createCluster(user_name, nick_name, ha_mode, shards, nodes, comps, max_storage_size, max_connections, cpu_cores, innodb_size, dbcfg, fullsync_level, storage_iplists, computer_iplists, data_storage_size, log_storage_size):
     create_cluster  = json.dumps({
     "version":"1.0",
     "job_id":"",
@@ -147,6 +143,9 @@ def createCluster(user_name, nick_name, ha_mode, shards, nodes, comps, max_stora
         ,
         "computer_iplists":
             computer_iplists
+        ,
+        "data_storage_size": data_storage_size,
+        "log_storage_size": log_storage_size
         }
     })
     print(create_cluster + '\n')
@@ -166,7 +165,7 @@ def runTest():
         createStorage(user_name, i, mysql_port_range, datadir, logdir, wal_log_dir, comp_datadir, total_mem, total_cpu_cores)
         #sleep(1)
     
-    createCluster(user_name, nick_name, ha_mode, shards, nodes, comps, max_storage_size, max_connections, total_cpu_cores, innodb_size, dbcfg, fullsync_level, dataHost, compHost)
+    createCluster(user_name, nick_name, ha_mode, shards, nodes, comps, max_storage_size, max_connections, total_cpu_cores, innodb_size, dbcfg, fullsync_level, dataHost, compHost, data_storage_size, log_storage_size)
 
 def deleteTest():
     delete_cluster  = json.dumps({
