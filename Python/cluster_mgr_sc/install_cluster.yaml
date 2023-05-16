@@ -41,5 +41,5 @@ max_connections: 6
 innodb_size: 1
 fullsync_level: 1
 
-data_storage_size: 3072
-log_storage_size: 1024
+data_storage_MB: 3072
+log_storage_MB: 1024

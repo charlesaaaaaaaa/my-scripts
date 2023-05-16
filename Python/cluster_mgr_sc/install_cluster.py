@@ -11,8 +11,8 @@ def readFile():
     global nick_name, max_storage_size, max_connections, mgrPort, mgrHost, ha_mode, innodb_size, data_storage_size
     f = open(files,encoding='utf-8')
     of = yaml.safe_load(f.read())
-    data_storage_size = of["data_storage_size"]
-    log_storage_size = of["log_storage_size"]
+    data_storage_size = of["data_storage_MB"]
+    log_storage_size = of["log_storage_MB"]
     compHost = of["computer"]
     dataHost = of["storage"]
     shards = str(of["shards"])
@@ -144,8 +144,8 @@ def createCluster(user_name, nick_name, ha_mode, shards, nodes, comps, max_stora
         "computer_iplists":
             computer_iplists
         ,
-        "data_storage_size": data_storage_size,
-        "log_storage_size": log_storage_size
+        "data_storage_MB": data_storage_size,
+        "log_storage_MB": log_storage_size
         }
     })
     print(create_cluster + '\n')
