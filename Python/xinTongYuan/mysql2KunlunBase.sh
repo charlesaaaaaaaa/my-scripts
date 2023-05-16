@@ -38,7 +38,7 @@ server-id = 1
 socket=$Home/mysql/mysql.sock
 
 character-set-server = utf8mb4
-collation-server = utf8mb4_general_ci
+collation-server = utf8mb4_bin
 init_connect='SET NAMES utf8mb4'
 lower_case_table_names = 1
 EOF
