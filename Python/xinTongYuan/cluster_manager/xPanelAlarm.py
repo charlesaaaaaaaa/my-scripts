@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
+import json
 import re
 import linecache
 import time
+
+import yaml
 from selenium import webdriver
 from time import sleep
 from selenium.webdriver.chrome.service import Service
@@ -41,6 +44,7 @@ def start(host, port):  # 开启driver
     print(urls)
     driver.get(urls)
     return driver
+
 
 def load_xpanel():
     sleep(3)
@@ -305,19 +309,17 @@ def check_email():
 
 if __name__ == '__main__':
     ps = argparse.ArgumentParser(description='install KunlunBase cluster with Xpanel')
-    ps.add_argument('--host', help="Xpanel host", default='192.168.0.125', type=str)
-    ps.add_argument('--port', help='Xpanel port', default=18851, type=int)
-    ps.add_argument('--user', help="所有涉及到的服务器的通用用户，必须要有ssh互信免密权限",default='kunlun', type=str)
-    ps.add_argument('--AccessKeyId', help="阿里云email的AccessKeyId", type=str)
-    ps.add_argument('--AccessKeySecret', help="阿里云email的AccessKeySecret", type=str)
-    ps.add_argument('--Email', help="阿里云email账号", type=str)
+    ps.add_argument('--config', help="configuration file", default='./config.yml', type=str)
     args = ps.parse_args()
-    Host = args.host
-    Port = args.port
-    User = args.user
-    AccessKeyId1 = args.AccessKeyId
-    SecretKey1 = args.AccessKeySecret
-    Email1 = args.Email
+    config = args.config
+    with open(config, mode='r', encoding='utf-8') as f:
+        conf = yaml.safe_load(f)
+    Host = conf['XpanelHost']
+    Port = conf['XpanelPort']
+    User = conf['defUser']
+    AccessKeyId1 = conf['aLiAccessKeyId']
+    SecretKey1 = conf['aLiAccessKeySecret']
+    Email1 = conf['Email']
     print(args)
     start(Host, Port)
     load_xpanel()
