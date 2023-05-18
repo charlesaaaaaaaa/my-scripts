@@ -45,6 +45,9 @@ def start(host, port):  # 开启driver
     driver.get(urls)
     return driver
 
+def sendKeys(url, txt):
+    driver.find_element(By.XPATH, url).click()
+    driver.find_element(By.XPATH, url).send_keys(txt)  # sec key
 
 def load_xpanel():
     sleep(3)
@@ -83,17 +86,19 @@ def test():
     print('选择其中一个存储分片主节点：%s:%s'% ( storage_host, storage_port))
 
     #设置用户信息，先进入 系统管理
-    driver.find_element(By.XPATH,'/html/body/div/div/div[1]/div/div[1]/div/ul/div[7]/li/div/span').click()
-    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[1]/div/div[1]/div/ul/div[7]/li/ul/div[1]/a/li/span').click() #点击用户管理
+    driver.find_element(By.XPATH,'/html/body/div[1]/div/div[1]/div/div[1]/div/ul/div[8]/li/div/span').click()
+    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[1]/div/div[1]/div/ul/div[8]/li/ul/div[1]/a/li/span').click() #点击用户管理
     sleep(1)
     #开始检查是否存在test这个用户，如果有就点击删除按钮, 先获取用户总个数
-    cNum = driver.find_element(By.XPATH,'/html/body/div[1]/div/div[2]/section/div/div[3]/div/span[1]').get_attribute('innerHTML')
-    cTotalNum = re.findall('0|[1-99]', cNum)
-    iTotalNum = int(cTotalNum[0])
+    cNum = driver.find_element(By.XPATH,'/html/body/div/div/div[2]/section/div/div[3]/div/span[1]').get_attribute('innerHTML')
+    cTotalNum = re.findall('0|[1-99]', cNum)[0]
+    print('当前共%s个用户' % (cTotalNum))
+    iTotalNum = int(cTotalNum)
     try:
         for i in range(iTotalNum):
             i = i + 1
-            userName = driver.find_element(By.XPATH,'/html/body/div[1]/div/div[2]/section/div/div[2]/div[3]/table/tbody/tr[%s]/td[2]/div/span' % (i)).get_attribute('innerHTML')
+            userName = driver.find_element(By.XPATH,'/html/body/div/div/div[2]/section/div/div[2]/div[3]/table/tbody/tr[%s]/td[2]/div/span' % (str(i))).get_attribute('innerHTML')
+            print(userName)
             if userName == 'test':
                 sleep(5)
                 #点击删除按键
@@ -101,15 +106,16 @@ def test():
                 #点击确定
                 driver.find_element(By.XPATH, '/html/body/div[2]/div/div[3]/button[2]/span').click()
                 print('删除旧test用户成功，新增新test用户。。。')
-    except:
-        pass
+                break
+    except Exception as err:
+        print(err)
     # 开始新增test用户, 点击新增
     driver.find_element(By.XPATH, '/html/body/div/div/div[2]/section/div/div[1]/div/button[3]/span').click()
     num = 0
-    for i in 'test', 'Qwer1234.', 'Qwer1234.', '12345678911', '2488347738@qq.com':
+    for i in 'test', 'Qwer1234.', 'Qwer1234.', '19864238151', '2488347738@qq.com':
         num = num + 1
-        driver.find_element(By.XPATH,
-                            '/html/body/div[1]/div/div[2]/section/div/div[4]/div/div[2]/form/div[%i]/div/div[1]/input' % (num)).send_keys(i)
+        elements = '/html/body/div[1]/div/div[2]/section/div/div[4]/div/div[2]/form/div[%s]/div/div[1]/input' % (num)
+        driver.find_element(By.XPATH, elements).send_keys(i)
     sleep(1)
     #重新获取一次用户总数
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[4]/div/div[3]/div/button[2]/span').click()
@@ -206,26 +212,34 @@ def test():
     sleep(1)
     a = j + 1
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[1]/div/div[2]/form/div[3]/div/div/div[2]/input').click()
-    driver.find_element(By.XPATH, '/html/body/div[%s]/div[1]/div[1]/ul/li[3]/span' % (a)).click()
+    for i in range(1, 4):
+        driver.find_element(By.XPATH, '/html/body/div[%s]/div[1]/div[1]/ul/li[%s]/span' % (a, i)).click()
     sleep(1)
     #点击确定
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[1]/div/div[3]/div/button[2]/span').click()
 
-    #增加告警发送邮箱 -- 告警管理 -- 配置管理 -- 阿里云邮箱 -- 配置key和邮箱
+    #增加告警发送邮箱 -- 告警管理 -- 配置管理 -- 短信配置 -- 配置key和签名
     print('开始配置发件邮箱信息')
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[3]/div[1]/button[4]/span').click()
     sleep(1)
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[1]/div/div/div/div[3]').click()
+    elements = '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[1]/div/div/div/div[2]'
+    driver.find_element(By.XPATH, elements).click() #短信配置
+    sendKeys('/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[1]/form/div[1]/div/div/input', AccessKeyId1)
+    elements = '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[1]/form/div[1]/div/div/input'
+    sendKeys(elements, SecretKey1)
+    elements = '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[1]/form/div[3]/div/div/input'
+    sendKeys(elements, msgModeId)#短信模版id
+    elements = '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[1]/form/div[4]/div/div/input'
+    sendKeys(elements, msgSignId)#短信签名id
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[1]/div/div/div/div[3]').click()
-    AccessKeyId = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[2]/form/div[1]/div/div/input')
-    AccessKeyId.clear()
-    AccessKeyId.send_keys(AccessKeyId1)
-    SecretKey = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[2]/form/div[2]/div/div/input')
-    SecretKey.clear()
-    SecretKey.send_keys(SecretKey1)
-    sendEMail = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[2]/form/div[3]/div/div/input')
-    sendEMail.clear()
-    sendEMail.send_keys(Email1)
+    #                                  -- 阿里云邮箱 -- 配置key和邮箱
+    elements='/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[2]/form/div[1]/div/div/input'
+    sendKeys(elements, AccessKeyId1)
+    elements='/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[2]/form/div[2]/div/div/input'
+    sendKeys(elements, SecretKey1)
+    elements='/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[2]/form/div[3]/div/div/input'
+    sendKeys(elements, Email1)
     sleep(1)
     #点击保存
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[2]/form/div[4]/div/button/span').click()
@@ -233,7 +247,7 @@ def test():
 
     #去选中的服务器进行进行不间断kill掉对应的存储节点进程
     print('开始不间断kill掉对应的存储节点进程一段时间，使其触发存储节点异常告警')
-    killStorageProcess = "ssh %s@%s \"ps -ef | grep %s | awk '{print \\$2}' | xargs kill -9\" > /dev/null 2>&1" % (User, storage_host, storage_port)
+    killStorageProcess = "ssh %s@%s \"ps -ef | grep %s | awk '{print \$2}' | xargs kill -9\" > /dev/null 2>&1" % (User, storage_host, storage_port)
     print(killStorageProcess)
     start_time = time.time()
     for i in range(500):
@@ -320,6 +334,8 @@ if __name__ == '__main__':
     AccessKeyId1 = conf['aLiAccessKeyId']
     SecretKey1 = conf['aLiAccessKeySecret']
     Email1 = conf['Email']
+    msgModeId = conf['msgModeId']
+    msgSignId = conf['msgSignId']
     print(args)
     start(Host, Port)
     load_xpanel()
