@@ -46,6 +46,8 @@ def InfoMation(Str):
 
 def start(host, port):#开启driver
     global driver
+    urls = 'http://%s:%d/KunlunXPanel' % (host, port)
+    print(urls)
     options = ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-automation'])
     options.add_experimental_option('useAutomationExtension', False)
@@ -68,8 +70,7 @@ def start(host, port):#开启driver
     #driver = webdriver.Chrome(options=ch_options)
     driver = webdriver.Chrome()
     driver.implicitly_wait(180)
-    urls = 'http://%s:%d/KunlunXPanel' % (host, port)
-    print(urls)
+
     driver.get(urls)
     return driver
 
@@ -96,9 +97,9 @@ def change_pwd():
         thread0.terminate()
         print('\r修改密码中 ...非首次登录，跳过...', end='')
         driver.refresh()
-        for i in range(10):
-            driver.find_element(By.NAME, 'username').send_keys(Keys.BACK_SPACE)
-            driver.find_element(By.NAME, 'password').send_keys(Keys.BACK_SPACE)
+        #for i in range(10):
+        driver.find_element(By.NAME, 'username').clear()
+        driver.find_element(By.NAME, 'password').clear()
         sleep(0.5)
     finally:
         print('\r修改密码中 ...完成...          ')
@@ -148,15 +149,15 @@ def create_cluster():
             print(sys.exc_info())
     sleep(1)
      #input shard info
-    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[5]/div/div/div/input').send_keys(Keys.BACKSPACE)
+    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[5]/div/div/div/input').clear()
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[5]/div/div/div/input').send_keys('%d' % (ShardNum))
-    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[6]/div/div/input').send_keys(Keys.BACK_SPACE)
+    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[6]/div/div/input').clear()
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[6]/div/div/input').send_keys('%d' % (ReplicaNum))
-    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[7]/div/div/input').send_keys(Keys.BACK_SPACE)
+    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[7]/div/div/input').clear()
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[7]/div/div/input').send_keys('%d' % (ServerNum))
     try:
-        driver.find_element(By.XPATH, '//*[@id="pane-second"]/div/div[4]/div/div[2]/form/div[11]/div/div[1]/input').send_keys('1024')
-        driver.find_element(By.XPATH, '//*[@id="pane-second"]/div/div[4]/div/div[2]/form/div[12]/div/div[1]/input').send_keys('1024')
+        driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[12]/div/div[1]/input').send_keys('1024')
+        driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[2]/form/div[13]/div/div/input').send_keys('1024')
     except:
         print('\nconnot find element -- storage log num, skip')
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[4]/div/div[3]/div/button[2]/span').click()
@@ -196,7 +197,7 @@ def create_cluster():
 
 if __name__ == '__main__':
     ps = argparse.ArgumentParser(description='install KunlunBase cluster with Xpanel')
-    ps.add_argument('--host', help="Xpanel host", default='192.168.0.125', type=str)
+    ps.add_argument('--host', help="Xpanel host", default='192.168.0.167', type=str)
     ps.add_argument('--port', help='Xpanel port', default=18851, type=int)
     ps.add_argument('--shardNum', help='KunlunBase cluster shard num, shard num >= 1', type=int, default=2)
     ps.add_argument('--replicaNum', help='KunlunBase cluster replica Num, replica num >=3', type=int, default=3)
