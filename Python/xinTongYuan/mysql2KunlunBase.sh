@@ -36,7 +36,8 @@ datadir = $Home/mysql/data
 port=12388
 server-id = 1
 socket=$Home/mysql/mysql.sock
-
+gtid_mode = on
+enforce_gtid_consistency = on
 character-set-server = utf8mb4
 collation-server = utf8mb4_bin
 init_connect='SET NAMES utf8mb4'
