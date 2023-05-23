@@ -87,7 +87,8 @@ def test():
         print("shard_%s node info: %s, %s" % (sid_list[num], host_list[num], port_list[num]))
         num = num + 1
     print(sid_list)
-
+    
+    print("创建klustron分区表及增加数据")
     connect_pg(Host, Port, User, Pwd, 'postgres', 'y')
     cur.execute("drop database if exists shard")
     cur.execute("create database shard")
@@ -99,7 +100,7 @@ def test():
     shardNum = shardNum.replace('L','')
     connect_pg(Host, Port, User, Pwd, 'shard', 'y')
     sql1 = "create table item(id int, name text, grp int) partition by range(grp)" #创建分区表，以id为分片字段
-    print("use shard; \n",sql1)
+    print("use shard; \n%s" % (sql1))
     cur.execute(sql1)
     for i in range(0, int(shardNum)):
         shard = t2str(sid_list[i])
@@ -107,7 +108,7 @@ def test():
         timNum = 5 * i
         part = "CREATE TABLE item_%s PARTITION OF item FOR VALUES FROM (%d) TO (%d) with (shard = %s);" % (str(i), 1+timNum, 6+timNum, shard) ##创建分区表
         cur.execute(part)
-        print(part)
+        print('kunlun:%s' % (part))
     close_pg('pass')
 
     print('load 1000 row data ...')
@@ -115,11 +116,36 @@ def test():
     for grp in range(1,11):
         for Id in range(1, 101):
             Ids = Id + (grp -1) * 100
-            ranStr = random.choice(['liangzai','is','llc','charles','trn','jgh','fhrq','fhxe','gewb'])
-            cur.execute("insert into item values(%d, '%s', %d)" % (Ids, ranStr, grp))
+            txt = 'testdata%d' % (Ids)
+            cur.execute("insert into item values(%d, '%s', %d)" % (Ids, txt, grp))
+    close_pg('pass')
+    
+    print("创建pg分区表及增加数据")
+    connect_pg(srcHost, srcPort, srcUser, srcPwd, 'postgres', 'y')
+    cur.execute("drop database if exists shard")
+    cur.execute("create database shard")
+    close_pg('pass')
+    connect_pg(srcHost, srcPort, srcUser, srcPwd, 'shard', 'y')
+    sql1 = "create table item(id int, name text, grp int) partition by range(grp)"
+    print(sql1)
+    cur.execute(sql1)
+    for i in range(0, int(shardNum)):
+        timNum = 5 * i
+        part = "CREATE TABLE item_%s PARTITION OF item FOR VALUES FROM (%d) TO (%d);" % (str(i), 1+timNum, 6+timNum)
+        cur.execute(part)
+        print('pg:%s' % (part))
     close_pg('pass')
 
-    print("\n检查数据是否正确分布,数据是否无误")
+    print('load 1000 row data ...')
+    connect_pg(srcHost, srcPort, srcUser, srcPwd, 'shard', 'y')
+    for grp in range(1,11):
+        for Id in range(1, 101):
+            Ids = Id + (grp -1) * 100
+            txt = 'testdata%d' % (Ids)
+            cur.execute("insert into item values(%d, '%s', %d)" % (Ids, txt, grp))
+    close_pg('pass')
+
+    print("\n检查klustron数据是否正确分布,数据是否无误")
     shardTotalDataRow = 0
     shardTip = ""
     num = 0
@@ -144,44 +170,68 @@ def test():
     print("KunlunServer: select count(*) from item: %s" % pgTotal)
     print("KunlunStorage:%s = %s"% (shardTip, shardTotalDataRow))
 
-    print("\n2）	采用where条件对分片字段过滤，查询单条数据；")
+    print("(分片字段grp：每100个数据分一组。如grp=1，id列从1到100，grp=2，id列101到200)\n2）	采用where条件对分片字段过滤，查询单条数据；")
     num = 0
     ranInt = random.randint(1, 10)
     ran100 = random.randint(1, 100)
-    sql = "select * from item where grp = %d limit %d,1" % (ranInt, ran100)
+    ran1000 = random.randint(1, 1000)
+    sql = "select * from item where grp = %d limit 1 offset %d" % (ranInt, ran100)
     print('%s:%s : %s:' % (Host, Port, sql))
     connect_pg(Host, Port, User, Pwd, 'shard', 'y')
     cur.execute(sql)
-    shardDataRow = close_pg('one')
-    print("result: %s"% (str(shardDataRow)))
+    shardDataRow2 = close_pg('one')
+    print("klustron: \n%s"% (str(shardDataRow2)))
 
-    print("\n3）	对分片字段范围查询，且排序；")
+    connect_pg(srcHost, srcPort, srcUser, srcPwd, 'shard', 'y')
+    cur.execute(sql)
+    pgShardDataRow2 = close_pg('one')
+    print("pg: \n%s" % (str(pgShardDataRow2)))
+
+    print("\n3）	对分片字段范围查询，且排序;")
     ranInt = random.randint(1, 10)
-    sql = "select * from item where grp = %d order by id" % (ranInt)
+    sql = "select * from item where id BETWEEN %d and %d order by id" % (ran1000 - 3, ran1000)
     print("%s: %s : %s "% (tmpHost, tmpPort, sql))
     connect_pg(Host, Port, User, Pwd, 'shard', 'y')
     cur.execute(sql)
-    shardDataRow = close_pg('all')
-    print(str(shardDataRow))
+    shardDataRow3 = close_pg('all')
+    print('klustron: \n%s' % (str(shardDataRow3)))
 
-    print("\n4）	对分片字段进行分组查询，并统计各个分组相同值的个数；")
-    sql = "select grp, count(grp) from item group by grp"
+    connect_pg(srcHost, srcPort, srcUser, srcPwd, 'shard', 'y')
+    cur.execute(sql)
+    pgShardDataRow3 = close_pg('all')
+    print('pg: \n%s' % (str(pgShardDataRow3)))
+
+    print("\n4）	对分片字段进行分组查询，并统计各个分组相同值的个数;")
+    sql = "select grp, count(grp) from item group by grp order by grp"
     print("%s: %s : %s "% (tmpHost, tmpPort, sql))
     connect_pg(Host, Port, User, Pwd, 'shard', 'y')
     cur.execute(sql)
-    shardDataRow = close_pg('all')
-    print(str(shardDataRow))
+    shardDataRow1 = close_pg('all')
+    print('klustron: \n%s' % (str(shardDataRow1)))
 
+    connect_pg(srcHost, srcPort, srcUser, srcPwd, 'shard', 'y')
+    cur.execute(sql)
+    pgShardDataRow1 = close_pg('all')
+    print('pg: \n%s' % (str(pgShardDataRow1)))
+    
 if __name__ == '__main__':
     ps = argparse.ArgumentParser(description='Kunlun sharding test')
     ps.add_argument('--host', type=str, help='the host of KunlunBase, something like "192.168.100.100"')
     ps.add_argument('--port', type=int, default=47001, help='the port of KunlunBase, default value = 47001')
     ps.add_argument('--user', type=str, default='abc', help='the user of KunlunBase, default value = "abc"')
     ps.add_argument('--password', type=str, default='abc', help = 'the password of Kunlunbase, default values = "abc"')
+    ps.add_argument('--srchost', type=str, help='源pg，进行对比的pg host')
+    ps.add_argument('--srcport', type=int, default=47001, help='源pg，进行对比的pg port')
+    ps.add_argument('--srcuser', type=str, default='abc', help='源pg，进行对比的pg user')
+    ps.add_argument('--srcpassword', type=str, default='abc', help = '源pg，进行对比的pg password')
     args = ps.parse_args();
     print(args);
     Host = args.host
     Port = args.port
     User = args.user;
     Pwd = args.password;
+    srcHost = args.srchost
+    srcPort = args.srcport
+    srcUser = args.srcuser
+    srcPwd = args.srcpassword
     test()
