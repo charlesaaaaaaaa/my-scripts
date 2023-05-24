@@ -51,7 +51,7 @@ def start(host, port):#开启driver
     options = ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-automation'])
     options.add_experimental_option('useAutomationExtension', False)
-
+    '''
     #这里被注释的是windows的部分
     #driver = webdriver.Chrome(executable_path='D:\python3\chromedriver.exe')
     #driver = webdriver.Chrome()
@@ -68,9 +68,7 @@ def start(host, port):#开启driver
     ch_options.add_argument('--disable-dev-shm-usage')
     #driver = webdriver.Chrome(options=ch_options)
     driver = webdriver.Chrome()
-    '''
-    driver.implicitly_wait(180)
-
+    driver.implicitly_wait(5)
     driver.get(urls)
     return driver
 
