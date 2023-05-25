@@ -151,7 +151,7 @@ def configComp():
                 err = 'Computing node' + SCompIp + ':' + SCompPort + 'parameter :"' + SCompkeys + '" values is null'
                 print(err)
 
-        stmt = "ssh %s@%s \'cd %s/%s/kunlun-server-%s/scripts && python2 stop_pg.py --port %s ; python3 start_pg.py --port %s \'" % (defuser, SCompIp, insBin, SCompPort, version, SCompPort, SCompPort)
+        stmt = "ssh %s@%s \'cd %s/%s/kunlun-server-%s/scripts && python2 stop_pg.py --port %s ; python2 start_pg.py --port %s \'" % (defuser, SCompIp, insBin, SCompPort, version, SCompPort, SCompPort)
 
         WFile(stmt, 'y')
         WFile(stmt, 'n')
