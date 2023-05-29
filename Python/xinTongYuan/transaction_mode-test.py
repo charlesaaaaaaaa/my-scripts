@@ -15,7 +15,7 @@ def wFile(tran_mode, res):
     num = 1
     with open("total_result.txt", "a") as F:
         F.write('========\n%s\n========\n'% (tran_mode))
-        F.write('|| times || [(单次事务首次查询R1), (单次事务二次查询R1), (单次事务首次查询R1与R2之和), (单次事务二查询R1与R2之和) ||\n')
+        F.write('|| times || [(单次事务首次查询R1), (首次查询R2), (单次事务首次查询R1与R2之和), (单次事务二次查询R1), (二次查询R2), (单次事务二查询R1与R2之和) ||\n')
         for i in res:
             F.write('|| %d || %s ||\n' % (num, str(i)))
             num = num+1
@@ -177,7 +177,7 @@ def T2Exec(tran_mode):
         curT2.execute(sumSql)
         C1Sum2 = curT2.fetchone()
         curT2.execute('commit')
-        singleResultList = [R1C1v1, R1C1v2, C1Sum1, C1Sum2]
+        singleResultList = [R1C1v1, R2C1v1, C1Sum1, R1C1v2, R2C1v2, C1Sum2]
         TotalResultList.append(singleResultList)
         T2Times = T2Times + 1
         print('\r当前查询次数 %d/1000' % (T2Times), end='')
@@ -224,10 +224,14 @@ def full_test(trans_mode):
     print('\n--------\n检查%s汇总结果\n--------' % (trans_mode))
     print('检查所有R1、R2之和是否为0')
     for sumNum in totalResultList:
-        if sumNum[2] != chTmpValue[0] or sumNum[3] != chTmpValue[0]:
+        if sumNum[2] != chTmpValue[0] or sumNum[5] != chTmpValue[0]:
             wrgNum = wrgNum+1
-            print('第%d次事务查询，其R1、R2值："%s" : %s'% (listNum, sumNum[2], sumNum[3]))
-        listNum = listNum + 1
+            print('第%d次事务查询，其R1、R2值："%s" : %s'% (listNum, sumNum[0], sumNum[1]))
+            listNum = listNum + 1
+        elif sumNum[5] != chTmpValue[0]:
+            wrgNum = wrgNum+1
+            print('第%d次事务查询，其R1、R2值："%s" : %s'% (listNum, sumNum[3], sumNum[4]))
+            listNum = listNum + 1
     if wrgNum != 0:
         print('<< 本次检查中，有%d组R1与R2之和不为0的结果，与预期不符合 >>' % (wrgNum))
     else :
@@ -241,7 +245,7 @@ def full_test(trans_mode):
         while listNum > 1000:
             if listNum == 0:
                 R1Fro = totalResultList[listNum][0]
-                R2Fro = totalResultList[listNum][1]
+                R2Fro = totalResultList[listNum][3]
                 if R1Fro != R2Fro:
                     print('第1次事务查询中，R1值%s和R2值%s不同，fail！'% (R1Fro, R2Fro))
                     errNum = errNum + 1
@@ -249,7 +253,7 @@ def full_test(trans_mode):
                 
             else:
                 R1Bak = totalResultList[listNum][0]
-                R2Bak = totalResultList[listNum][1]
+                R2Bak = totalResultList[listNum][3]
                 if R1Fro != R2Fro:
                     print('第%s次事务查询中，R1值%s和R2值%s不同，fail！' % (listNum, R1Fro, R2Fro))
                     errNum = errNum + 1
@@ -275,7 +279,7 @@ def full_test(trans_mode):
         print('2.2)	在read commited的情况下，T2线程在事务中的读取，一次都不出现字段和不为0的现象，可能并且应该出现一个事务中两次查询R1的C1字段值发生变化，若满足则read commited隔离级别大概率正确。')
         while listNum > 1000:
             R1C1v = totalResultList[listNum][0]
-            R2C1v = totalResultList[listNum][1]
+            R2C1v = totalResultList[listNum][3]
             if R1Fro == R1Bak:
                 print('第%d次查询中，R1行C1列值%s与R2行C1列值%s相同, fail' % (listNum+1, R1C1v, R2C1v))
                 errNum = errNum + 1
