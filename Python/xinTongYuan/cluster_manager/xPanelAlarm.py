@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import errno
 import json
 import re
 import linecache
@@ -46,7 +47,8 @@ def start(host, port):  # 开启driver
     return driver
 
 def sendKeys(url, txt):
-    driver.find_element(By.XPATH, url).click()
+    driver.find_element(By.XPATH, url).clear()
+    #sleep(0.5)
     driver.find_element(By.XPATH, url).send_keys(txt)  # sec key
 
 def load_xpanel():
@@ -83,7 +85,7 @@ def test():
             storage_port = driver.find_element(By.XPATH, '/html/body/div/div/div[2]/section/div/div/div[2]/div[4]/div/div[2]/div/div[2]/div[3]/table/tbody/tr[2]/td/div/div[3]/table/tbody/tr[%s]/td[3]/div' % (num)).text
             break
         num = num + 1
-    print('选择其中一个存储分片主节点：%s:%s'% ( storage_host, storage_port))
+    print('选择其中一个存储分片主节点：%s:%s' % (storage_host, storage_port))
 
     #设置用户信息，先进入 系统管理
     driver.find_element(By.XPATH,'/html/body/div[1]/div/div[1]/div/div[1]/div/ul/div[8]/li/div/span').click()
@@ -106,7 +108,6 @@ def test():
                 #点击确定
                 driver.find_element(By.XPATH, '/html/body/div[2]/div/div[3]/button[2]/span').click()
                 print('删除旧test用户成功，新增新test用户。。。')
-                break
     except Exception as err:
         print(err)
     # 开始新增test用户, 点击新增
@@ -126,112 +127,79 @@ def test():
 
     #开始新增告警, 点击告警终端管理
     print('开始新增告警 -- 存储节点异常')
-    driver.find_element(By.XPATH, '/html/body/div/div/div[1]/div/div[1]/div/ul/div[2]/a/li').click()
-    driver.find_element(By.XPATH, '/html/body/div/div/div[2]/section/div/div[3]/div[1]/button[4]/span').click()
-    #开始查找接受处理人为空（因为上一步删除了test用户，故如果之前存在test的告警应该在用户处为空）且告警类型为存储节点异常的告警并删除，无则不做任何事
+    driver.find_element(By.XPATH, '/html/body/div/div/div[1]/div/div[1]/div/ul/div[2]/a/li').click() #点击告警终端管理
+    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[3]/div[1]/button[3]/span').click() #点击告警管理
+    # 开始查找计算节点异常
+    '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[1]/div/div/div[3]/table/tbody/tr[1]/td[2]/div'
+    '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[1]/div/div/div[3]/table/tbody/tr[2]/td[2]/div'
+    ele = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[1]/div/div/div[3]/table/tbody/tr[1]/td[2]/div')
+    text = ele.get_attribute('innerHTML')
+    trnum = 1
+    sleep(2)
+    while text != atti_type:
+        trnum = trnum + 1
+        ele = driver.find_element(By.XPATH,
+                                  '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[1]/div/div/div[3]/table/tbody/tr[%s]/td[2]/div' % (trnum))
+        text = ele.get_attribute('innerHTML')
+    print(trnum)
+    #用户相关
     try:
-        cru_alarm_types = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[1]/div/div[3]/table/tbody/tr/td[1]/div/span').text
-        print(cru_alarm_types, atti_type)
-        num = 1
-        while cru_alarm_types != atti_type:
-            cru_alarm_types = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[1]/div/div[3]/table/tbody/tr[%s]/td[1]/div/span' % (num)).text
-            print(cru_alarm_types, atti_type)
-            num = num + 1
-        print(num)
-        if num == 1:
-            button_del = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[1]/div/div[3]/table/tbody/tr/td[5]/div/button[2]/span')
-            driver.execute_script("arguments[0].click();",button_del)
-        else:
-            button_del = driver.find_element(By.XPATH,
-                                '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[1]/div/div[3]/table/tbody/tr[%s]/td[5]/div/button[2]/span' % (
-                                    num - 1))
-            driver.execute_script("arguments[0].click();", button_del)
-        errCode = driver.find_element(By.XPATH, '/html/body/div[2]/div/div[2]/div[1]/div[2]/p').text
-        errCode = re.findall('0|[0-9][0-9][0-9][0-9]', errCode)
-        print(errCode)
-        errCode = errCode[0]
-        print(errCode)
-        driver.find_element(By.XPATH, '/html/body/div[2]/div/div[2]/div[2]/div[1]/input').send_keys(errCode)
-        driver.find_element(By.XPATH, '/html/body/div[2]/div/div[3]/button[2]/span').click()
-    except Exception as a:
-        print('当前没有旧的告警管理配置')
-        #print(a)
-    driver.find_element(By.XPATH,
-                            '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/header/button/i').click()  # 点击关闭
-    #点击新增
-    driver.find_element(By.XPATH, '/html/body/div/div/div[2]/section/div/div[3]/div[1]/button[3]/span').click()
-    #点击告警类型
-    sleep(1)
-    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[1]/div/div[2]/form/div[1]/div/div/div/input').click()
-    #开始逐个查找类型为 存储节点异常 的选择
-    for i in range(1, 17):
-        for j in range(3, 6):
-            print(j)
+        driver.find_element(By.XPATH,'/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[1]/div/div/div[3]/table/tbody/tr[%s]/td[5]/div/div/div[2]/input' % (trnum)).click()
+    except:
+        for i in range(iTotalNum):
             try:
-                alType = driver.find_element(By.XPATH, '/html/body/div[%s]/div[1]/div[1]/ul/li[%s]/span' % (j, i))
-                alTypeTxt = alType.text
-                if alTypeTxt == atti_type:
-                    alType.click()
-                    break
+                driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[1]/div/div/div[3]/table/tbody/tr[%s]/td[5]/div/div/div[1]/span/span/i' % trnum).click()
             except:
-                pass
-        if alTypeTxt == atti_type:
-            break
-        else:
-            print(i)
-
-    #逐个查找test用户
-    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[1]/div/div[2]/form/div[2]/div/div/div/input').click()
-    for i in range(1, iTotalNum + 1):
+                for i in range(iTotalNum):
+                    try:
+                        sleep(1)
+                        driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[1]/div/div/div[3]/table/tbody/tr[%s]/td[5]/div/div/div[1]/span/span[1]/i' % (trnum)).click()
+                    except:
+                        driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[1]/div/div/div[3]/table/tbody/tr[%s]/td[5]/div/div/div[1]/span/span/i' % trnum).click()
         sleep(1)
-        findEls = 0
-        a = j + 1
-        while findEls == 0:
-            try:
-                sleUser = driver.find_element(By.XPATH, '/html/body/div[%s]/div[1]/div[1]/ul/li[%s]/span' % (a, i))
-                sleUserTxt = sleUser.text
-                findEls == 1
-                print(sleUserTxt)
-                break
-            except:
-                findEls == 0
-                print(a)
-                a = a + 1
-        if sleUserTxt == 'test':
-            sleUser.click()
+        driver.find_element(By.XPATH,'/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[1]/div/div/div[3]/table/tbody/tr[%s]/td[5]/div/div/div[2]/input' % (trnum)).click()
+        sleep(1)
+    for i in range(iTotalNum): #找用户名为test的项并且点击
+        linum = i + 1
+        ele = driver.find_element(By.XPATH, '/html/body/div[4]/div[1]/div[1]/ul/li[%s]/span' % (linum))
+        Names = ele.get_attribute('innerHTML')
+        if Names == 'test':
+            ele.click()
             break
-    if sleUserTxt != 'test':
-        print('未找到test用户')
-        exit(1)
-    # 是否生效，是
+        elif Names != 'test' and linum == iTotalNum:
+            print("找不到名为 test 的用户，失败")
+            exit(1)
     sleep(1)
-    j = a + 1
-    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[1]/div/div[2]/form/div[4]/div/div/div/input').click()
-    driver.find_element(By.XPATH, '/html/body/div[%s]/div[1]/div[1]/ul/li[1]/span' % (j)).click()
-    #提醒方式, 邮件
-    sleep(1)
-    a = j + 1
-    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[1]/div/div[2]/form/div[3]/div/div/div[2]/input').click()
+    #提醒相关
+    try:
+        for i in range(3):
+            driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[1]/div/div/div[3]/table/tbody/tr[%s]/td[6]/div/div/div[1]/span/span/i' % trnum).click()
+            sleep(1)
+    except:
+        pass
+    #点击下拉框
+    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[1]/div/div/div[3]/table/tbody/tr[%s]/td[6]/div/div/div[2]/span/span/i' % trnum).click()
     for i in range(1, 4):
-        driver.find_element(By.XPATH, '/html/body/div[%s]/div[1]/div[1]/ul/li[%s]/span' % (a, i)).click()
-    sleep(1)
-    #点击确定
-    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[1]/div/div[3]/div/button[2]/span').click()
+        sleep(1)
+        driver.find_element(By.XPATH, '/html/body/div[5]/div[1]/div[1]/ul/li[%s]/span' % (i)).click() #(点击三个提醒方式)
+    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/header/button/i').click()#点击关闭
 
     #增加告警发送邮箱 -- 告警管理 -- 配置管理 -- 短信配置 -- 配置key和签名
     print('开始配置发件邮箱信息')
-    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[3]/div[1]/button[4]/span').click()
+    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[3]/div[1]/button[3]/span').click()
     sleep(1)
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[1]/div/div/div/div[3]').click()
     elements = '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[1]/div/div/div/div[2]'
     driver.find_element(By.XPATH, elements).click() #短信配置
     sendKeys('/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[1]/form/div[1]/div/div/input', AccessKeyId1)
-    elements = '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[1]/form/div[1]/div/div/input'
+    elements = '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[1]/form/div[2]/div/div/input'
     sendKeys(elements, SecretKey1)
     elements = '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[1]/form/div[3]/div/div/input'
     sendKeys(elements, msgModeId)#短信模版id
     elements = '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[1]/form/div[4]/div/div/input'
     sendKeys(elements, msgSignId)#短信签名id
+    #点击保存
+    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[1]/form/div[5]/div/button/span').click()
     driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[1]/div/div/div/div[3]').click()
     #                                  -- 阿里云邮箱 -- 配置key和邮箱
     elements='/html/body/div[1]/div/div[2]/section/div/div[2]/div/div/section/div/div[2]/div[2]/div/div[2]/div[2]/form/div[1]/div/div/input'
@@ -247,7 +215,7 @@ def test():
 
     #去选中的服务器进行进行不间断kill掉对应的存储节点进程
     print('开始不间断kill掉对应的存储节点进程一段时间，使其触发存储节点异常告警')
-    killStorageProcess = "ssh %s@%s \"ps -ef | grep %s | awk '{print \$2}' | xargs kill -9\" > /dev/null 2>&1" % (User, storage_host, storage_port)
+    killStorageProcess = "ssh %s@%s \"ps -ef | grep %s | awk '{print \\$2}' | xargs kill -9\" > /dev/null 2>&1" % (User, storage_host, storage_port)
     print(killStorageProcess)
     start_time = time.time()
     for i in range(500):

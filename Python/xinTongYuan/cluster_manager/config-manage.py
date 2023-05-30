@@ -39,8 +39,8 @@ def config_node():
 
     def setVar():
         global sql, varName, varValue
-        #Var = random.randint(1,3)
-        Var = 2
+        Var = random.randint(1,3)
+        #Var = 2
         if Var == 1:
             varName = random.choice(['lock_wait_timeout', 'innodb_lock_wait_timeout', 'fullsync_timeout'])
             varValue = random.randint(1200, 30001)
