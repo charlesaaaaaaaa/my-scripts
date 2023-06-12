@@ -1,6 +1,8 @@
-if [[ $* -eq 0 ]]
+if [[ $# -eq 0 ]]
 then
-	echo 请给三个参数，分别是 安装mysql的ip地址、已安装好的计算节点ip地址与port
+	echo 请给三个参数，分别是 本机的ip地址、已安装好的计算节点ip地址与port
+	echo 如 bash mysql2KunlunBase.sh 192.168.0.126 192.168.0.128 58881
+	exit 0
 fi
 mkdir -p mysql2Kunlun
 Home=`readlink -f mysql2Kunlun`
