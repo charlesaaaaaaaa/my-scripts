@@ -141,8 +141,10 @@ def configComp():
                 SCompPort = str(CompPort[CIPN])
                 
                 num = 0
+                if num == 0:
+                    BashStmt = "ssh %s@%s \'echo >> %s/%s/postgresql.conf\'" % (defuser, SCompIp, serDat, SCompPort)
+                    num = num + 1
                 BashStmt = "ssh %s@%s \'echo %s = %s >> %s/%s/postgresql.conf\'" % (defuser, SCompIp, SCompkeys, SCompvalues, serDat, SCompPort)
-                num = num + 1
 
                 WFile(BashStmt, 'y')
                 WFile(BashStmt, 'n')
