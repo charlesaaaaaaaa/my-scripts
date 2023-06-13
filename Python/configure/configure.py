@@ -133,6 +133,7 @@ def configComp():
     # setting computing node ========================================================================
     CIPN = 0
     for i in CompIp:
+        num = 0
         for a in range(0, CompNum):
             if Compvalues[a] :
                 SCompkeys = ''.join(Compkeys[a])
@@ -140,9 +141,10 @@ def configComp():
                 SCompIp = ''.join(CompIp[CIPN])
                 SCompPort = str(CompPort[CIPN])
                 
-                num = 0
                 if num == 0:
                     BashStmt = "ssh %s@%s \'echo >> %s/%s/postgresql.conf\'" % (defuser, SCompIp, serDat, SCompPort)
+                    WFile(BashStmt, 'y')
+                    WFile(BashStmt, 'n')
                     num = num + 1
                 BashStmt = "ssh %s@%s \'echo %s = %s >> %s/%s/postgresql.conf\'" % (defuser, SCompIp, SCompkeys, SCompvalues, serDat, SCompPort)
 
