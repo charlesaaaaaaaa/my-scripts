@@ -162,6 +162,7 @@ def test():
     for i in range(iTotalNum): #找用户名为test的项并且点击
         linum = i + 1
         try:
+            sleep(1)
             ele = driver.find_element(By.XPATH, '/html/body/div[4]/div[1]/div[1]/ul/li[%s]/span' % (linum))
             Names = ele.get_attribute('innerHTML')
         except:
