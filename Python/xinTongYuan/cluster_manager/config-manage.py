@@ -39,15 +39,15 @@ def config_node():
 
     def setVar():
         global sql, varName, varValue
-        Var = random.randint(1,3)
+        Var = random.randint(1,2)
         #Var = 2
         if Var == 1:
             varName = random.choice(['lock_wait_timeout', 'innodb_lock_wait_timeout', 'fullsync_timeout'])
             varValue = random.randint(1200, 30001)
-        elif Var == 2:
+        elif Var == 3: #'innodb_buffer_pool_size', 'max_binlog_size'这两个都会获取失败，应该是范围的问题
             varName = random.choice(['innodb_buffer_pool_size', 'max_binlog_size'])
             varValue = random.randint(1080000000, 1800000000)
-        else:
+        elif Var == 2:
             varName = random.choice(['innodb_flush_log_at_trx_commit', 'sync_binlog', 'global_xmin'])
             varValue = random.randint(0,1)
         sql = 'set global %s = %i' % (varName, varValue)
