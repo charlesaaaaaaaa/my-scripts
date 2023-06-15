@@ -161,8 +161,11 @@ def test():
         sleep(1)
     for i in range(iTotalNum): #找用户名为test的项并且点击
         linum = i + 1
-        ele = driver.find_element(By.XPATH, '/html/body/div[4]/div[1]/div[1]/ul/li[%s]/span' % (linum))
-        Names = ele.get_attribute('innerHTML')
+        try:
+            ele = driver.find_element(By.XPATH, '/html/body/div[4]/div[1]/div[1]/ul/li[%s]/span' % (linum))
+            Names = ele.get_attribute('innerHTML')
+        except:
+            pass
         if Names == 'test':
             ele.click()
             break
