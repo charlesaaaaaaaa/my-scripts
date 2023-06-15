@@ -46,8 +46,8 @@ def test():
             pwd  = conf['instance'][i]['pwd']
             break
     Time = conf['runtime']
-    execClean = "sysbench oltp_point_select --tables=10 --table-size=525000 --db-driver=pgsql --pgsql-host=%s --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=postgres --threads=10 cleanup" % (conf['haproxy_host'], conf['haproxy_port'], user, pwd)
-    execPrepare = "sysbench oltp_point_select --tables=10 --table-size=525000 --db-driver=pgsql --pgsql-host=%s --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=postgres --threads=10 prepare" % (conf['haproxy_host'], conf['haproxy_port'], user, pwd)
+    execClean = "sysbench oltp_point_select --tables=10 --table-size=50000 --db-driver=pgsql --pgsql-host=%s --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=postgres --threads=10 cleanup > /dev/null" % (conf['haproxy_host'], conf['haproxy_port'], user, pwd)
+    execPrepare = "sysbench oltp_point_select --tables=10 --table-size=50000 --db-driver=pgsql --pgsql-host=%s --pgsql-port=%s --pgsql-user=%s --pgsql-password=%s --pgsql-db=postgres --threads=10 prepare > /dev/null" % (conf['haproxy_host'], conf['haproxy_port'], user, pwd)
     try:
         subrun(execClean)
         sleep(5)
