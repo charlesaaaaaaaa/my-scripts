@@ -1,6 +1,6 @@
 rm -rf haproxy*
 killall haproxy > /dev/null 2>&1
-wget http://zettatech.tpddns.cn:14000/thirdparty/cloud/haproxy.tgz
+wget -q http://zettatech.tpddns.cn:14000/thirdparty/cloud/haproxy.tgz
 tar -zxf haproxy.tgz
 rm -rf haproxy.tgz
 for i in `seq 1 4`; do sed -i '$d' haproxy/conf/haproxy.cnf; done

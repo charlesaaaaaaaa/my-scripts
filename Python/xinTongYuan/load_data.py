@@ -26,9 +26,9 @@ def close_pg(fet):
 def test():
     print('load 1000 row data ...')
     connect_pg(Host, Port, User, Pwd, Db, 'y')
-    for grp in range(1,11):
-        for Id in range(1, 101):
-            Ids = Id + (grp -1) * 100
+    for grp in range(1,101):
+        for Id in range(1, 11):
+            Ids = Id + (grp -1) * 10
             txt = 'testdata%d' % (Ids)
             cur.execute("insert into item values(%d, '%s', %d)" % (Ids, txt, grp))
     close_pg('pass')

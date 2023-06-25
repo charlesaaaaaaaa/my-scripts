@@ -167,12 +167,11 @@ def test():
             Names = ele.get_attribute('innerHTML')
         except:
             pass
-        if Names == 'test':
-            ele.click()
-            break
-        elif Names != 'test' and linum == iTotalNum:
-            print("找不到名为 test 的用户，失败")
-            exit(1)
+    if Names == 'test':
+        ele.click()
+    elif Names != 'test' and linum == iTotalNum:
+        print("找不到名为 test 的用户，失败")
+        exit(1)
     sleep(1)
     #提醒相关
     try:
@@ -288,8 +287,10 @@ def check_email():
             subprocess.run('cat tmp.txt', shell = True)
         else:
             print("port不正确，失败")
+            exit(1)
     else:
         print('host不正确，失败')
+        exit(1)
     subprocess.run('rm tmp.txt', shell = True)
 
 

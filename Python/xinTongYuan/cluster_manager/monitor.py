@@ -70,14 +70,21 @@ def enter_shard_list():
 
 def show_monitor():
     enter_shard_list()
-    for nodeNum in range(1,4): #这一步就是在选择备节点的机器的禁用button
-        shard1_node2 = '//*[@id="pane-1"]/div/div[2]/div/div[2]/div[3]/table/tbody/tr[2]/td/div/div[3]/table/tbody/tr[%s]/td[10]/div/button[3]/span' % (nodeNum)
-        testText = driver.find_element(By.XPATH, shard1_node2).text
-        print('node_%s: %s' % (nodeNum, testText))
-        if testText == '禁用':
-            break
-        else :
-            shard1_node2 = ''
+    shard1_node2 = ''
+    nodeNum = 0
+    #for nodeNum in range(1,4): #这一步就是在选择备节点的机器的禁用button
+    while shard1_node2 == '':
+        nodeNum += 1
+        try:
+            shard1_node2 = '/html/body/div/div/div[2]/section/div/div/div[2]/div[4]/div/div[2]/div/div[2]/div[3]/table/tbody/tr[2]/td/div/div[3]/table/tbody/tr[%s]/td[10]/div/button[3]/span' % (nodeNum)
+            testText = driver.find_element(By.XPATH, shard1_node2).text
+            print('node_%s: %s' % (nodeNum, testText))
+            if testText == '禁用':
+                break
+            else :
+                shard1_node2 = ''
+        except:
+            pass
     print('开始禁用备节点：node_%s...' % (nodeNum))
     dClick(shard1_node2)#点击备节点的禁用button
     warnText = driver.find_element(By.XPATH, '/html/body/div[2]/div/div[2]/div[1]/div[2]/p').get_attribute('innerHTML')#这里在获取弹窗的提示语
@@ -95,17 +102,21 @@ def show_monitor():
             assert txt == ' 禁用成功 '
             break
         except:
-            if txt == ' 禁用失败':
-                print(Alerts)
-                exit(1)
-            else:
-                sleep(1)
+            try:
+                if txt == ' 禁用失败':
+                    print(Alerts)
+                    exit(1)
+                else:
+                    sleep(1)
+            except:
+                pass
 
     dClick('/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[4]/div/div[2]/div/div[6]/div/div[1]/button/i')#点击x
     driver.refresh() #刷新当前页面
     sleep(2)
     enter_shard_list()
-    nodeAttr = '//*[@id="pane-1"]/div/div[2]/div/div[2]/div[3]/table/tbody/tr[2]/td/div/div[3]/table/tbody/tr[%s]/td[10]/div/button[1]/span' % (nodeNum)
+               #'/html/body/div/div/div[2]/section/div/div/div[2]/div[4]/div/div[2]/div/div[2]/div[3]/table/tbody/tr[2]/td/div/div[3]/table/tbody/tr[2]/td[7]/div/span'
+    nodeAttr = '/html/body/div/div/div[2]/section/div/div/div[2]/div[4]/div/div[2]/div/div[2]/div[3]/table/tbody/tr[2]/td/div/div[3]/table/tbody/tr[%d]/td[7]/div/span' % (nodeNum)
     nodeAttr_text = driver.find_element(By.XPATH, nodeAttr).text #找到被禁用的节点状态
     times = 0
     print('检查node_%s状态：%s' % (nodeNum, nodeAttr_text))
@@ -120,7 +131,7 @@ def show_monitor():
 
     sleep(3)
     print('开始启动备节点：node_%s...'% (nodeNum))
-    start_button = '//*[@id="pane-1"]/div/div[2]/div/div[2]/div[3]/table/tbody/tr[2]/td/div/div[3]/table/tbody/tr[%s]/td[10]/div/button[1]/span' % (nodeNum)
+    start_button = '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[4]/div/div[2]/div/div[2]/div[3]/table/tbody/tr[2]/td/div/div[3]/table/tbody/tr[%s]/td[10]/div/button[1]/span' % (nodeNum)
     dClick(start_button) #点击刚刚禁用的机器
     start_text = driver.find_element(By.XPATH, '/html/body/div[2]/div/div[2]/div[1]/div[2]/p').get_attribute('innerHTML')# 找到提示语句
     start_text = start_text.split('=', -1)#把提示语句以‘=’号分割，-1就是分割成最大份
@@ -171,7 +182,7 @@ def show_monitor():
 
 if __name__ == '__main__':
     ps = argparse.ArgumentParser(description='KunlunBase cluster monitor with Xpanel')
-    ps.add_argument('--host', help="Xpanel host", default='192.168.0.125', type=str)
+    ps.add_argument('--host', help="Xpanel host", default='192.168.0.167', type=str)
     ps.add_argument('--port', help='Xpanel port', default=18851, type=int)
     args = ps.parse_args()
     Host = args.host

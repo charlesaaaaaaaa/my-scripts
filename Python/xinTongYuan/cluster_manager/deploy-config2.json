@@ -1,0 +1,47 @@
+{
+   "machines": [
+      {
+         "ip": "192.168.0.113",
+         "basedir": "/nvme2/compare/base",
+         "user": "charles"
+      }
+   ],
+   "meta": {
+      "ha_mode": "rbr",
+      "nodes": [
+         {
+            "ip": "192.168.0.113",
+	    "port": 18882
+         },
+	 {
+            "ip": "192.168.0.113",
+            "port": 18883
+	 },
+	 {
+            "ip": "192.168.0.113",
+            "port": 17779
+	 }
+      ]
+   },
+   "cluster_manager": {
+      "nodes": [
+         {
+            "ip": "192.168.0.113",
+	    "brpc_http_port": 18885,
+	    "brpc_raft_port": 18887,
+	    "prometheus_port_start": 18889
+         }
+      ]
+   },
+   "node_manager": {
+      "nodes": [
+         {
+            "ip": "192.168.0.113",
+	    "brpc_http_port": 18823,
+	    "tcp_port": 18825,
+	    "server_portrange": "58880-58900",
+	    "storage_portrange": "56660-56700"
+         }
+      ]
+   }
+}

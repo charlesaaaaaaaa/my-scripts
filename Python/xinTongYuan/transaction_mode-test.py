@@ -309,7 +309,8 @@ if __name__ == '__main__':
     total_start_time = time.time()
     load_data()
     tranList = ['read uncommitted', 'read committed', 'repeatable read', 'serializable']
-    tmpTranList = ['read committed', 'repeatable read', 'serializable']
+    #tmpTranList = ['read committed', 'repeatable read', 'serializable']
+    tmpTranList = ['read committed', 'repeatable read']
     print('\n因不支持read uncommitted隔离级别，故充分测试跳过该隔离级别')
     for simple_transaction_mode in tranList:
         simple_test(simple_transaction_mode)

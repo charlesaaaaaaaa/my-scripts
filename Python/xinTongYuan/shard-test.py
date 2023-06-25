@@ -67,6 +67,7 @@ def test():
     print("\n1）	新建一张分片表，并插入一定量数据，设法展示或证明数据都分布到各个分片上")
     for i in range(shardid): #现在就是在查找对应的shard主节点，把对应的信息放到数组里面好后面拿取
         connect_pg(Host, Port, User, Pwd, 'postgres', 'y')
+        connect_pg(Host, Port, User, Pwd, 'postgres', 'y')
         Hos = 'select hostaddr from pg_shard_node where shard_id = (select distinct(shard_id) from pg_shard_node order by shard_id limit '+ str(num) + ',1) limit 1'
         Por = 'select port from pg_shard_node where shard_id = (select distinct(shard_id) from pg_shard_node order by shard_id limit %s,1) limit 1' % (str(num))
         Sid = 'select shard_id from pg_shard_node where shard_id = (select distinct(shard_id) from pg_shard_node order by shard_id limit %s,1) limit 1' % (str(num))
