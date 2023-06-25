@@ -11,8 +11,8 @@ def readFile():
     global nick_name, max_storage_size, max_connections, mgrPort, mgrHost, ha_mode, innodb_size, data_storage_size
     f = open(files,encoding='utf-8')
     of = yaml.safe_load(f.read())
-    data_storage_size = of["data_storage_MB"]
-    log_storage_size = of["log_storage_MB"]
+    data_storage_size = str(of["data_storage_MB"])
+    log_storage_size = str(of["log_storage_MB"])
     compHost = of["computer"]
     dataHost = of["storage"]
     shards = str(of["shards"])
