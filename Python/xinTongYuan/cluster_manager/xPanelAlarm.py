@@ -68,9 +68,9 @@ def test():
     atti_type = '存储节点异常'
     sleep(1)
     #检查有几个shard几个副本
-    driver.find_element(By.XPATH, '/html/body/div/div/div[2]/section/div/div/div[2]/div[1]/div/div[2]/div[4]/div[2]/table/tbody/tr/td[7]/div/button[4]/span').click()
-    numTxt = driver.find_element(By.XPATH, '/html/body/div/div/div[2]/section/div/div/div[2]/div[4]/div/div[2]/div/form/div[5]/div/span').text
-    numTxt_total = re.findall('0|[1-9]', numTxt)
+    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[2]/div[4]/div[2]/table/tbody/tr/td[6]/div/button[4]/span').click()# 点击集群设置
+    numTxt = driver.find_element(By.XPATH, '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[4]/div/div[2]/div/form/div[5]/div/span').text#查看shard信息
+    numTxt_total = re.findall('\d+', numTxt)
     shard_num = int(numTxt_total[0])
     replica_nums = int(numTxt_total[2])
     print('该集群有%s个shard，每个shard有%s个副本' % (shard_num, replica_nums))
@@ -86,14 +86,24 @@ def test():
             break
         num = num + 1
     print('选择其中一个存储分片主节点：%s:%s' % (storage_host, storage_port))
-
+    # sleep(30)
     #设置用户信息，先进入 系统管理
-    driver.find_element(By.XPATH,'/html/body/div[1]/div/div[1]/div/div[1]/div/ul/div[8]/li/div/span').click()
-    driver.find_element(By.XPATH, '/html/body/div[1]/div/div[1]/div/div[1]/div/ul/div[8]/li/ul/div[1]/a/li/span').click() #点击用户管理
+    try:
+        driver.find_element(By.XPATH,
+                            '/html/body/div/div/div[1]/div/div[1]/div/ul/div[9]/li/div/span').click()  # 系统管理
+        driver.find_element(By.XPATH, '/html/body/div/div/div[1]/div/div[1]/div/ul/div[9]/li/ul/div[1]/a/li').click()  # 点击用户管理
+    except:
+        for i in range(1, 6):
+            try:
+                driver.find_element(By.XPATH,
+                                    '/html/body/div[%s]/div/div[1]/div/div[1]/div/ul/div[9]/li/div/span' % i).click()  # 系统管理
+                driver.find_element(By.XPATH, '/html/body/div[%s]/div/div[1]/div/div[1]/div/ul/div[9]/li/ul/div[1]/a/li' % i).click() #点击用户管理
+            except:
+                print('第%s次点击系统管理或者用户管理失败' % i)
     sleep(1)
     #开始检查是否存在test这个用户，如果有就点击删除按钮, 先获取用户总个数
-    cNum = driver.find_element(By.XPATH,'/html/body/div/div/div[2]/section/div/div[3]/div/span[1]').get_attribute('innerHTML')
-    cTotalNum = re.findall('0|[1-99]', cNum)[0]
+    cNum = driver.find_element(By.XPATH,'/html/body/div/div/div[2]/section/div/div[3]/div/span[1]').get_attribute('innerHTML')#查看当前有几个用户
+    cTotalNum = re.findall('\d+', cNum)[0]
     print('当前共%s个用户' % (cTotalNum))
     iTotalNum = int(cTotalNum)
     try:
@@ -163,8 +173,15 @@ def test():
         linum = i + 1
         try:
             sleep(1)
-            ele = driver.find_element(By.XPATH, '/html/body/div[4]/div[1]/div[1]/ul/li[%s]/span' % (linum))
-            Names = ele.get_attribute('innerHTML')
+            for i in range(4, 7):
+                try:
+                    link = '/html/body/div[%s]/div[1]/div[1]/ul/li[%s]/span' % (i, linum)
+                    ele = driver.find_element(By.XPATH, link)
+                    Names = ele.get_attribute('innerHTML')
+                    if Names == 'test':
+                        break
+                except:
+                    print('查找用户test失败 %s' % (link))
         except:
             pass
     if Names == 'test':
