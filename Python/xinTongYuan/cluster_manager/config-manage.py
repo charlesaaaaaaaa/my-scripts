@@ -34,17 +34,25 @@ def config_node():
     dClick('/html/body/div[1]/div/div[1]/div/div[1]/div/ul/div[1]/li/ul/div[1]/a/li')#集群列表
     dClick('/html/body/div[1]/div/div[2]/section/div/div/div[1]/div/div/div/div[1]')#集群列表信息
     sleep(2)
-    sreach_window = driver.current_window_handle
-    dClick('/html/body/div/div/div[2]/section/div/div/div[2]/div[1]/div/div[2]/div[4]/div[2]/table/tbody/tr/td[7]/div/button[4]/span')#点击设置
-
+    try:
+        dClick('/html/body/div/div/div[2]/section/div/div/div[2]/div[1]/div/div[2]/div[4]/div[2]/table/tbody/tr/td[7]/div/button[4]/span')#点击设置
+         # '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[2]/div[4]/div[2]/table/tbody/tr/td[6]/div/button[4]/span'
+    except:
+        for i in range(1, 6):
+            link = '/html/body/div[%s]/div/div[2]/section/div/div/div[2]/div[1]/div/div[2]/div[4]/div[2]/table/tbody/tr/td[6]/div/button[4]/span' % i
+            try:
+                dClick(link)#点击设置
+                break
+            except:
+                print('点击集群设置失败 %s' % link)
     def setVar():
         global sql, varName, varValue
-        Var = random.randint(1,2)
-        #Var = 2
+        #Var = random.randint(1,2)
+        Var = 2
         if Var == 1:
             varName = random.choice(['lock_wait_timeout', 'innodb_lock_wait_timeout', 'fullsync_timeout'])
             varValue = random.randint(1200, 30001)
-        elif Var == 3: #'innodb_buffer_pool_size', 'max_binlog_size'这两个都会获取失败，应该是范围的问题
+        elif Var == 3:
             varName = random.choice(['innodb_buffer_pool_size', 'max_binlog_size'])
             varValue = random.randint(1080000000, 1800000000)
         elif Var == 2:
