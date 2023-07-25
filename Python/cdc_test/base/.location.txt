@@ -1,2 +1,0 @@
-config=D:\Project\cdc_test\conf\config.conf
-log=D:\Project\cdc_test\log\file

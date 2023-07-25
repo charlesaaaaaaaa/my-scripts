@@ -157,8 +157,8 @@ class fullSync_kunlunToMysql():
                 pgsql = 'select count(*) from %s' % i.split('.')[1]
                 mysql = 'select count(*) from %s' % i.split('.')[1]
                 try:
-                    myRes = connMy().myReturn(db, mysql)
-                    pgRes = connPg().pgReturn('postgres', pgsql)
+                    myRes = connMy().myReturn(db + '_$$_public', mysql)
+                    pgRes = connPg().pgReturn(db, pgsql)
                     if pgRes[0][0] > int(myRes[0][0] / 2) and pgRes[0][0] <= myRes[0][0]:
                         whileNum = 1
                         break
