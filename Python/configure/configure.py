@@ -293,11 +293,13 @@ if __name__ == '__main__':
     readJsonFile()
     if component == 'all':
         configComp()
+        sleep(15)
         configData()
         Verdata()
         Vercomp()
     elif component == 'server':
         configComp()
+        sleep(15)
         Vercomp()
     elif component == 'storage':
         configData()
