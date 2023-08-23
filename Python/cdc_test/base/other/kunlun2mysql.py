@@ -97,6 +97,7 @@ class fullSync_kunlunToMysql():
         writeLog('开始检查数据量是否一致\n')
         tableName = self.tableName.split(',')
         doneOrNot = 1
+        failtimes = 0
         while doneOrNot != 0:
             doneOrNot = len(tableName)
             for i in tableName:
@@ -108,10 +109,15 @@ class fullSync_kunlunToMysql():
                 try:
                     if myRes[0][0] != pgRes[0][0]:
                         writeLog('%s 数据量上下游不一致: %s -- %s %s\n\t%s\n' % (i, myRes, pgRes, doneOrNot, pgsql))
+                        failtimes += 1
                     else:
                         doneOrNot -= 1
                 except Exception as err:
                     writeLog('无法比对当前上游 %s 及 下游 %s 数据\n\t' % (myRes, pgRes) + str(err) + '\n')
+                    failtimes += 1
+            if failtimes == 30:
+                writeLog('失败次数过多，跳过本次检查')
+                break
             sleep(5)
         writeLog('上下游所有表数据量一致\n')
 
@@ -140,15 +146,18 @@ class fullSync_kunlunToMysql():
                     writeFile('my', myRes)
             if doneOrNot == 0:
                 writeLog('当前检查所有表上下游一致，通过\n')
+                return 1
                 break
             sleep(10)
         if doneOrNot == 1:
             writeLog('failure: 10次检查皆失败，该用例不通过\n')
+            return 0
 
     def reviewDataRow(self):
         db = self.db
         tableName = self.tableName.split(',')
         whileNum = 0
+        failTimes = 0
         sleep(5)
         writeLog('当下游任意表数据量大于源表2分之一时，开始进行下一步')
         # 当任意下游表的数据量小于源表但大于源表3分之一时，进行下一步
@@ -162,12 +171,16 @@ class fullSync_kunlunToMysql():
                     if pgRes[0][0] > int(myRes[0][0] / 2) and pgRes[0][0] <= myRes[0][0]:
                         whileNum = 1
                         break
+                    failTimes += 1
                 except:
                     try:
                         writeLog('对比结果失败 mysql:%s pg:%s' % (myRes, pgRes))
+                        failTimes += 1
                     except Exception as err:
                         writeLog(str(err))
-            sleep(1)
+            sleep(5)
+            if failTimes == 30:
+                break
 
     def killCdc(self):
         db = self.db

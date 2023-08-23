@@ -31,7 +31,8 @@ class mysqlToKunlun():
         fullSync_mysqlToKunlun(dbname).startapi(tableList)
         fullSync_mysqlToKunlun(dbname).sysbenchAction('prepare', 2, 10000)
         fullSync_mysqlToKunlun(dbname).reviewDataNum()
-        fullSync_mysqlToKunlun(dbname).reviewAllTable()
+        res = fullSync_mysqlToKunlun(dbname).reviewAllTable()
+        return res
 
     def killCdcMasterWhenCdcIsRunning(self):
         # 清理sysbench数据（如果有的话）-- sysbench prepare -- 开启mydumper -- 获取binlog位置信息
@@ -47,7 +48,8 @@ class mysqlToKunlun():
         fullSync_mysqlToKunlun(dbname).sysbenchAction('prepare', 2, 10000)
         fullSync_mysqlToKunlun(dbname).killCdc()
         fullSync_mysqlToKunlun(dbname).reviewDataNum()
-        fullSync_mysqlToKunlun(dbname).reviewAllTable()
+        res = fullSync_mysqlToKunlun(dbname).reviewAllTable()
+        return res
 
     def killSourceMysqlWhenCdcIsRunning(self):
         # 清理sysbench数据（如果有的话）-- sysbench prepare -- 开启mydumper -- 获取binlog位置信息
@@ -63,7 +65,8 @@ class mysqlToKunlun():
         fullSync_mysqlToKunlun(dbname).sysbenchAction('prepare', 2, 10000)
         fullSync_mysqlToKunlun(dbname).killSourceMysql()
         fullSync_mysqlToKunlun(dbname).reviewDataNum()
-        fullSync_mysqlToKunlun(dbname).reviewAllTable()
+        res = fullSync_mysqlToKunlun(dbname).reviewAllTable()
+        return res
 
     def killTargeKlustronWherCdcIsRunning(self):
         # 清理sysbench数据（如果有的话）-- sysbench prepare -- 开启mydumper -- 获取binlog位置信息
@@ -79,7 +82,8 @@ class mysqlToKunlun():
         fullSync_mysqlToKunlun(dbname).sysbenchAction('prepare', 2, 10000)
         fullSync_mysqlToKunlun(dbname).killTargetKlustron()
         fullSync_mysqlToKunlun(dbname).reviewDataNum()
-        fullSync_mysqlToKunlun(dbname).reviewAllTable()
+        res = fullSync_mysqlToKunlun(dbname).reviewAllTable()
+        return res
 
 class kunlunToMysql():
     def __init__(self):
@@ -107,7 +111,8 @@ class kunlunToMysql():
         fullSync_kunlunToMysql(dbname).startApi(tableList)
         fullSync_kunlunToMysql(dbname).sysbenchAction('prepare', 2, 10000)
         fullSync_kunlunToMysql(dbname).reviewDataNum()
-        fullSync_kunlunToMysql(dbname).reviewAllTable()
+        res = fullSync_kunlunToMysql(dbname).reviewAllTable()
+        return res
 
     def killCdcMasterWhenCdcIsRunning(self):
         # 获取app -- 清理sysbench数据（如果有的话）-- sysbench prepare /
@@ -122,7 +127,8 @@ class kunlunToMysql():
         fullSync_kunlunToMysql(dbname).sysbenchAction('prepare', 2, 10000)
         fullSync_kunlunToMysql(dbname).killCdc()
         fullSync_kunlunToMysql(dbname).reviewDataNum()
-        fullSync_kunlunToMysql(dbname).reviewAllTable()
+        res = fullSync_kunlunToMysql(dbname).reviewAllTable()
+        return res
 
     def killTargetMysqlWhenCdcIsRunning(self):
         # 获取app -- 清理sysbench数据（如果有的话）-- sysbench prepare /
@@ -137,7 +143,8 @@ class kunlunToMysql():
         fullSync_kunlunToMysql(dbname).sysbenchAction('prepare', 2, 10000)
         fullSync_kunlunToMysql(dbname).killTargetMysql()
         fullSync_kunlunToMysql(dbname).reviewDataNum()
-        fullSync_kunlunToMysql(dbname).reviewAllTable()
+        res = fullSync_kunlunToMysql(dbname).reviewAllTable()
+        return res
 
     def killSourceKunlunWhenCdcIsRunning(self):
         # 获取app -- 清理sysbench数据（如果有的话）-- sysbench prepare /
@@ -152,4 +159,5 @@ class kunlunToMysql():
         fullSync_kunlunToMysql(dbname).sysbenchAction('prepare', 2, 10000)
         fullSync_kunlunToMysql(dbname).killSourceKlustron()
         fullSync_kunlunToMysql(dbname).reviewDataNum()
-        fullSync_kunlunToMysql(dbname).reviewAllTable()
+        res = fullSync_kunlunToMysql(dbname).reviewAllTable()
+        return res
