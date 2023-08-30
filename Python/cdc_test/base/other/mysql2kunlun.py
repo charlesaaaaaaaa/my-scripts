@@ -29,15 +29,15 @@ class fullSync_mysqlToKunlun():
         db = self.db
         if action == 'prepare':
             command = 'sysbench oltp_point_select --tables=%s --table-size=%s --db-driver=mysql --mysql-host=%s --mysql-port=%s' \
-                                      ' --mysql-user=%s --mysql-password=%s --mysql-db=%s prepare\n' % (tables, tableSize, mysqlInfo['host'], mysqlInfo['port'], mysqlInfo['user'], mysqlInfo['password'], db)
+                                      ' --mysql-user=%s --mysql-password=%s --mysql-db=%s prepare > /dev/null \n' % (tables, tableSize, mysqlInfo['host'], mysqlInfo['port'], mysqlInfo['user'], mysqlInfo['password'], db)
             writeLog('开始灌sysbench数据\n\t' + command)
         elif action == 'cleanup':
             command = 'sysbench oltp_point_select --tables=%s --table-size=%s --db-driver=mysql --mysql-host=%s --mysql-port=%s' \
-                                      ' --mysql-user=%s --mysql-password=%s --mysql-db=%s cleanup\n' % (tables, tableSize, mysqlInfo['host'], mysqlInfo['port'], mysqlInfo['user'], mysqlInfo['password'], db)
+                                      ' --mysql-user=%s --mysql-password=%s --mysql-db=%s cleanup > /dev/null \n' % (tables, tableSize, mysqlInfo['host'], mysqlInfo['port'], mysqlInfo['user'], mysqlInfo['password'], db)
             writeLog('开始清除sysbench数据\n\t' + command)
         elif action == 'run':
             command = 'sysbench oltp_point_select --tables=%s --table-size=%s --db-driver=mysql --mysql-host=%s --mysql-port=%s' \
-                                  ' --mysql-user=%s --mysql-password=%s --mysql-db=%s run\n' % (tables, tableSize, mysqlInfo['host'], mysqlInfo['port'], mysqlInfo['user'], mysqlInfo['password'], db)
+                                  ' --mysql-user=%s --mysql-password=%s --mysql-db=%s run > /dev/null \n' % (tables, tableSize, mysqlInfo['host'], mysqlInfo['port'], mysqlInfo['user'], mysqlInfo['password'], db)
             writeLog('开始sysbench压测\n\t' + command)
         subprocess.run(command, shell=True)
         if action == 'prepare':
@@ -53,7 +53,7 @@ class fullSync_mysqlToKunlun():
         writeLog('休眠60s，待shard备机与主机同步数据完成')
         sleep(60)
         mysqlInfo = self.configDbInfo['mysql']
-        command_start_mydumper = './mydumper -h %s -u %s -p %s -P %s -B %s -o ./mysql2kunlun/%s\n' % (mysqlInfo['host'], mysqlInfo['user'], mysqlInfo['password'], mysqlInfo['port'], db, db)
+        command_start_mydumper = './mydumper -h %s -u %s -p %s -P %s -B %s -o ./mysql2kunlun/%s  > /dev/null \n' % (mysqlInfo['host'], mysqlInfo['user'], mysqlInfo['password'], mysqlInfo['port'], db, db)
         writeLog('开始运行mydumper\n\t' + command_start_mydumper)
         subprocess.run(command_start_mydumper, shell=True)
         return tableList
@@ -128,11 +128,13 @@ class fullSync_mysqlToKunlun():
                     writeFile('my', myRes)
             if doneOrNot == 0:
                 writeLog('当前检查所有表上下游一致，通过\n')
-                return 1
+                res = [db, 1]
+                return res
             sleep(10)
         if doneOrNot == 1:
             writeLog('failure: 10次检查皆失败，该用例不通过\n')
-            return 0
+            res = [db, 0]
+            return res
 
     def reviewDataRow(self):
         db = self.db
@@ -190,7 +192,7 @@ class fullSync_mysqlToKunlun():
         writeLog('现在停止上游mysql并等待25秒\n\t%s\n'% command_stopmysql)
         subprocess.run(command_stopmysql, shell=True)
         sleep(25)
-        command_startmysql = "ssh %s@%s 'nohup %s --defaults-file=%s --user=%s &'" % (
+        command_startmysql = "ssh %s@%s 'nohup %s --defaults-file=%s --user=%s > /dev/null 2>&1 &'" % (
             linuxUserForStartMysql, mysqlHost, mysqld_safe, defaults_configFile, linuxUserForStartMysql)
         writeLog('现在开启mysql并等待10秒\n\t%s\n' % command_startmysql)
         startMysql = subprocess.Popen(command_startmysql, shell=True)
@@ -206,12 +208,12 @@ class fullSync_mysqlToKunlun():
         times = 1
         writeLog('正在kill掉klustron对应分片的备节点。。。\n')
         for i in range(100):
-            for i in clusterInfo:
-                if i == 'metadata':
+            for ii in clusterInfo:
+                if ii == 'metadata':
                     continue
                 else:
-                    klustronHost = clusterInfo[i]['host']
-                    klustronPort = clusterInfo[i]['port']
+                    klustronHost = clusterInfo[ii]['host']
+                    klustronPort = clusterInfo[ii]['port']
                     command_killklutron = 'ssh %s@%s "ps -ef | grep %s | grep mysql | awk \'{print \$2}\'"' % (cdcUser, klustronHost, klustronPort)
                     if times > len(clusterInfo):
                         writeLog(command_killklutron)

@@ -61,7 +61,7 @@ def restartCdcCluster():
     cdcInfo = readcnf().getCdcInfo()
     host = list(cdcInfo['host'].replace(' ', '').split(','))
     cdcUser = cdcInfo['user']
-    startCdc = cdcInfo['base'] + '/bin && bash start_kunlun_cdc.sh'
+    startCdc = cdcInfo['base'] + '/bin && bash start_kunlun_cdc.sh > /dev/null'
     stopCdc = cdcInfo['base'] + '/bin && bash stop_kunlun_cdc.sh'
     rmCdcData = cdcInfo['base'] + '/data && rm -rf *'
     for i in range(int(cdcInfo['nodenum'])):

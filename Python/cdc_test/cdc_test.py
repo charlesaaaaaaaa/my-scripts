@@ -2,18 +2,19 @@
 from base.other import copyconfig
 from base.other.otherOpt import *
 
-global total, times
-total = 0
-times = 0
+succ = []
+fail = []
 
-def getNum(Times):
-    global total, times
-    total += 1
-    times = times + Times
+def getNum(res):
+    if res[1] == 1:
+        succ.append(res[0])
+    elif res[1] == 0:
+        fail.append(res[0])
 
 def mysqlToKlustron():
     from base import test
     from base.other.otherOpt import restartCdcCluster
+    restartCdcCluster()
     res = test.mysqlToKunlun().regular_test()
     getNum(res)
     #res = test.mysqlToKunlun().killCdcMasterWhenCdcIsRunning()
@@ -22,11 +23,11 @@ def mysqlToKlustron():
     getNum(res)
     res = test.mysqlToKunlun().killTargeKlustronWherCdcIsRunning()
     getNum(res)
-    restartCdcCluster()
 
 def kunlunToMysql():
     from base.test import kunlunToMysql
     from base.other.otherOpt import restartCdcCluster
+    restartCdcCluster()
     res = kunlunToMysql().regular_test()
     getNum(res)
     #res = kunlunToMysql().killCdcMasterWhenCdcIsRunning()
@@ -35,16 +36,21 @@ def kunlunToMysql():
     getNum(res)
     res = kunlunToMysql().killSourceKunlunWhenCdcIsRunning()
     getNum(res)
-    restartCdcCluster()
 
 if __name__ == '__main__':
     copyconfig.Mode('regular')
     #copyconfig.Mode('regular')
     mysqlToKlustron()
     kunlunToMysql()
-    if total == times:
+    totalCaseNum = len(succ) + len(fail)
+    print('======== 测试结果 ========')
+    if totalCaseNum == len(succ):
         writeLog('所有测试成功')
-        exit(0)
+        res = 0
     else:
-        writeLog('有%s条测试失败' % (total - times))
-        exit(1)
+        writeLog('有%s条测试失败' % (len(fail)))
+        res = 1
+    print('当前的成功项：%s' % succ)
+    print('当前的失败项: %s' % fail)
+    print('======== 测试结果 ========')
+    exit(res)

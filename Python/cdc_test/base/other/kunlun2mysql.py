@@ -29,16 +29,16 @@ class fullSync_kunlunToMysql():
         db = self.db
         if action == 'prepare':
             command = 'sysbench oltp_point_select --tables=%s --table-size=%s --db-driver=pgsql --pgsql-host=%s --pgsql-port=%s' \
-                                      ' --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s prepare\n' % (tables, tableSize, klustronInfo['host'], klustronInfo['port'], klustronInfo['user'], klustronInfo['password'], db)
+                                      ' --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s prepare > /dev/null\n' % (tables, tableSize, klustronInfo['host'], klustronInfo['port'], klustronInfo['user'], klustronInfo['password'], db)
             writeLog('开始灌sysbench数据\n\t' + command)
         elif action == 'cleanup':
             command = 'sysbench oltp_point_select --tables=%s --table-size=%s --db-driver=pgsql --pgsql-host=%s --pgsql-port=%s' \
-                      ' --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s cleanup\n' % (
+                      ' --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s cleanup > /dev/null\n' % (
                       tables, tableSize, klustronInfo['host'], klustronInfo['port'], klustronInfo['user'], klustronInfo['password'], db)
             writeLog('开始清除sysbench数据\n\t' + command)
         elif action == 'run':
-            command = command = 'sysbench oltp_point_select --tables=%s --table-size=%s --db-driver=pgsql --pgsql-host=%s --pgsql-port=%s' \
-                                      ' --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s run\n' % (tables, tableSize, klustronInfo['host'], klustronInfo['port'], klustronInfo['user'], klustronInfo['password'], db)
+            command = 'sysbench oltp_point_select --tables=%s --table-size=%s --db-driver=pgsql --pgsql-host=%s --pgsql-port=%s' \
+                                      ' --pgsql-user=%s --pgsql-password=%s --pgsql-db=%s run > /dev/null\n' % (tables, tableSize, klustronInfo['host'], klustronInfo['port'], klustronInfo['user'], klustronInfo['password'], db)
             writeLog('开始sysbench压测\n\t' + command)
         subprocess.run(command, shell=True)
         if action == 'prepare':
@@ -62,7 +62,7 @@ class fullSync_kunlunToMysql():
         storageDict = fullSync_kunlunToMysql(db).getStorageDict()
         fullSync_kunlunToMysql(db).sysbenchAction('cleanup', 2, 10)
         for i in storageDict:
-            command_start_mydumper = './mydumper -h %s -u %s -p %s -P %s -B %s_\$\$_public -o ./kunlun2mysql/%s_%s\n' % (storageDict[i]['host'], storageDict[i]['user'], storageDict[i]['password'],storageDict[i]['port'], db, db, i)
+            command_start_mydumper = './mydumper -h %s -u %s -p %s -P %s -B %s_\$\$_public -o ./kunlun2mysql/%s_%s > /dev/null\n' % (storageDict[i]['host'], storageDict[i]['user'], storageDict[i]['password'],storageDict[i]['port'], db, db, i)
             writeLog('开始运行mydumper\n\t' + command_start_mydumper)
             subprocess.run(command_start_mydumper, shell=True)
         return tableList
@@ -146,12 +146,14 @@ class fullSync_kunlunToMysql():
                     writeFile('my', myRes)
             if doneOrNot == 0:
                 writeLog('当前检查所有表上下游一致，通过\n')
-                return 1
+                res = [db, 1]
+                return res
                 break
             sleep(10)
         if doneOrNot == 1:
             writeLog('failure: 10次检查皆失败，该用例不通过\n')
-            return 0
+            res = [db, 0]
+            return res
 
     def reviewDataRow(self):
         db = self.db
@@ -209,7 +211,7 @@ class fullSync_kunlunToMysql():
         writeLog('现在停止上游mysql并等待25秒\n\t%s\n'% command_stopmysql)
         subprocess.run(command_stopmysql, shell=True)
         sleep(25)
-        command_startmysql = "ssh %s@%s 'nohup %s --defaults-file=%s --user=%s &'" % (
+        command_startmysql = "ssh %s@%s 'nohup %s --defaults-file=%s --user=%s > /dev/null 2>&1 &'" % (
             linuxUserForStartMysql, mysqlHost, mysqld_safe, defaults_configFile, linuxUserForStartMysql)
         writeLog('现在开启mysql并等待10秒\n\t%s\n' % command_startmysql)
         startMysql = subprocess.Popen(command_startmysql, shell=True)
@@ -225,13 +227,14 @@ class fullSync_kunlunToMysql():
         times = 1
         writeLog('正在kill掉klustron对应分片的备节点。。。\n')
         for i in range(100):
-            for i in clusterInfo:
-                if i == 'metadata':
+            for ii in clusterInfo:
+                if ii == 'metadata':
                     continue
                 else:
-                    klustronHost = clusterInfo[i]['host']
-                    klustronPort = clusterInfo[i]['port']
-                    command_killklutron = 'ssh %s@%s "ps -ef | grep %s | grep mysql | awk \'{print \$2}\'"' % (cdcUser, klustronHost, klustronPort)
+                    klustronHost = clusterInfo[ii]['host']
+                    klustronPort = clusterInfo[ii]['port']
+                    command_killklutron = 'ssh %s@%s "ps -ef | grep %s | grep mysql | awk \'{print \$2}\' | xargs kill ' \
+                                          '-9 > /dev/null 2>&1 || a=1"' % (cdcUser, klustronHost, klustronPort)
                     if times > len(clusterInfo):
                         writeLog(command_killklutron)
                     subprocess.run(command_killklutron, shell=True)

@@ -117,7 +117,7 @@ class kunlunToMysql():
     def killCdcMasterWhenCdcIsRunning(self):
         # 获取app -- 清理sysbench数据（如果有的话）-- sysbench prepare /
         # 开启mydumper -- 启动api -- 等待60s -- 检查数据总量 -- 检查所有表是否一致
-        dbname = 'kunluntomysql'
+        dbname = 'kunluntomysql_killcdcmaster'
         kunlunToMysql().createDatabase(dbname)
         fullSync_kunlunToMysql(dbname).getApp()
         fullSync_kunlunToMysql(dbname).sysbenchAction('cleanup', 2, 10)
@@ -133,7 +133,7 @@ class kunlunToMysql():
     def killTargetMysqlWhenCdcIsRunning(self):
         # 获取app -- 清理sysbench数据（如果有的话）-- sysbench prepare /
         # 开启mydumper -- 启动api -- 等待60s -- 检查数据总量 -- 检查所有表是否一致
-        dbname = 'kunluntomysql'
+        dbname = 'kunluntomysql_killmysql'
         kunlunToMysql().createDatabase(dbname)
         fullSync_kunlunToMysql(dbname).getApp()
         fullSync_kunlunToMysql(dbname).sysbenchAction('cleanup', 2, 10)
@@ -149,7 +149,7 @@ class kunlunToMysql():
     def killSourceKunlunWhenCdcIsRunning(self):
         # 获取app -- 清理sysbench数据（如果有的话）-- sysbench prepare /
         # 开启mydumper -- 启动api -- 等待60s -- 检查数据总量 -- 检查所有表是否一致
-        dbname = 'kunluntomysql'
+        dbname = 'kunluntomysql_killkunlun'
         kunlunToMysql().createDatabase(dbname)
         fullSync_kunlunToMysql(dbname).getApp()
         fullSync_kunlunToMysql(dbname).sysbenchAction('cleanup', 2, 10)
@@ -160,4 +160,5 @@ class kunlunToMysql():
         fullSync_kunlunToMysql(dbname).killSourceKlustron()
         fullSync_kunlunToMysql(dbname).reviewDataNum()
         res = fullSync_kunlunToMysql(dbname).reviewAllTable()
+
         return res
