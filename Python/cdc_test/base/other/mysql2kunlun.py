@@ -214,7 +214,8 @@ class fullSync_mysqlToKunlun():
                 else:
                     klustronHost = clusterInfo[ii]['host']
                     klustronPort = clusterInfo[ii]['port']
-                    command_killklutron = 'ssh %s@%s "ps -ef | grep %s | grep mysql | awk \'{print \$2}\'"' % (cdcUser, klustronHost, klustronPort)
+                    command_killklutron = 'ssh %s@%s "ps -ef | grep %s | grep mysql | awk \'{print \$2}\' | ' \
+                                          'xargs kill -9 > /dev/null 2>&1 &"' % (cdcUser, klustronHost, klustronPort)
                     if times > len(clusterInfo):
                         writeLog(command_killklutron)
                     subprocess.run(command_killklutron, shell=True)
