@@ -13,13 +13,14 @@ class getFile():
         awk_c = '| awk -F: "{print \$1"}'
         find_line = ssh_c + "'" + cat_c + awk_c + "'"
         lines = subprocess.Popen(find_line, shell=True, stdout=subprocess.PIPE)
+        linetxt = lines.stdout.read()
         try:
-            lineNum = int(lines.stdout.read().decode('utf-8').split('\n')[-2])
-            sed_c = "sed -i '%ss/.*/%s = %s/' %d" % (lineNum, txt, replace_value, paths)
-        except:
+            lineNum = int(linetxt.decode('utf-8').split('\n')[-2])
+            sed_c = "sed -i '%ss/.*/%s = %s/' %s" % (lineNum, txt, replace_value, paths)
+        except Exception as err:
             try:
-                lineNum = int(lines.stdout.read().decode('utf-8'))
-                sed_c = "sed -i '%ss/.*/%s = %s/' %d" % (lineNum, txt, replace_value, paths)
+                lineNum = int(linetxt.decode('utf-8'))
+                sed_c = "sed -i '%ss/.*/%s = %s/' %s" % (lineNum, txt, replace_value, paths)
             except:
                 sed_c = "echo '%s = %s' >> %s" % (txt, replace_value, paths)
         replace_c = ssh_c + '"' + sed_c + '"'
