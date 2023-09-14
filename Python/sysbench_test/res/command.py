@@ -34,12 +34,13 @@ class sysbench_command():
         otherInfo = self.otherInfo
         host = self.dbInfo['host'].replace(' ', '').split(',')[position]
         port = self.dbInfo['port'].replace(' ', '').split(',')[position]
+        time = int(self.necInfo['time'])
         driver = self.dbInfo['driver']
-        db_opts += '--%s-host=%s --%s-port=%s ' % (driver, host, driver, port)
+        db_opts += '--%s-host=%s --%s-port=%s --time=%s' % (driver, host, driver, port, time)
         otherOpt = ' '
-        command = 'sysbench %s %s --threads=%s ' % (db_opts, case, threads)
+        command = 'sysbench %s %s --threads=%s ' % (case, db_opts, threads)
         for i in otherInfo:
-            opt = '--%s=%s' % (i, otherInfo[i])
+            opt = '--%s=%s ' % (i, otherInfo[i])
             otherOpt += opt
         command += otherOpt + ' run'
         return command
