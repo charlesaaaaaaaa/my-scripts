@@ -19,8 +19,10 @@ def mysqlToKlustron():
     getNum(res)
     #res = test.mysqlToKunlun().killCdcMasterWhenCdcIsRunning()
     #getNum(res)
+    restartCdcCluster()
     res = test.mysqlToKunlun().killSourceMysqlWhenCdcIsRunning()
     getNum(res)
+    restartCdcCluster()
     res = test.mysqlToKunlun().killTargeKlustronWherCdcIsRunning()
     getNum(res)
 
@@ -32,8 +34,10 @@ def kunlunToMysql():
     getNum(res)
     #res = kunlunToMysql().killCdcMasterWhenCdcIsRunning()
     #getNum(res)
+    restartCdcCluster()
     res = kunlunToMysql().killTargetMysqlWhenCdcIsRunning()
     getNum(res)
+    restartCdcCluster()
     res = kunlunToMysql().killSourceKunlunWhenCdcIsRunning()
     getNum(res)
 

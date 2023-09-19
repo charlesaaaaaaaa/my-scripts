@@ -115,10 +115,10 @@ class fullSync_kunlunToMysql():
                 except Exception as err:
                     writeLog('无法比对当前上游 %s 及 下游 %s 数据\n\t' % (myRes, pgRes) + str(err) + '\n')
                     failtimes += 1
-            if failtimes == 30:
+            if failtimes == 10:
                 writeLog('失败次数过多，跳过本次检查')
                 break
-            sleep(5)
+            sleep(30)
         writeLog('上下游所有表数据量一致\n')
 
     def reviewAllTable(self):
@@ -135,7 +135,7 @@ class fullSync_kunlunToMysql():
                 pgres = connPg().pgReturn(db, pgsql)
                 if myres == -1:
                     writeLog('当前获取下游mysql出错，请检查对应数据库\n%s' % mysql)
-                    sleep(10)
+                    sleep(30)
                     continue
                 myRes = str(list(myres)).replace(' ', '')
                 pgRes = str(pgres).replace(' ', '')
@@ -149,7 +149,7 @@ class fullSync_kunlunToMysql():
                 res = [db, 1]
                 return res
                 break
-            sleep(10)
+            sleep(30)
         if doneOrNot == 1:
             writeLog('failure: 10次检查皆失败，该用例不通过\n')
             res = [db, 0]
