@@ -1,0 +1,2 @@
+config=/home/charles/git/my-script/Python/cdc_test/conf/config.conf
+log=/home/charles/git/my-script/Python/cdc_test/log/file

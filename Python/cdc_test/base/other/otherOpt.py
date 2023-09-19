@@ -73,6 +73,8 @@ def restartCdcCluster():
         subprocess.Popen(command_rmCdcData, shell=True)
     for i in range(int(cdcInfo['nodenum'])):
         command_startCdc = 'ssh %s@%s "cd %s"' % (cdcUser, host[i], startCdc)
-        subprocess.Popen(command_startCdc, shell=True)
+        p = subprocess.Popen(command_startCdc, shell=True, stdout = subprocess.PIPE)
+        out = p.stdout.readlines()
+        writeLog(str(out))
 
 # print(getKlustronTableName('kunluntomysql'))
