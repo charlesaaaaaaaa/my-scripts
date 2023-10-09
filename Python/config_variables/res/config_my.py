@@ -2,6 +2,8 @@ from res.cluster_info import getStorage
 from res.connection import *
 from res.getconf import *
 from res.system_opt import *
+import threading
+from time import sleep
 
 class configure_storage():
     def __init__(self):
@@ -16,7 +18,7 @@ class configure_storage():
         print('\n## setting storage node ...')
         for host in Infos:
             for infos in Infos[host]:
-                print('change storage == %s: %s' % (infos[0], infos[1]))
+                print('setting storage %s: %s' % (infos[0], infos[1]))
                 conn = connMy(infos[0], infos[1], infos[2], infos[3], 'mysql')
                 for key in variables:
                     sql = 'SET PERSIST %s = %s' % (key, variables[key])
@@ -40,16 +42,29 @@ class configure_storage():
         Path = self.Paths
         variables = self.variables
 
+        print("\n## write storage config file ...")
         for host in Path:
             OF = getFile(host)
             for info in Path[host]:
+                print("### %s: %s" % (host, info[1]))
                 for key in variables:
                     OF.replaceTxtRow(info[1], key, variables[key])
 
     def restart(self):
         print('\n## restart stoarge node ...')
         Path = self.Paths
+
+        def thread_worker(host, info1, info2):
+            restart_component(host).restart_db(info1, info2)
+
+        l = []
         for host in Path:
             for info in Path[host]:
-                print('resert storage %s: %s' % (host, info[2]))
                 restart_component(host).restart_db(info[0], info[2])
+                p = threading.Thread(target=thread_worker, args=[host, info[0], info[2]])
+                l.append(p)
+                p.start()
+        for i in l:
+            i.join()
+        print('## sleep 30s')
+        sleep(30)

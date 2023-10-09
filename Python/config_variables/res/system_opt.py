@@ -1,5 +1,6 @@
 import subprocess
 from res.getconf import *
+from res.connection import *
 
 class getFile():
     def __init__(self, hosts):
@@ -34,7 +35,7 @@ class restart_component():
     def restart_pg(self, baseDir, port):
         host = self.hosts
         user = self.user
-        print('restarting server - %s:%s' % (host, port))
+        print('### restarting server - %s:%s' % (host, port))
         scriptDir = baseDir + '/scripts/'
         stopPg_c = 'cd %s; python2 %sstop_pg.py --port=%s' % (scriptDir, scriptDir, port)
         stopPg = "ssh %s@%s '%s'" % (user, host, stopPg_c)
@@ -43,19 +44,19 @@ class restart_component():
         startPg_c = 'cd %s; python3 %sstart_pg.py --port=%s' % (scriptDir, scriptDir, port)
         startPg = "ssh %s@%s '%s'" % (user, host, startPg_c)
         subprocess.run(startPg, shell=True)
-        print('restart server - %s:%s done' % (host, port))
+        print('### restart server - %s:%s done' % (host, port))
 
     def restart_db(self, baseDir, port):
         host = self.hosts
         user = self.user
-        print('restarting storage - %s:%s' % (host, port))
+        print('### restarting storage - %s:%s' % (host, port))
 
-        dba_toolsDir = baseDir + '/dba_tools/'
-        stopDb_c = 'cd %s; python2 %s/stopmysql.sh --port=%s' % (dba_toolsDir, dba_toolsDir, port)
-        stopDb = "ssh %s@%s '%s'" % (user, port, stopDb_c)
+        dba_toolsDir = baseDir + 'dba_tools/'
+        stopDb_c = 'cd %s; bash %sstopmysql.sh %s' % (dba_toolsDir, dba_toolsDir, port)
+        stopDb = "ssh %s@%s '%s'" % (user, host, stopDb_c)
         subprocess.run(stopDb, shell=True)
 
-        startDb_c = 'cd %s; python2 %s/startmysql.sh --port=%s' % (dba_toolsDir, dba_toolsDir, port)
-        startDb = "ssh %s@%s '%s'" % (user, port, startDb_c)
+        startDb_c = 'cd %s; bash %sstartmysql.sh %s' % (dba_toolsDir, dba_toolsDir, port)
+        startDb = "ssh %s@%s '%s'" % (user, host, startDb_c)
         subprocess.run(startDb, shell=True)
-        print('restart storage - %s:%s done' % (host, port))
+        print('### restart storage - %s:%s done' % (host, port))

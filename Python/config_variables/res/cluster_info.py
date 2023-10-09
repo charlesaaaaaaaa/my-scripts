@@ -57,6 +57,9 @@ class getServer():
     def __init__(self):
         self.metaInfo = getMetadata().Master()
         self.db = 'kunlun_metadata_db'
+        sql = 'select VERSION();'
+        res = connPg().pgReturn(sql)[0][0]
+        self.version = res.split(' ')[0].split('-')[1].replace('-', '.')
 
     def Infos(self):
         #sql =
@@ -76,7 +79,7 @@ class getServer():
 
     def Paths(self):
         serverInfo = self.Infos()
-        Versions = readcnf().getKunlunInfo()['version']
+        Versions = self.version
         server_path_info = {}
         conn = connPg()
         dataSql = 'show unix_socket_directories'

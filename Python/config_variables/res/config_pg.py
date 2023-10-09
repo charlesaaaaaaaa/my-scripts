@@ -1,3 +1,5 @@
+import threading
+
 from res.cluster_info import getServer
 from res.connection import *
 from res.getconf import *
@@ -32,16 +34,26 @@ class configure_server():
         for host in Path:
             OF = getFile(host)
             for info in Path[host]:
-                print('setting server %s:%s' % (host, info[1]))
+                print('### setting server %s:%s' % (host, info[1]))
                 for key in variables:
                     OF.replaceTxtRow(info[1], key, variables[key])
 
     def restart(self):
         Path = self.Path
         print('\n## restart server node ...')
+
+        def thread_worker(host, info1, info2):
+            restart_component(host).restart_pg(info1, info2)
+
+        l = []
         for host in Path:
             for info in Path[host]:
-                print('resert server %s: %s' % (host, info[2]))
                 restart_component(host).restart_pg(info[0], info[2])
+                p = threading.Thread(target=thread_worker, args=[host, info[0], info[2]])
+                l.append(p)
+                p.start()
+        for i in l:
+            i.join()
+
         print('sleep 30s ...\n')
         sleep(30)
