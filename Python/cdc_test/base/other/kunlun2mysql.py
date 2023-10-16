@@ -71,13 +71,21 @@ class fullSync_kunlunToMysql():
         db = self.db
         shard_params = {}
         storageDict = fullSync_kunlunToMysql(db).getStorageDict()
+        def search_strings(strings, txt):
+            for i in strings:
+                if txt in i:
+                    resLine = i
+                    if ',' in resLine:
+                        resLint = resLine.split(',')[0]
+            return resLine
         for i in storageDict:
             shradId = i.split('_')[1]
             command_mkdir = './kunlun2mysql/%s_%s' % (db, i)
-            fileContent = readFile('%s/metadata' % (command_mkdir))
-            Log = fileContent.splitlines()[8].split(': ')[1]
-            Pos = fileContent.splitlines()[9].split(': ')[1]
-            Gtid= fileContent.splitlines()[10].split('GTID:')[1]
+            with open('%s/metadata' % command_mkdir, 'r') as f:
+                fileContent = f.readlines()
+            Log = search_strings(fileContent, 'Log:').split(': ')[1]
+            Pos = search_strings(fileContent, 'Pos:').split(': ')[1]
+            Gtid= search_strings(fileContent, 'GTID:').split('GTID:')[1]
             tmpdict = {"shard_id": shradId, "dump_hostaddr": storageDict[i]['host'], "dump_port": str(storageDict[i]['port']), "binlog_file": Log, "binlog_pos": Pos, "gtid_set": Gtid}
             shardDict = {i: tmpdict}
             shard_params.update(shardDict)
