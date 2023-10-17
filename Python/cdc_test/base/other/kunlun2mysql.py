@@ -100,8 +100,8 @@ class fullSync_kunlunToMysql():
 
     def reviewDataNum(self):
         db = self.db
-        writeLog('休眠60s，等待上下游同步完成')
-        sleep(60)
+        writeLog('休眠300s，等待上下游同步完成')
+        sleep(300)
         writeLog('开始检查数据量是否一致\n')
         tableName = self.tableName.split(',')
         doneOrNot = 1
