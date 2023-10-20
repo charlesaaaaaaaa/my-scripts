@@ -1,6 +1,6 @@
 from res.connection import *
 from res.getconf import *
-
+import subprocess
 
 class getMetadata():
     def __init__(self):
@@ -60,6 +60,7 @@ class getServer():
         sql = 'select VERSION();'
         res = connPg().pgReturn(sql)[0][0]
         self.version = res.split(' ')[0].split('-')[1].replace('-', '.')
+        self.sysUser = readcnf().getKunlunInfo()['sys_user']
 
     def Infos(self):
         #sql =
@@ -87,8 +88,11 @@ class getServer():
             hostList = []
             for infos in serverInfo[host]:
                 dataDir = conn.pgReturn_other(infos[0], infos[1], infos[2], infos[3], dataSql)[0][0]
-                basePath = dataDir.split('/server_datadir')[0]
-                baseDir = basePath + '/instance_binaries/computer/' + str(infos[1]) + '/kunlun-server-' + Versions
+                get_basedir = "ssh %s@%s 'ps -ef | grep %s | grep bin | head -1'" % (self.sysUser, infos[0], infos[1])
+                basedir_res = subprocess.Popen(get_basedir, shell = True, stdout = subprocess.PIPE)
+                baseDir = str(basedir_res.stdout.readlines()).split(' ')[-3].split('/bin')[0]
+                #basePath = dataDir.split('/server_datadir')[0]
+                #baseDir = basePath + '/instance_binaries/computer/' + str(infos[1]) + '/kunlun-server-' + Versions
                 dataDir += '/postgresql.conf'
                 tmpList = [baseDir, dataDir, infos[1]]
                 hostList.append(tmpList)

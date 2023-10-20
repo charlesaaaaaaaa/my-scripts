@@ -48,7 +48,7 @@ class configure_server():
         l = []
         for host in Path:
             for info in Path[host]:
-                restart_component(host).restart_pg(info[0], info[2])
+                #restart_component(host).restart_pg(info[0], info[2])
                 p = threading.Thread(target=thread_worker, args=[host, info[0], info[2]])
                 l.append(p)
                 p.start()
