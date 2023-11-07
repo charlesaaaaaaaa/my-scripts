@@ -15,31 +15,29 @@ def mysqlToKlustron():
     from base import test
     from base.other.otherOpt import restartCdcCluster
     restartCdcCluster()
-    res = test.mysqlToKunlun().regular_test()
-    getNum(res)
-    #res = test.mysqlToKunlun().killCdcMasterWhenCdcIsRunning()
-    #getNum(res)
+    getNum(test.mysqlToKunlun().regular_test())
     restartCdcCluster()
-    res = test.mysqlToKunlun().killSourceMysqlWhenCdcIsRunning()
-    getNum(res)
+    getNum(test.mysqlToKunlun().killSourceMysqlWhenCdcIsRunning())
     restartCdcCluster()
-    res = test.mysqlToKunlun().killTargeKlustronWherCdcIsRunning()
-    getNum(res)
+    getNum(test.mysqlToKunlun().killTargeKlustronWherCdcIsRunning())
+    restartCdcCluster()
+    getNum(test.mysqlToKunlun().killShardMasterWhenCdcIsRunning())
+    restartCdcCluster()
+    getNum(test.mysqlToKunlun().killCdcMasterWhenCdcIsRunning())
 
 def kunlunToMysql():
     from base.test import kunlunToMysql
     from base.other.otherOpt import restartCdcCluster
     restartCdcCluster()
-    res = kunlunToMysql().regular_test()
-    getNum(res)
-    #res = kunlunToMysql().killCdcMasterWhenCdcIsRunning()
-    #getNum(res)
+    getNum(kunlunToMysql().regular_test())
     restartCdcCluster()
-    res = kunlunToMysql().killTargetMysqlWhenCdcIsRunning()
-    getNum(res)
+    getNum(kunlunToMysql().killTargetMysqlWhenCdcIsRunning())
     restartCdcCluster()
-    res = kunlunToMysql().killSourceKunlunWhenCdcIsRunning()
-    getNum(res)
+    getNum(kunlunToMysql().killSourceKunlunWhenCdcIsRunning())
+    restartCdcCluster()
+    getNum(kunlunToMysql().killShardMasterWhenCdcIsRunning())
+    restartCdcCluster()
+    getNum(kunlunToMysql().killCdcMasterWhenCdcIsRunning())
 
 if __name__ == '__main__':
     copyconfig.Mode('regular')

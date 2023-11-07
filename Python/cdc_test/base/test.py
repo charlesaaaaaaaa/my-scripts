@@ -85,6 +85,21 @@ class mysqlToKunlun():
         res = fullSync_mysqlToKunlun(dbname).reviewAllTable()
         return res
 
+    def killShardMasterWhenCdcIsRunning(self):
+        dbname = 'mysqltokunlun_killshardmaster'
+        mysqlToKunlun().createDatabase(dbname)
+        fullSync_mysqlToKunlun(dbname).sysbenchAction('cleanup', 2, 10)
+        fullSync_mysqlToKunlun(dbname).sysbenchAction('prepare', 2, 10)
+        tableList = fullSync_mysqlToKunlun(dbname).startMydumper()
+        fullSync_mysqlToKunlun(dbname).getBinlogPosition()
+        fullSync_mysqlToKunlun(dbname).startapi(tableList)
+        # startMydumper里面已经存在cleanup动作了，所以不用再cleanup了
+        fullSync_mysqlToKunlun(dbname).sysbenchAction('prepare', 2, 10000)
+        fullSync_mysqlToKunlun(dbname).killShardsMaster()
+        fullSync_mysqlToKunlun(dbname).reviewDataNum()
+        res = fullSync_mysqlToKunlun(dbname).reviewAllTable()
+        return res
+
 class kunlunToMysql():
     def __init__(self):
         pass
@@ -160,5 +175,18 @@ class kunlunToMysql():
         fullSync_kunlunToMysql(dbname).killSourceKlustron()
         fullSync_kunlunToMysql(dbname).reviewDataNum()
         res = fullSync_kunlunToMysql(dbname).reviewAllTable()
+        return res
 
+    def killShardMasterWhenCdcIsRunning(self):
+        dbname = 'kunluntomysql_killshardmaster'
+        kunlunToMysql().createDatabase(dbname)
+        fullSync_kunlunToMysql(dbname).getApp()
+        fullSync_kunlunToMysql(dbname).sysbenchAction('cleanup', 2, 10)
+        fullSync_kunlunToMysql(dbname).sysbenchAction('prepare', 2, 10)
+        tableList = fullSync_kunlunToMysql(dbname).startMydumper()
+        fullSync_kunlunToMysql(dbname).startApi(tableList)
+        fullSync_kunlunToMysql(dbname).sysbenchAction('prepare', 2, 10000)
+        fullSync_kunlunToMysql(dbname).killShardsMaster()
+        fullSync_kunlunToMysql(dbname).reviewDataNum()
+        res = fullSync_kunlunToMysql(dbname).reviewAllTable()
         return res

@@ -83,6 +83,7 @@ class fullSync_kunlunToMysql():
             command_mkdir = './kunlun2mysql/%s_%s' % (db, i)
             with open('%s/metadata' % command_mkdir, 'r') as f:
                 fileContent = f.readlines()
+            #fileContent = readFile('%s/metadata' % (command_mkdir))
             Log = search_strings(fileContent, 'Log:').split(': ')[1]
             Pos = search_strings(fileContent, 'Pos:').split(': ')[1]
             Gtid= search_strings(fileContent, 'GTID:').split('GTID:')[1]
@@ -247,5 +248,22 @@ class fullSync_kunlunToMysql():
                         writeLog(command_killklutron)
                     subprocess.run(command_killklutron, shell=True)
         writeLog('开始进行下一步')
-
-#print(fullSync_kunlunToMysql('kunluntomysql').startApi())
+    
+    def killShardsMaster(self):
+        cdcUser = readcnf().getCdcInfo()['user']
+        infos = info().metadata()
+        con = connMy()
+        sql = "select hostaddr, port, shard_id from shard_nodes where member_state = 'source' and status = 'active';"
+        shard_master_tuple = con.myConn(infos, 'kunlun_metadata_db', sql)
+        shard_master_infos = {}
+        for master_node in shard_master_tuple:
+            tmp = {'host': master_node[0], 'port': master_node[1]}
+            tmp_dict = {'shard_%s' % master_node[2]: tmp}
+            shard_master_infos.update(tmp_dict)
+        writeLog("\n当前活动的shard主有\n\t%s" % shard_master_infos)
+        for master_info in shard_master_infos:
+            command_killShardMaster = 'ssh %s@%s "ps -ef | grep %s | grep mysql | awk \'{print \$2}\' | xargs kill ' \
+                                          '-9 > /dev/null 2>&1 || a=1"' % (cdcUser, shard_master_infos[master_info]['host'], shard_master_infos[master_info]['port'])
+            writeLog(command_killShardMaster)
+            subprocess.run(command_killShardMaster, shell=True)
+        writeLog('开始进行下一步')
