@@ -29,7 +29,7 @@ class info():
         shard_id = con.myConn(metaConf, 'kunlun_metadata_db', sql)
         for i in shard_id:
             shardId = 'shard_%s' % i
-            sql = 'select hostaddr, port, user_name, passwd from shard_nodes where shard_id = %s and member_state = "replica" limit 1' % i
+            sql = 'select hostaddr, port, user_name, passwd from shard_nodes where shard_id = %s and member_state = "replica" and backup_node = "ON" limit 1' % i
             signalNodeInfo = con.myConn(metaConf, 'kunlun_metadata_db', sql)[0]
             dictInfo = {'host': signalNodeInfo[0], 'port': signalNodeInfo[1], 'user': signalNodeInfo[2], 'password': signalNodeInfo[3]}
             nodeInfo = {shardId : dictInfo}
