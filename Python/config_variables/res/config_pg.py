@@ -12,19 +12,133 @@ class configure_server():
         self.Path = getServer().Paths()
         self.variables = readcnf().server_settings()
 
-    def show_variables(self):
+    def show_variables_old(self):
         Infos = self.Infos
         variables = self.variables
 
-        print('|--------|\n| server |\n|--------|')
+        print('\n|--------|\n| server |\n|--------|')
+        variable_len = 15
+        for key in variables:
+            if len(key) > variable_len:
+                variable_len = len(key)
+        first_title_name = 'variable_name'
+        first_title_name += ' ' * (variable_len-len(first_title_name))
+        first_title = "| %s |" % first_title_name
+        times = 0
         for host in Infos:
+            port_len = 0
             for infos in Infos[host]:
-                print('-- %s: %s --' % (infos[0], infos[1]))
+                port_len += 1
+                times += 1
+                ip_port = '%s:%s' % (infos[0], infos[1])
+                first_title += ' %-20s |' % ip_port
+
+        lines = '-' * (variable_len + (23 * times) + 4)
+        print(lines)
+        print(first_title)
+        print(lines)
+        for key in variables:
+            key_name = key
+            key_name += ' ' * (variable_len - len(key_name))
+            reslog = '| %s |' % key_name
+            sql = "show %s" % key
+            for host in Infos:
+                for infos in Infos[host]:
+                    conn = connPg()
+                    res = conn.pgReturn_other(infos[0], infos[1], infos[2], infos[3], sql)[0][0]
+                    reslog += ' %-20s |' % res
+            print(reslog)
+
+    def show_variables(self):
+        Infos = self.Infos
+        variables = self.variables
+        res_dict = {}
+        host_len_dict = {}
+        max_variable_len = 12 + 8
+
+        print('\n|--------|\n| server |\n|--------|\n')
+        for key in variables:
+            if len(key) > max_variable_len:
+                max_variable_len = len(key)
+        for host in Infos:
+            port_dict = {}
+            for infos in Infos[host]:
+                port = str(infos[1])
+                port_list = []
                 conn = connPg()
                 for key in variables:
-                    sql = "show %s" % key
-                    res = conn.pgReturn_other(infos[0], infos[1], infos[2], infos[3], sql)[0][0]
-                    print(' * %s = %s' % (key, res))
+                    sql = 'show "%s"' % key
+                    try:
+                        res = conn.pgReturn_other(infos[0], infos[1], infos[2], infos[3], sql)[0][0]
+                    except:
+                        res = 'noRes'
+                    port_list.append(res)
+                port_dict.update({port: port_list})
+            res_dict.update({host: port_dict})
+        for host in res_dict:
+            host_len = 12
+            port_count = len(res_dict[host])
+            port_len_dict = {}
+            for port in res_dict[host]:
+                tmp_port_len = 5
+                for variable in res_dict[host][port]:
+                    if len(variable) > tmp_port_len:
+                        tmplen = len(variable)
+                        tmp_port_len = tmplen
+                if port_count == 1:
+                    if tmp_port_len < len(host):
+                        tmp_port_len = len(host)
+                port_len = {port: tmp_port_len}
+                port_len_dict.update(port_len)
+            total_port_len = 0
+            # print(port_len_dict)
+            for port in port_len_dict:
+                total_port_len += port_len_dict[port]
+            total_port_len += (port_count - 1) * 3
+            if total_port_len >= host_len:
+                host_len = total_port_len
+            host_len_dict.update({host: [host_len, port_len_dict]})
+        # print(host_len_dict)
+        first_title_name = '| variable_name \\'
+        first_title = first_title_name + (' ' * (max_variable_len - len(first_title_name) - 2)) + 'host |'
+        secone_tital = '|' + ' ' * (max_variable_len + 1 - 12) + '\\' + ' ' * (max_variable_len - 9 - 12) + 'port |'
+        line = 0
+        def empty_str(num):
+            strs = ' ' * num
+            return strs
+        for host in host_len_dict:
+            empty_str_num = host_len_dict[host][0] - len(host)
+            left_empty_str_num = int(empty_str_num / 2)
+            left_empty_str = empty_str(left_empty_str_num)
+            right_empty_str = empty_str(empty_str_num - left_empty_str_num)
+            host_column = left_empty_str + host + right_empty_str
+            line += host_len_dict[host][0]
+            first_title += ' %s |' % host_column
+            for port in host_len_dict[host][1]:
+                port_column = port + ' ' * (host_len_dict[host][1][port] - len(port))
+                secone_tital += ' %s |' % port_column
+        def lines(str, linenum):
+            line = '|' + '%s' % str * (linenum + max_variable_len + (len(host_len_dict) * 3) + 2) + '|'
+            return line
+        print(lines('-', line))
+        print(first_title)
+        print(lines('-', line))
+        print(secone_tital)
+        print(lines('=', line))
+        # print(res_dict)
+        num = 0
+        for key in variables:
+            row_title = key + ' ' * (max_variable_len - len(key))
+            reslog = '| %s |' % row_title
+            for host in res_dict:
+                for port in res_dict[host]:
+                    # print(res_dict[host][num])
+                    value = res_dict[host][port][num] + ' ' * (
+                                host_len_dict[host][1][port] - len(res_dict[host][port][num]))
+                    reslog += ' %s |' % value
+            num += 1
+            print(reslog)
+        print(lines('-', line))
 
     def write_config_file(self):
         Path = self.Path
