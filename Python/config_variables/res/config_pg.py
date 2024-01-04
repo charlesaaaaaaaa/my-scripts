@@ -101,7 +101,10 @@ class configure_server():
         # print(host_len_dict)
         first_title_name = '| variable_name \\'
         first_title = first_title_name + (' ' * (max_variable_len - len(first_title_name) - 2)) + 'host |'
-        secone_tital = '|' + ' ' * (max_variable_len + 1 - 12) + '\\' + ' ' * (max_variable_len - 9 - 12) + 'port |'
+        if max_variable_len <= 20:
+            secone_tital = '|' + ' ' * 16 + '\port |'
+        else:
+            secone_tital = '|' + ' ' * (17) + '\\' + ' ' * (max_variable_len - 17 - 4) + 'port |'
         line = 0
         def empty_str(num):
             strs = ' ' * num
@@ -169,5 +172,5 @@ class configure_server():
         for i in l:
             i.join()
 
-        print('sleep 30s ...\n')
-        sleep(30)
+        print('sleep 50s ...\n')
+        sleep(50)

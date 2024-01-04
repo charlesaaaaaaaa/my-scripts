@@ -107,9 +107,14 @@ class configure_storage():
                 host_len = total_port_len
             host_len_dict.update({host: [host_len, port_len_dict]})
         #print(host_len_dict)
+        max_variable_len = 20
         first_title_name= '| variable_name \\'
         first_title = first_title_name + (' ' * (max_variable_len - len(first_title_name) - 2)) + 'host |'
-        secone_tital = '|' + ' ' * (max_variable_len - 1 - 12) + '\\' + ' ' * (max_variable_len - 9 - 12) + 'port |'
+        if max_variable_len <= 20:
+            secone_tital = '|' + ' ' * 16 + '\port |'
+        else:
+            secone_tital = '|' + ' ' * (17) + '\\' + ' ' * (max_variable_len - 17 - 4) + 'port |'
+        #secone_tital = '|' + ' ' * (max_variable_len - 1 - 16) + '\\' + ' ' * (ax_variable_len - 9 - 12) + 'port |'
         #secone_tital = first_title_name + (' ' * (max_variable_len - len(first_title_name) - 2)) + 'port |'
         line = 0
         def empty_str(num):
@@ -176,5 +181,5 @@ class configure_storage():
                 p.start()
         for i in l:
             i.join()
-        print('## sleep 30s')
-        sleep(30)
+        print('## sleep 50s')
+        sleep(50)
