@@ -1,0 +1,9 @@
+host=${1:-192.168.0.136}
+port=${2:-12388}
+user=${3:-root}
+pwds=${4:-root}
+export MYSQL_HOST=$host
+export MYSQL_USER_NAME=$user
+export MYSQL_PORT=$port
+export MYSQL_PASS=$pwds
+export MYSQL_PWD=$pwds
