@@ -71,7 +71,12 @@ def test():
     cur.execute(connsql1)
     print(selectsql)
     cur.execute(selectsql)
-    res = close_pg('all')[2][0]
+    ress = close_pg('all')
+    for i in ress:
+        for ii in i:
+            if '_$$_' in ii:
+                res = ii
+                break
     print(res)
     shardNum = res.split(':')[1][1]
     tableName = res.split('.')[3][1:7]

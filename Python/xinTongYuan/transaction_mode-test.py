@@ -71,7 +71,7 @@ def load_data():
     print("# 开始创建表")
     connect_pg1(Host, Port, User, Pwd)
     drop = 'drop table if exists item'
-    sql = 'create table item(id int, name text, C1 int)'
+    sql = 'create table item(id int primary key, name text, C1 int)'
     exePg1('y', drop)
     exePg1('y', sql)
     close_pg1('pass', 'commit')
