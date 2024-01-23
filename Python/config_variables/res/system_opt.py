@@ -22,7 +22,7 @@ class getFile():
                     sed_c = "sed -i '%ss/.*/%s = %s/' %s" % (lineNum, txt, replace_value, paths)
             except:
                 replace_value = replace_value.replace('"', '')
-                sed_c = "sed -i '%ss/.*/%s = \"%s\"/' %s" % (lineNum, txt, replace_value, paths)
+                sed_c = "sed -i \\\"%ss/.*/%s = '%s'/\\\" %s" % (lineNum, txt, replace_value, paths)
         except Exception as err:
             try:
                 lineNum = int(linetxt.decode('utf-8'))
