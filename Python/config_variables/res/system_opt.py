@@ -17,7 +17,12 @@ class getFile():
         linetxt = lines.stdout.read()
         try:
             lineNum = int(linetxt.decode('utf-8').split('\n')[-2])
-            sed_c = "sed -i '%ss/.*/%s = %s/' %s" % (lineNum, txt, replace_value, paths)
+            try:
+                if int(replace_value):
+                    sed_c = "sed -i '%ss/.*/%s = %s/' %s" % (lineNum, txt, replace_value, paths)
+            except:
+                replace_value = replace_value.replace('"', '')
+                sed_c = "sed -i '%ss/.*/%s = \"%s\"/' %s" % (lineNum, txt, replace_value, paths)
         except Exception as err:
             try:
                 lineNum = int(linetxt.decode('utf-8'))
@@ -25,6 +30,7 @@ class getFile():
             except:
                 sed_c = "echo '%s = %s' >> %s" % (txt, replace_value, paths)
         replace_c = ssh_c + '"' + sed_c + '"'
+        print(replace_c)
         subprocess.run(replace_c, shell=True)
 
 class restart_component():
