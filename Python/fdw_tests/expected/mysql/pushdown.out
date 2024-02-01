@@ -228,7 +228,7 @@ SELECT c1, c2, c6, c8 FROM f_test_tbl1 e
 (3 rows)
 
 SELECT c1, c2, c6, c8 FROM f_test_tbl1 e
-  WHERE c3 LIKE 'SALESMAN'
+  WHERE c3 = 'SALESMAN'
   ORDER BY c1;
   c1  |  c2   |     c6     | c8 
 ------+-------+------------+----

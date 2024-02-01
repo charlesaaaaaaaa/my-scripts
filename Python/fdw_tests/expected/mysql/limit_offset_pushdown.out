@@ -99,12 +99,12 @@ SELECT * FROM f_test_tbl2 ORDER BY 1 OFFSET 2;
 (5 rows)
 
 SELECT * FROM f_test_tbl2 ORDER BY 1 OFFSET 2;
- c1 |    c2     |   c3   
-----+-----------+--------
- 30 | SALES     | MUMBAI
- 40 | HR        | NAGPUR
- 50 | IT        | PUNE
- 60 | DB SERVER | PUNE
+ c1 |    c2    |   c3   
+----+----------+--------
+ 30 | SALES    | MUMBAI
+ 40 | HR       | NAGPUR
+ 50 | IT       | PUNE
+ 60 | DBSERVER | PUNE
 (4 rows)
 
 -- Limit ALL
@@ -161,12 +161,12 @@ SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT NULL OFFSET 2;
 (5 rows)
 
 SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT NULL OFFSET 2;
- c1 |    c2     |   c3   
-----+-----------+--------
- 30 | SALES     | MUMBAI
- 40 | HR        | NAGPUR
- 50 | IT        | PUNE
- 60 | DB SERVER | PUNE
+ c1 |    c2    |   c3   
+----+----------+--------
+ 30 | SALES    | MUMBAI
+ 40 | HR       | NAGPUR
+ 50 | IT       | PUNE
+ 60 | DBSERVER | PUNE
 (4 rows)
 
 -- Limit 0 and Offset 0

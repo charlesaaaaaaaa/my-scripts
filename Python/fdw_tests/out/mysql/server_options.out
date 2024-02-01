@@ -1,0 +1,373 @@
+NOTICE:  Extension            : mysql_fdw
+NOTICE:  Server               : mysql_svr
+NOTICE:  Server_Options       : matched
+NOTICE:  User_Mapping_Options : matched
+ERROR:  failed to connect to MySQL: Table 'init_command_check' already exists
+ERROR:  failed to connect to MySQL: Table 'init_command_check' already exists
+WARNING:  MySQL secure authentication is off
+['config', 'sqlfile', 'dbtype'] ['conf/config.conf', 'sql/mysql/server_options.sql', 'mysql']
+Namespace(config='conf/config.conf', dbtype='mysql', sqlfile='sql/mysql/server_options.sql')
+Converted SQL statement by this script: drop database if exists contrib_regression
+Converted SQL statement by this script: create database if not exists contrib_regression
+CREATE EXTENSION IF NOT EXISTS mysql_fdw;
+
+========
+CREATE SERVER mysql_svr FOREIGN DATA WRAPPER mysql_fdw
+  	OPTIONS  (host '192.168.0.136', port  '12388');
+
+========
+CREATE USER MAPPING FOR public SERVER mysql_svr
+  	OPTIONS  (username 'root', password 'root');
+
+========
+CREATE OR REPLACE FUNCTION show_details(host TEXT, port TEXT, uid TEXT, pwd TEXT) RETURNS int AS \$\$
+DECLARE
+  ext TEXT;
+  srv TEXT;
+  sopts TEXT;
+  uopts TEXT;
+BEGIN
+  SELECT e.fdwname, srvname, array_to_string(s.srvoptions, ','), array_to_string(u.umoptions, ',')
+    INTO ext, srv, sopts, uopts
+    FROM pg_foreign_data_wrapper e LEFT JOIN pg_foreign_server s ON e.oid = s.srvfdw LEFT JOIN pg_user_mapping u ON s.oid = u.umserver
+    WHERE e.fdwname = 'mysql_fdw'
+    ORDER BY 1, 2, 3, 4;
+
+  raise notice 'Extension            : %', ext;
+  raise notice 'Server               : %', srv;
+
+  IF strpos(sopts, host) <> 0 AND strpos(sopts, port) <> 0 THEN
+    raise notice 'Server_Options       : matched';
+  END IF;
+
+  IF strpos(uopts, uid) <> 0 AND strpos(uopts, pwd) <> 0 THEN
+    raise notice 'User_Mapping_Options : matched';
+  END IF;
+
+  return 1;
+END;
+\$\$ language plpgsql;
+
+========
+SELECT show_details( '192.168.0.136',  '12388',  'root',  'root');
+
+ show_details 
+--------------
+            1
+(1 row)
+
+========
+CREATE FOREIGN TABLE f_mysql_test(a int, b int)
+  SERVER mysql_svr OPTIONS (dbname 'mysql_fdw_regress', table_name 'mysql_test');
+
+========
+SELECT a, b FROM f_mysql_test ORDER BY 1, 2;
+
+ a | b 
+---+---
+ 1 | 1
+(1 row)
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = INSERT INTO f_mysql_test (a, b) VALUES (2, 2);
+Converted SQL statement by this script: INSERT INTO `mysql_test` (a, b) VALUES (2, 2) ;
+
+========
+SELECT a, b FROM f_mysql_test ORDER BY 1, 2;
+
+ a | b 
+---+---
+ 1 | 1
+ 2 | 2
+(2 rows)
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = UPDATE f_mysql_test SET b = 3 WHERE a = 2;
+Converted SQL statement by this script: UPDATE `mysql_test` SET  b  = '3' WHERE a = 2;
+
+========
+SELECT a, b FROM f_mysql_test ORDER BY 1, 2;
+
+ a | b 
+---+---
+ 1 | 1
+ 2 | 3
+(2 rows)
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = DELETE FROM f_mysql_test WHERE a = 2;
+Converted SQL statement by this script: DELETE FROM `mysql_test`  WHERE  a = 2 ;
+========
+SELECT a, b FROM f_mysql_test ORDER BY 1, 2;
+
+ a | b 
+---+---
+ 1 | 1
+(1 row)
+
+========
+DROP FOREIGN TABLE f_mysql_test;
+
+========
+DROP USER MAPPING FOR public SERVER mysql_svr;
+
+========
+DROP SERVER mysql_svr;
+
+========
+CREATE SERVER mysql_svr1 FOREIGN DATA WRAPPER mysql_fdw
+  	OPTIONS  (host '192.168.0.136', port  '12388', init_command 'create table init_command_check(a int)');
+
+========
+CREATE USER MAPPING FOR public SERVER mysql_svr1
+  	OPTIONS  (username 'root', password 'root');
+
+========
+CREATE FOREIGN TABLE f_mysql_test (a int, b int)
+  SERVER mysql_svr1 OPTIONS (dbname 'mysql_fdw_regress', table_name 'mysql_test');
+
+========
+SELECT a, b FROM f_mysql_test ORDER BY 1, 2;
+
+ a | b 
+---+---
+ 1 | 1
+(1 row)
+
+========
+CREATE FOREIGN TABLE f_init_command_check(a int)
+  SERVER mysql_svr1 OPTIONS (dbname 'mysql_fdw_regress', table_name 'init_command_check');
+
+========
+SELECT a FROM f_init_command_check ORDER BY 1;
+
+========
+SELECT a, b FROM f_mysql_test;
+
+========
+DROP FOREIGN TABLE f_init_command_check;
+
+========
+DROP FOREIGN TABLE f_mysql_test;
+
+========
+DROP USER MAPPING FOR public SERVER mysql_svr1;
+
+========
+DROP SERVER mysql_svr1;
+
+========
+CREATE SERVER mysql_svr1 FOREIGN DATA WRAPPER mysql_fdw
+  	OPTIONS  (host '192.168.0.136', port  '12388', use_remote_estimate 'TRUE');
+
+========
+CREATE USER MAPPING FOR public SERVER mysql_svr1
+  	OPTIONS  (username 'root', password 'root');
+
+========
+CREATE FOREIGN TABLE f_mysql_test(a int, b int)
+  SERVER mysql_svr1 OPTIONS (dbname 'mysql_fdw_regress', table_name 'mysql_test');
+
+========
+EXPLAIN (VERBOSE, COSTS OFF) SELECT a FROM f_mysql_test WHERE a < 2 ORDER BY 1;
+
+========
+DROP FOREIGN TABLE f_mysql_test;
+
+========
+DROP USER MAPPING FOR public SERVER mysql_svr1;
+
+========
+DROP SERVER mysql_svr1;
+
+========
+CREATE SERVER mysql_svr1 FOREIGN DATA WRAPPER mysql_fdw
+  	OPTIONS  (host '192.168.0.136', port  '12388', secure_auth 'FALSE');
+
+========
+CREATE USER MAPPING FOR public SERVER mysql_svr1
+  	OPTIONS  (username 'root', password 'root');
+
+========
+CREATE FOREIGN TABLE f_mysql_test(a int, b int)
+  SERVER mysql_svr1 OPTIONS (dbname 'mysql_fdw_regress', table_name 'mysql_test');
+
+========
+SELECT a, b FROM f_mysql_test ORDER BY 1, 2;
+
+ a | b 
+---+---
+ 1 | 1
+(1 row)
+
+========
+DROP FOREIGN TABLE f_mysql_test;
+
+========
+DROP USER MAPPING FOR public SERVER mysql_svr1;
+
+========
+DROP SERVER mysql_svr1;
+
+========
+script warning: this OPTIONS doesn't have node info or user info:   OPTIONS ( fetch_size '101' );
+
+CREATE SERVER fetch101 FOREIGN DATA WRAPPER mysql_fdw
+  OPTIONS ( fetch_size '101' );
+
+========
+SELECT count(*)
+  FROM pg_foreign_server
+  WHERE srvname = 'fetch101'
+  AND srvoptions @> array['fetch_size=101'];
+
+ count 
+-------
+     1
+(1 row)
+
+========
+SELECT count(*)
+  FROM pg_foreign_server
+  WHERE srvname = 'fetch101'
+  AND srvoptions @> array['fetch_size=101'];
+
+ count 
+-------
+     1
+(1 row)
+
+========
+SELECT count(*)
+  FROM pg_foreign_server
+  WHERE srvname = 'fetch101'
+  AND srvoptions @> array['fetch_size=202'];
+
+ count 
+-------
+     0
+(1 row)
+
+========
+script warning: this OPTIONS doesn't have node info or user info:   OPTIONS ( fetch_size '30000' );
+
+script warning: this create statememt doesn't have table name!
+CREATE FOREIGN TABLE table30000 ( x int ) SERVER fetch101
+  OPTIONS ( fetch_size '30000' );
+
+========
+SELECT COUNT(*)
+  FROM pg_foreign_table
+  WHERE ftrelid = 'table30000'::regclass
+  AND ftoptions @> array['fetch_size=30000'];
+
+ count 
+-------
+     1
+(1 row)
+
+========
+SELECT COUNT(*)
+  FROM pg_foreign_table
+  WHERE ftrelid = 'table30000'::regclass
+  AND ftoptions @> array['fetch_size=30000'];
+
+ count 
+-------
+     1
+(1 row)
+
+========
+SELECT COUNT(*)
+  FROM pg_foreign_table
+  WHERE ftrelid = 'table30000'::regclass
+  AND ftoptions @> array['fetch_size=60000'];
+
+ count 
+-------
+     0
+(1 row)
+
+========
+SELECT count(*)
+  FROM pg_foreign_server
+  WHERE srvname = 'fetch101'
+  AND srvoptions @> array['fetch_size=202'];
+
+ count 
+-------
+     0
+(1 row)
+
+========
+DROP FOREIGN TABLE  table30000;
+
+========
+DROP SERVER fetch101;
+
+========
+script warning: this OPTIONS doesn't have node info or user info:   OPTIONS ( reconnect 'true' );
+
+CREATE SERVER reconnect1 FOREIGN DATA WRAPPER mysql_fdw
+  OPTIONS ( reconnect 'true' );
+
+========
+SELECT count(*)
+  FROM pg_foreign_server
+  WHERE srvname = 'reconnect1'
+  AND srvoptions @> array['reconnect=true'];
+
+ count 
+-------
+     1
+(1 row)
+
+========
+SELECT count(*)
+  FROM pg_foreign_server
+  WHERE srvname = 'reconnect1'
+  AND srvoptions @> array['reconnect=false'];
+
+ count 
+-------
+     0
+(1 row)
+
+========
+DROP SERVER reconnect1;
+
+========
+script warning: this OPTIONS doesn't have node info or user info:   OPTIONS ( character_set 'utf8' );
+
+CREATE SERVER charset101 FOREIGN DATA WRAPPER mysql_fdw
+  OPTIONS ( character_set 'utf8' );
+
+========
+SELECT count(*)
+  FROM pg_foreign_server
+  WHERE srvname = 'charset101'
+  AND srvoptions @> array['character_set=utf8'];
+
+ count 
+-------
+     1
+(1 row)
+
+========
+SELECT count(*)
+  FROM pg_foreign_server
+  WHERE srvname = 'charset101'
+  AND srvoptions @> array['character_set=latin'];
+
+ count 
+-------
+     0
+(1 row)
+
+========
+DROP SERVER charset101;
+
+========
+DROP EXTENSION mysql_fdw;
+
+========

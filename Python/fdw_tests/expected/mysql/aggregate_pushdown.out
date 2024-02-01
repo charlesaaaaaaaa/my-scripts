@@ -498,7 +498,7 @@ SELECT c2, rank('10'::varchar) within group (ORDER BY c3), percentile_cont(c2/20
          Remote query: SELECT `c1`, `c2`, `c3` FROM `mysql_fdw_regress`.`test2` ORDER BY `c2` IS NULL, `c2` ASC
 (7 rows)
 
-SELECT c2, rank('10'::varchar) within group (ORDER BY c3), percentile_cont(c2/200::numeric) within group (ORDER BY c1) FROM fdw132_t2 GROUP BY c2 HAVING percentile_cont(c2/200::numeric) within group (ORDER BY c1) < 500 ORDER BY c2;
+SELECT c2, rank('10'::varchar) within group (ORDER BY c3 COLLATE "C"), percentile_cont(c2/200::numeric) within group (ORDER BY c1) FROM fdw132_t2 GROUP BY c2 HAVING percentile_cont(c2/200::numeric) within group (ORDER BY c1) < 500 ORDER BY c2;
  c2  | rank | percentile_cont 
 -----+------+-----------------
  200 |    1 |              12

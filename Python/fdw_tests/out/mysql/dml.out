@@ -1,0 +1,372 @@
+ERROR:  relation mysql_fdw_regress1.nosuchtable does not exist
+ERROR:  relation mysql_fdw_regress2.numbers does not exist
+WARNING:  skipping "f_empdata" --- cannot analyze this foreign table
+WARNING:  skipping "f_empdata" --- cannot analyze this foreign table
+ERROR:  cannot copy from foreign table "f_mysql_test"
+HINT:  Try the COPY (SELECT ...) TO variant.
+ERROR:  cannot copy from foreign table "f_mysql_test"
+HINT:  Try the COPY (SELECT ...) TO variant.
+['config', 'sqlfile', 'dbtype'] ['conf/config.conf', 'sql/mysql/dml.sql', 'mysql']
+Namespace(config='conf/config.conf', dbtype='mysql', sqlfile='sql/mysql/dml.sql')
+Converted SQL statement by this script: drop database if exists contrib_regression
+Converted SQL statement by this script: create database if not exists contrib_regression
+CREATE EXTENSION IF NOT EXISTS mysql_fdw;
+
+========
+CREATE SERVER mysql_svr FOREIGN DATA WRAPPER mysql_fdw
+  	OPTIONS  (host '192.168.0.136', port  '12388');
+
+========
+CREATE USER MAPPING FOR public SERVER mysql_svr
+  	OPTIONS  (username 'root', password 'root');
+
+========
+CREATE FOREIGN TABLE f_mysql_test(a int, b int)
+  SERVER mysql_svr OPTIONS (dbname 'mysql_fdw_regress', table_name 'mysql_test');
+
+========
+CREATE FOREIGN TABLE fdw126_ft1(stu_id int, stu_name varchar(255), stu_dept int)
+  SERVER mysql_svr OPTIONS (dbname 'mysql_fdw_regress1', table_name 'student');
+
+========
+CREATE FOREIGN TABLE fdw126_ft2(stu_id int, stu_name varchar(255))
+  SERVER mysql_svr OPTIONS (table_name 'student');
+
+========
+CREATE FOREIGN TABLE fdw126_ft3(a int, b varchar(255))
+  SERVER mysql_svr OPTIONS (dbname 'mysql_fdw_regress1', table_name 'numbers');
+
+========
+CREATE FOREIGN TABLE fdw126_ft4(a int, b varchar(255))
+  SERVER mysql_svr OPTIONS (dbname 'mysql_fdw_regress1', table_name 'nosuchtable');
+
+========
+CREATE FOREIGN TABLE fdw126_ft5(a int, b varchar(255))
+  SERVER mysql_svr OPTIONS (dbname 'mysql_fdw_regress2', table_name 'numbers');
+
+========
+CREATE FOREIGN TABLE fdw126_ft6(stu_id int, stu_name varchar(255))
+  SERVER mysql_svr OPTIONS (dbname 'mysql_fdw_regress1', table_name 'mysql_fdw_regress1.student');
+
+========
+CREATE FOREIGN TABLE f_empdata(emp_id int, emp_dat bytea)
+  SERVER mysql_svr OPTIONS (dbname 'mysql_fdw_regress', table_name 'empdata');
+
+========
+CREATE FOREIGN TABLE fdw193_ft1(stu_id varchar(10), stu_name varchar(255), stu_dept int)
+  SERVER mysql_svr OPTIONS (dbname 'mysql_fdw_regress1', table_name 'student1');
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = INSERT INTO f_empdata VALUES (1, decode ('01234567', 'hex'));
+Converted SQL statement by this script: INSERT INTO `empdata` VALUES (1, 0x01234567) ;
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = INSERT INTO f_empdata VALUES (2, 'abc');
+Converted SQL statement by this script: INSERT INTO `empdata` VALUES (2, 'abc') ;
+
+========
+SELECT count(*) FROM f_empdata ORDER BY 1;
+
+ count 
+-------
+     2
+(1 row)
+
+========
+SELECT emp_id, emp_dat FROM f_empdata ORDER BY 1;
+
+ emp_id |  emp_dat   
+--------+------------
+      1 | \x01234567
+      2 | \x616263
+(2 rows)
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = UPDATE f_empdata SET emp_dat = decode ('0123', 'hex') WHERE emp_id = 1;
+Converted SQL statement by this script: UPDATE `empdata` SET  emp_dat  = 0x0123 WHERE emp_id = 1;
+
+========
+SELECT emp_id, emp_dat FROM f_empdata ORDER BY 1;
+
+ emp_id | emp_dat  
+--------+----------
+      1 | \x0123
+      2 | \x616263
+(2 rows)
+
+========
+mysql - dbname = mysql_fdw_regress1; src_pgsql = INSERT INTO fdw126_ft1 VALUES(1, 'One', 101);
+Converted SQL statement by this script: INSERT INTO `student` VALUES (1, 'One', 101) ;
+
+========
+mysql - dbname = mysql_fdw_regress1; src_pgsql = UPDATE fdw126_ft1 SET stu_name = 'one' WHERE stu_id = 1;
+Converted SQL statement by this script: UPDATE `student` SET  stu_name  = 'one' WHERE stu_id = 1;
+
+========
+mysql - dbname = mysql_fdw_regress1; src_pgsql = DELETE FROM fdw126_ft1 WHERE stu_id = 1;
+Converted SQL statement by this script: DELETE FROM `student`  WHERE  stu_id = 1 ;
+========
+SELECT a, b FROM f_mysql_test ORDER BY 1, 2;
+
+ a | b 
+---+---
+ 1 | 1
+(1 row)
+
+========
+mysql - dbname = mysql_fdw_regress1; src_pgsql = INSERT INTO fdw126_ft3 VALUES(1, 'One');
+Converted SQL statement by this script: INSERT INTO `numbers` VALUES (1, 'One') ;
+
+========
+SELECT a, b FROM fdw126_ft3 ORDER BY 1, 2 LIMIT 1;
+
+ a |  b  
+---+-----
+ 1 | One
+(1 row)
+
+========
+mysql - dbname = mysql_fdw_regress1; src_pgsql = UPDATE fdw126_ft3 SET b = 'one' WHERE a = 1;
+Converted SQL statement by this script: UPDATE `numbers` SET  b  = 'one' WHERE a = 1;
+
+========
+mysql - dbname = mysql_fdw_regress1; src_pgsql = DELETE FROM fdw126_ft3 WHERE a = 1;
+Converted SQL statement by this script: DELETE FROM `numbers`  WHERE  a = 1 ;
+========
+mysql - dbname = mysql_fdw_regress1; src_pgsql = INSERT INTO fdw126_ft6 VALUES(1, 'One');
+Converted SQL statement by this script: INSERT INTO `mysql_fdw_regress1.student` VALUES (1, 'One') ;
+
+mysql ERROR: (1146, "Table 'mysql_fdw_regress1.mysql_fdw_regress1.student' doesn't exist")
+========
+ANALYZE fdw126_ft4;
+
+========
+ANALYZE fdw126_ft5;
+
+========
+ANALYZE f_empdata;
+
+========
+ANALYZE f_empdata(emp_id);
+
+========
+CREATE FUNCTION before_row_update_func() RETURNS TRIGGER AS \$\$
+BEGIN
+  NEW.stu_name := NEW.stu_name || ' trigger updated!';
+	RETURN NEW;
+  END
+\$\$ language plpgsql;
+
+========
+CREATE TRIGGER before_row_update_trig
+BEFORE UPDATE ON fdw126_ft1
+FOR EACH ROW EXECUTE PROCEDURE before_row_update_func();
+
+========
+mysql - dbname = mysql_fdw_regress1; src_pgsql = INSERT INTO fdw126_ft1 VALUES(1, 'One', 101);
+Converted SQL statement by this script: INSERT INTO `student` VALUES (1, 'One', 101) ;
+
+========
+mysql - dbname = mysql_fdw_regress1; src_pgsql = UPDATE fdw126_ft1 SET stu_dept = 201 WHERE stu_id = 1;
+Converted SQL statement by this script: UPDATE `student` SET  stu_dept  = '201' WHERE stu_id = 1;
+
+========
+SELECT * FROM fdw126_ft1 ORDER BY stu_id;
+
+ stu_id | stu_name | stu_dept 
+--------+----------+----------
+      1 | One      |      201
+(1 row)
+
+========
+mysql - dbname = mysql_fdw_regress1; src_pgsql = UPDATE fdw126_ft1 SET stu_dept = 201, stu_id = 10  WHERE stu_id = 1;
+Converted SQL statement by this script: UPDATE `student` SET  stu_dept  = '201' AND  stu_dept  = '201' WHERE stu_id = 1;
+
+========
+CREATE OR REPLACE FUNCTION before_row_update_func() RETURNS TRIGGER AS \$\$
+BEGIN
+  NEW.stu_name := NEW.stu_name || ' trigger updated!';
+  NEW.stu_id = 20;
+  RETURN NEW;
+  END
+\$\$ language plpgsql;
+
+========
+mysql - dbname = mysql_fdw_regress1; src_pgsql = UPDATE fdw126_ft1 SET stu_dept = 301 WHERE stu_id = 1;
+Converted SQL statement by this script: UPDATE `student` SET  stu_dept  = '301' WHERE stu_id = 1;
+
+========
+CREATE OR REPLACE FUNCTION before_row_update_func() RETURNS TRIGGER AS \$\$
+BEGIN
+  NEW.stu_name := NEW.stu_name || ' trigger updated!';
+  RETURN NEW;
+  END
+\$\$ language plpgsql;
+
+========
+CREATE TRIGGER before_row_update_trig1
+BEFORE UPDATE ON fdw193_ft1
+FOR EACH ROW EXECUTE PROCEDURE before_row_update_func();
+
+========
+mysql - dbname = mysql_fdw_regress1; src_pgsql = INSERT INTO fdw193_ft1 VALUES('aa', 'One', 101);
+Converted SQL statement by this script: INSERT INTO `student1` VALUES ('aa', 'One', 101) ;
+
+========
+mysql - dbname = mysql_fdw_regress1; src_pgsql = UPDATE fdw193_ft1 SET stu_dept = 201 WHERE stu_id = 'aa';
+Converted SQL statement by this script: UPDATE `student1` SET  stu_dept  = '201' WHERE stu_id = 'aa';
+
+========
+SELECT * FROM fdw193_ft1 ORDER BY stu_id;
+
+ stu_id | stu_name | stu_dept 
+--------+----------+----------
+ aa     | One      |      201
+(1 row)
+
+========
+CREATE OR REPLACE FUNCTION before_row_update_func() RETURNS TRIGGER AS \$\$
+BEGIN
+  NEW.stu_name := NEW.stu_name || ' trigger updated!';
+  NEW.stu_id = 'bb';
+  RETURN NEW;
+  END
+\$\$ language plpgsql;
+
+========
+mysql - dbname = mysql_fdw_regress1; src_pgsql = UPDATE fdw193_ft1 SET stu_dept = 301 WHERE stu_id = 'aa';
+Converted SQL statement by this script: UPDATE `student1` SET  stu_dept  = '301' WHERE stu_id = 'aa';
+
+========
+CREATE OR REPLACE FUNCTION before_row_update_func() RETURNS TRIGGER AS \$\$
+BEGIN
+  NEW.stu_name := NEW.stu_name || ' trigger updated!';
+  NEW.stu_id = NULL;
+  RETURN NEW;
+  END
+\$\$ language plpgsql;
+
+========
+mysql - dbname = mysql_fdw_regress1; src_pgsql = UPDATE fdw193_ft1 SET stu_dept = 401 WHERE stu_id = 'aa';
+Converted SQL statement by this script: UPDATE `student1` SET  stu_dept  = '401' WHERE stu_id = 'aa';
+
+========
+COPY f_mysql_test TO stdout;
+
+========
+COPY f_mysql_test (a) TO stdout;
+
+========
+COPY (SELECT * FROM f_mysql_test) TO stdout;
+
+========
+COPY (SELECT a FROM f_mysql_test) TO '/tmp/copy_test.txt' delimiter ',';
+
+========
+SELECT * FROM f_mysql_test ORDER BY 1;
+
+ a | b 
+---+---
+ 1 | 1
+(1 row)
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = INSERT INTO f_mysql_test VALUES(1,1) ON CONFLICT DO NOTHING;
+Converted SQL statement by this script: INSERT INTO `mysql_test` VALUES (1, 1)  ON DUPLICATE KEY UPDATE a = 1
+========
+SELECT * FROM f_mysql_test ORDER BY 1;
+
+ a | b 
+---+---
+ 1 | 1
+(1 row)
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = INSERT INTO f_mysql_test VALUES(1,1) ON CONFLICT (a, b) DO NOTHING;
+Converted SQL statement by this script: INSERT INTO `mysql_test` VALUES (1, 1) ON DUPLICATE KEY UPDATE  a = 1  ;
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = INSERT INTO f_mysql_test VALUES(1,1) ON CONFLICT DO UPDATE SET b = 10;
+Converted SQL statement by this script: INSERT INTO `mysql_test` VALUES (1, 1)  ON DUPLICATE KEY UPDATE a = 1
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = INSERT INTO f_mysql_test VALUES(1,1) ON CONFLICT (a) DO UPDATE SET b = 10;
+Converted SQL statement by this script: INSERT INTO `mysql_test` VALUES  (1,1) ON DUPLICATE KEY UPDATE  b = 10;
+ 
+========
+CREATE FOREIGN TABLE fdw601(a int, b int)
+  SERVER mysql_svr OPTIONS (dbname 'mysql_fdw_regress', table_name 'fdw-601');
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = INSERT INTO fdw601 VALUES(1,1), (2,2);
+Converted SQL statement by this script: INSERT INTO `fdw-601` VALUES (1, 1),(2, 2) ;
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = UPDATE fdw601 SET b = 3 WHERE b = 2;
+Converted SQL statement by this script: UPDATE `fdw-601` SET  b  = '3' WHERE b = 2;
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = DELETE FROM fdw601 WHERE b = 1;
+Converted SQL statement by this script: DELETE FROM `fdw-601`  WHERE  b = 1 ;
+========
+SELECT * FROM fdw601 ORDER BY 1;
+
+ a | b 
+---+---
+ 2 | 3
+(1 row)
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = DELETE FROM fdw601;
+Converted SQL statement by this script: DELETE FROM `fdw-601`   ;
+========
+mysql - dbname = mysql_fdw_regress1; src_pgsql = DELETE FROM fdw126_ft1;
+Converted SQL statement by this script: DELETE FROM `student`   ;
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = DELETE FROM f_empdata;
+Converted SQL statement by this script: DELETE FROM `empdata`   ;
+========
+mysql - dbname = mysql_fdw_regress1; src_pgsql = DELETE FROM fdw193_ft1;
+Converted SQL statement by this script: DELETE FROM `student1`   ;
+========
+DROP FOREIGN TABLE f_mysql_test;
+
+========
+DROP FOREIGN TABLE fdw126_ft1;
+
+========
+DROP FOREIGN TABLE fdw126_ft2;
+
+========
+DROP FOREIGN TABLE fdw126_ft3;
+
+========
+DROP FOREIGN TABLE fdw126_ft4;
+
+========
+DROP FOREIGN TABLE fdw126_ft5;
+
+========
+DROP FOREIGN TABLE fdw126_ft6;
+
+========
+DROP FOREIGN TABLE f_empdata;
+
+========
+DROP FOREIGN TABLE fdw193_ft1;
+
+========
+DROP FOREIGN TABLE fdw601;
+
+========
+DROP FUNCTION before_row_update_func();
+
+========
+DROP USER MAPPING FOR public SERVER mysql_svr;
+
+========
+DROP SERVER mysql_svr;
+
+========
+DROP EXTENSION mysql_fdw;
+
+========

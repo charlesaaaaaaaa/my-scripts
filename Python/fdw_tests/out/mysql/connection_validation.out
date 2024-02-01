@@ -1,0 +1,55 @@
+['config', 'sqlfile', 'dbtype'] ['conf/config.conf', 'sql/mysql/connection_validation.sql', 'mysql']
+Namespace(config='conf/config.conf', dbtype='mysql', sqlfile='sql/mysql/connection_validation.sql')
+Converted SQL statement by this script: drop database if exists contrib_regression
+Converted SQL statement by this script: create database if not exists contrib_regression
+CREATE EXTENSION IF NOT EXISTS mysql_fdw;
+
+========
+CREATE SERVER mysql_svr FOREIGN DATA WRAPPER mysql_fdw
+  	OPTIONS  (host '192.168.0.136', port  '12388');
+
+========
+CREATE USER MAPPING FOR public SERVER mysql_svr
+  	OPTIONS  (username 'root', password 'root');
+
+========
+CREATE FOREIGN TABLE f_mysql_test(a int, b int)
+  SERVER mysql_svr OPTIONS (dbname 'mysql_fdw_regress', table_name 'mysql_test');
+
+========
+SELECT * FROM f_mysql_test ORDER BY 1, 2;
+
+ a | b 
+---+---
+ 1 | 1
+(1 row)
+
+========
+SELECT * FROM f_mysql_test ORDER BY 1, 2;
+
+ a | b 
+---+---
+ 1 | 1
+(1 row)
+
+========
+SELECT * FROM f_mysql_test ORDER BY 1, 2;
+
+ a | b 
+---+---
+ 1 | 1
+(1 row)
+
+========
+DROP FOREIGN TABLE f_mysql_test;
+
+========
+DROP USER MAPPING FOR public SERVER mysql_svr;
+
+========
+DROP SERVER mysql_svr;
+
+========
+DROP EXTENSION mysql_fdw;
+
+========

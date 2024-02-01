@@ -51,7 +51,6 @@ def test():
             if cur_dbtype == 'klustron':
                 tmpsql += sql
                 if ':' in tmpsql:
-                    # :MYSQL_USER_NAME, :MYSQL_PASS
                     if dbtype == 'mysql':
                         if ':MYSQL_HOST' in tmpsql:
                             tmpsql = tmpsql.replace(':MYSQL_HOST', " '%s'" % other_db_info['host'])
@@ -67,7 +66,8 @@ def test():
                         try:
                             txt = txt.decode(encoding='utf-8')
                             txt = txt.replace('\n', '')
-                            print(txt)
+                            if '\n' != txt:
+                                print(txt)
                         except:
                             pass
                 except Exception as err:
@@ -103,7 +103,8 @@ def test():
                 if dbtype == 'mysql':
                     sqllist = srctb_sql(server_dict, tmpsql)
                     if sqllist == 'klustron':
-                        dbs(2, db).execsql(tmpsql)
+                        # dbs(2, db).execsql(tmpsql)
+                        conn_klustron.execsql(tmpsql)
                     else:
                         sql = sqllist[1]
                         db = sqllist[0]

@@ -715,9 +715,10 @@ SELECT t1.c1, t2.c1
                      Remote query: SELECT `c1` FROM `mysql_fdw_regress`.`test2` ORDER BY `c1` IS NULL, `c1` ASC
 (16 rows)
 
-SELECT t1.c1, t2.c1
-  FROM fdw139_t1 t1 LEFT JOIN fdw139_t2 t2 ON (t1.c1 = t2.c1) WHERE t1.c4 = 'foo'
-  ORDER BY t1.c1, t2.c1 NULLS LAST;
+-- SELECT t1.c1, t2.c1
+--  FROM fdw139_t1 t1 LEFT JOIN fdw139_t2 t2 ON (t1.c1 = t2.c1) WHERE t1.c4 = 'foo'
+--  ORDER BY t1.c1, t2.c1 NULLS LAST;
+SELECT t1.c1, t2.c1 FROM fdw139_t1 t1 LEFT JOIN fdw139_t2 t2 ON (t1.c1 = t2.c1) WHERE  t1.c4 COLLATE en_US = 'foo' ORDER BY t1.c1, t2.c1;
  c1 | c1 
 ----+----
   1 |  1

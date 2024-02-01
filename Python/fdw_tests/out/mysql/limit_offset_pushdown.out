@@ -1,0 +1,245 @@
+['config', 'sqlfile', 'dbtype'] ['conf/config.conf', 'sql/mysql/limit_offset_pushdown.sql', 'mysql']
+Namespace(config='conf/config.conf', dbtype='mysql', sqlfile='sql/mysql/limit_offset_pushdown.sql')
+Converted SQL statement by this script: drop database if exists contrib_regression
+Converted SQL statement by this script: create database if not exists contrib_regression
+CREATE EXTENSION IF NOT EXISTS mysql_fdw;
+
+========
+CREATE SERVER mysql_svr FOREIGN DATA WRAPPER mysql_fdw
+  	OPTIONS  (host '192.168.0.136', port  '12388');
+
+========
+CREATE USER MAPPING FOR public SERVER mysql_svr
+  	OPTIONS  (username 'root', password 'root');
+
+========
+CREATE FOREIGN TABLE f_test_tbl2 (c1 INTEGER, c2 VARCHAR(14), c3 VARCHAR(13))
+  SERVER mysql_svr OPTIONS (dbname 'mysql_fdw_regress', table_name 'test_tbl2');
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = INSERT INTO f_test_tbl2 VALUES(10, 'DEVELOPMENT', 'PUNE');
+Converted SQL statement by this script: INSERT INTO `test_tbl2` VALUES (10, 'DEVELOPMENT', 'PUNE') ;
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = INSERT INTO f_test_tbl2 VALUES(20, 'ADMINISTRATION', 'BANGLORE');
+Converted SQL statement by this script: INSERT INTO `test_tbl2` VALUES (20, 'ADMINISTRATION', 'BANGLORE') ;
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = INSERT INTO f_test_tbl2 VALUES(30, 'SALES', 'MUMBAI');
+Converted SQL statement by this script: INSERT INTO `test_tbl2` VALUES (30, 'SALES', 'MUMBAI') ;
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = INSERT INTO f_test_tbl2 VALUES(40, 'HR', 'NAGPUR');
+Converted SQL statement by this script: INSERT INTO `test_tbl2` VALUES (40, 'HR', 'NAGPUR') ;
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = INSERT INTO f_test_tbl2 VALUES(50, 'IT', 'PUNE');
+Converted SQL statement by this script: INSERT INTO `test_tbl2` VALUES (50, 'IT', 'PUNE') ;
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = INSERT INTO f_test_tbl2 VALUES(60, 'DB SERVER', 'PUNE');
+Converted SQL statement by this script: INSERT INTO `test_tbl2` VALUES (60, 'DBSERVER', 'PUNE') ;
+
+========
+SELECT * FROM f_test_tbl2 ORDER BY 1;
+
+ c1 |       c2       |    c3    
+----+----------------+----------
+ 10 | DEVELOPMENT    | PUNE
+ 20 | ADMINISTRATION | BANGLORE
+ 30 | SALES          | MUMBAI
+ 40 | HR             | NAGPUR
+ 50 | IT             | PUNE
+ 60 | DBSERVER       | PUNE
+(6 rows)
+
+========
+EXPLAIN (VERBOSE, COSTS FALSE)
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT 3 OFFSET 2;
+
+========
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT 3 OFFSET 2;
+
+ c1 |  c2   |   c3   
+----+-------+--------
+ 30 | SALES | MUMBAI
+ 40 | HR    | NAGPUR
+ 50 | IT    | PUNE
+(3 rows)
+
+========
+EXPLAIN (VERBOSE, COSTS FALSE)
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT 3;
+
+========
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT 3;
+
+ c1 |       c2       |    c3    
+----+----------------+----------
+ 10 | DEVELOPMENT    | PUNE
+ 20 | ADMINISTRATION | BANGLORE
+ 30 | SALES          | MUMBAI
+(3 rows)
+
+========
+EXPLAIN (VERBOSE, COSTS FALSE)
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT round(3.2) OFFSET 2;
+
+========
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT round(3.2) OFFSET 2;
+
+ c1 |  c2   |   c3   
+----+-------+--------
+ 30 | SALES | MUMBAI
+ 40 | HR    | NAGPUR
+ 50 | IT    | PUNE
+(3 rows)
+
+========
+EXPLAIN (VERBOSE, COSTS FALSE)
+SELECT * FROM f_test_tbl2 ORDER BY 1 OFFSET 2;
+
+========
+SELECT * FROM f_test_tbl2 ORDER BY 1 OFFSET 2;
+
+ c1 |    c2    |   c3   
+----+----------+--------
+ 30 | SALES    | MUMBAI
+ 40 | HR       | NAGPUR
+ 50 | IT       | PUNE
+ 60 | DBSERVER | PUNE
+(4 rows)
+
+========
+EXPLAIN (VERBOSE, COSTS FALSE)
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT ALL;
+
+========
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT ALL;
+
+ c1 |       c2       |    c3    
+----+----------------+----------
+ 10 | DEVELOPMENT    | PUNE
+ 20 | ADMINISTRATION | BANGLORE
+ 30 | SALES          | MUMBAI
+ 40 | HR             | NAGPUR
+ 50 | IT             | PUNE
+ 60 | DBSERVER       | PUNE
+(6 rows)
+
+========
+EXPLAIN (VERBOSE, COSTS FALSE)
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT NULL;
+
+========
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT NULL;
+
+ c1 |       c2       |    c3    
+----+----------------+----------
+ 10 | DEVELOPMENT    | PUNE
+ 20 | ADMINISTRATION | BANGLORE
+ 30 | SALES          | MUMBAI
+ 40 | HR             | NAGPUR
+ 50 | IT             | PUNE
+ 60 | DBSERVER       | PUNE
+(6 rows)
+
+========
+EXPLAIN (VERBOSE, COSTS FALSE)
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT NULL OFFSET 2;
+
+========
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT NULL OFFSET 2;
+
+ c1 |    c2    |   c3   
+----+----------+--------
+ 30 | SALES    | MUMBAI
+ 40 | HR       | NAGPUR
+ 50 | IT       | PUNE
+ 60 | DBSERVER | PUNE
+(4 rows)
+
+========
+EXPLAIN (VERBOSE, COSTS FALSE)
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT 0;
+
+========
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT 0;
+
+ c1 | c2 | c3 
+----+----+----
+(0 rows)
+
+========
+EXPLAIN (VERBOSE, COSTS FALSE)
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT 0 OFFSET 0;
+
+========
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT 0 OFFSET 0;
+
+ c1 | c2 | c3 
+----+----+----
+(0 rows)
+
+========
+EXPLAIN (VERBOSE, COSTS FALSE)
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT 3 OFFSET NULL;
+
+========
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT 3 OFFSET NULL;
+
+ c1 |       c2       |    c3    
+----+----------------+----------
+ 10 | DEVELOPMENT    | PUNE
+ 20 | ADMINISTRATION | BANGLORE
+ 30 | SALES          | MUMBAI
+(3 rows)
+
+========
+EXPLAIN (VERBOSE, COSTS FALSE)
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT (SELECT COUNT(*) FROM f_test_tbl2);
+
+========
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT (SELECT COUNT(*) FROM f_test_tbl2);
+
+ c1 |       c2       |    c3    
+----+----------------+----------
+ 10 | DEVELOPMENT    | PUNE
+ 20 | ADMINISTRATION | BANGLORE
+ 30 | SALES          | MUMBAI
+ 40 | HR             | NAGPUR
+ 50 | IT             | PUNE
+ 60 | DBSERVER       | PUNE
+(6 rows)
+
+========
+EXPLAIN (VERBOSE, COSTS FALSE)
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT (10 - (SELECT COUNT(*) FROM f_test_tbl2));
+
+========
+SELECT * FROM f_test_tbl2 ORDER BY 1 LIMIT (10 - (SELECT COUNT(*) FROM f_test_tbl2));
+
+ c1 |       c2       |    c3    
+----+----------------+----------
+ 10 | DEVELOPMENT    | PUNE
+ 20 | ADMINISTRATION | BANGLORE
+ 30 | SALES          | MUMBAI
+ 40 | HR             | NAGPUR
+(4 rows)
+
+========
+mysql - dbname = mysql_fdw_regress; src_pgsql = DELETE FROM f_test_tbl2;
+Converted SQL statement by this script: DELETE FROM `test_tbl2`   ;
+========
+DROP FOREIGN TABLE f_test_tbl2;
+
+========
+DROP USER MAPPING FOR public SERVER mysql_svr;
+
+========
+DROP SERVER mysql_svr;
+
+========
+DROP EXTENSION mysql_fdw;
+
+========
