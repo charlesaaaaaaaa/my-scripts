@@ -1,4 +1,7 @@
 import subprocess
+import threading
+from multiprocessing import Process
+from time import sleep 
 from res.getconf import *
 from res.connection import *
 
@@ -30,7 +33,7 @@ class getFile():
             except:
                 sed_c = "echo '%s = %s' >> %s" % (txt, replace_value, paths)
         replace_c = ssh_c + '"' + sed_c + '"'
-        print(replace_c)
+        #print(replace_c)
         subprocess.run(replace_c, shell=True)
 
 class restart_component():
@@ -38,18 +41,24 @@ class restart_component():
         self.hosts = hosts
         self.user = readcnf().getKunlunInfo()['sys_user']
 
-    def restart_pg(self, baseDir, port):
+    def restart_pg(self, baseDir, port, datadir):
         host = self.hosts
         user = self.user
         print('### restarting server - %s:%s' % (host, port))
         scriptDir = baseDir + '/scripts/'
+        binDir = baseDir + '/bin/'
         stopPg_c = 'cd %s; python2 %sstop_pg.py --port=%s' % (scriptDir, scriptDir, port)
         stopPg = "ssh %s@%s '%s'" % (user, host, stopPg_c)
         subprocess.run(stopPg, shell=True)
 
-        startPg_c = 'cd %s; python3 %sstart_pg.py --port=%s' % (scriptDir, scriptDir, port)
+        startPg_c = 'cd %s; ./pg_ctl -D %s start 2>/dev/null ' % (binDir, datadir)
         startPg = "ssh %s@%s '%s'" % (user, host, startPg_c)
-        subprocess.run(startPg, shell=True)
+        def start_threads(sql):
+            subprocess.run(sql, shell=True)
+        start_p = Process(target=start_threads, args=(startPg,))
+        start_p.start()
+        sleep(2)
+        start_p.terminate()
         print('### restart server - %s:%s done' % (host, port))
 
     def restart_db(self, baseDir, port):

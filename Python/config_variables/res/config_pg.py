@@ -101,10 +101,7 @@ class configure_server():
         # print(host_len_dict)
         first_title_name = '| variable_name \\'
         first_title = first_title_name + (' ' * (max_variable_len - len(first_title_name) - 2)) + 'host |'
-        if max_variable_len <= 20:
-            secone_tital = '|' + ' ' * 16 + '\port |'
-        else:
-            secone_tital = '|' + ' ' * (17) + '\\' + ' ' * (max_variable_len - 17 - 4) + 'port |'
+        secone_tital = '|' + ' ' * (max_variable_len + 1 - 12) + '\\' + ' ' * (max_variable_len - 9 - 12) + 'port |'
         line = 0
         def empty_str(num):
             strs = ' ' * num
@@ -159,18 +156,19 @@ class configure_server():
         Path = self.Path
         print('\n## restart server node ...')
 
-        def thread_worker(host, info1, info2):
-            restart_component(host).restart_pg(info1, info2)
+        def thread_worker(host, basedir, port, datadir):
+            datadir = str(datadir).replace('/postgresql.conf', '')
+            restart_component(host).restart_pg(basedir, port, datadir)
 
         l = []
         for host in Path:
             for info in Path[host]:
-                #restart_component(host).restart_pg(info[0], info[2])
-                p = threading.Thread(target=thread_worker, args=[host, info[0], info[2]])
+                #print(info)
+                p = threading.Thread(target=thread_worker, args=[host, info[0], info[2], info[1]])
                 l.append(p)
                 p.start()
         for i in l:
             i.join()
 
-        print('sleep 50s ...\n')
-        sleep(50)
+        print('sleep 10s ...\n')
+        sleep(10)

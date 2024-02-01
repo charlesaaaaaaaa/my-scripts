@@ -88,9 +88,11 @@ class getServer():
             hostList = []
             for infos in serverInfo[host]:
                 dataDir = conn.pgReturn_other(infos[0], infos[1], infos[2], infos[3], dataSql)[0][0]
-                get_basedir = "ssh %s@%s 'ps -ef | grep %s | grep bin | head -1'" % (self.sysUser, infos[0], infos[1])
+                txt = "ssh %s@%s 'ps -ef | grep %s | grep bin | head -1'" % (self.sysUser, infos[0], infos[1])
+                get_basedir = "ssh %s@%s 'ps -ef | grep %s | grep bin | grep -v \"ps -ef\" | head -1'" % (self.sysUser, infos[0], infos[1])
                 basedir_res = subprocess.Popen(get_basedir, shell = True, stdout = subprocess.PIPE)
                 baseDir = str(basedir_res.stdout.readlines()).split(' ')[-3].split('/bin')[0]
+                #print(baseDir, basedir_res, txt)
                 #basePath = dataDir.split('/server_datadir')[0]
                 #baseDir = basePath + '/instance_binaries/computer/' + str(infos[1]) + '/kunlun-server-' + Versions
                 dataDir += '/postgresql.conf'
