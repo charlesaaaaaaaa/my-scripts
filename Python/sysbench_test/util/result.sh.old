@@ -1,13 +1,4 @@
 dir=${1:-.}
-mode=${2:-'tps'}
-if [ $mode == 'tps' ]
-then
-	mode='transactions'
-elif [ $mode=='qps' ]
-then
-	mode='queries'
-fi
-echo $mode
 first_row=0
 for casedir in `ls $dir | grep oltp`
 do
@@ -16,7 +7,7 @@ do
 	files=`ls -v $dir/$casedir`
 	for threadOutput in $files
 	do
-		res=`cat $dir/$casedir/$threadOutput | grep $mode | awk -F'(' '{print \$2}' | awk '{print \$1}'`
+		res=`cat $dir/$casedir/$threadOutput | grep transactions | awk -F'(' '{print \$2}' | awk '{print \$1}'`
 		case_res[$now_tag]=$res
 		now_tag=$((now_tag+1))
 	done
