@@ -52,6 +52,7 @@ port = 58881, 58881, 58881
   * 如`case`, 顺序和动作及其数据可随意调整，每填一个就会跑一轮
   * 示例`cleanup, prepare, run` 先`清除数据`(如果有的话)， 再`灌数据`， 再`跑一轮压测`
   * `prepare, run`, `cleanup, prepare, run, run, run`, `cleanup, prepare` 这样都是可以的, 随意填写
+  * 这里 `run` 代表跑一轮，跑完一轮后会在当前目录下产生一个 `当前时间.tgz` 的压缩文件，会把所有`pro%d`压进去, 有几个 `run` 那脚本结束时就会有几个tgz文件
 
 ## other_info
 * 这个是非必要的sysbench选项，自行增加删减
