@@ -51,6 +51,9 @@ port = 58881, 58881, 58881
 * `action` 这个是对应sysbench的动作。有[prepare]|[run]|[cleanup], 分别对应 [灌数据]|[跑压测]|[消除数据]
   * 如`case`, 顺序和动作及其数据可随意调整，每填一个就会跑一轮
   * 示例`cleanup, prepare, run` 先`清除数据`(如果有的话)， 再`灌数据`， 再`跑一轮压测`
+    * `cleanup`会直接输出到屏幕上，如果有重定向到文件里面，就看这个文件
+    * `prepare` 会输出到 `prepare.log` 文件里
+    * `run` 会输出到`pro%d`目录里(最新的一轮)
   * `prepare, run`, `cleanup, prepare, run, run, run`, `cleanup, prepare` 这样都是可以的, 随意填写
   * 这里 `run` 代表跑一轮，跑完一轮后会在当前目录下产生一个 `当前时间.tgz` 的压缩文件，会把所有`pro%d`压进去, 有几个 `run` 那脚本结束时就会有几个tgz文件
 
