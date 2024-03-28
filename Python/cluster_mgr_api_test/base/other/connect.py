@@ -4,6 +4,7 @@ import pymysql
 class Pg():
     def __init__(self, host, port, user, pwd, db):
         self.conn = psycopg2.connect(host=host, port=port, user=user, password=pwd, dbname=db)
+        self.conn.autocommit = True
         self.cur = self.conn.cursor()
 
     def ddl_sql(self, sql):

@@ -14,26 +14,39 @@ class cluster_setting():
     def random_nodes(self, node_num, node_list):
         # 在 节点ip列表 里面随机选择 node_num 个数的节点
         random_node_list = []
-        for times in range(node_num):
-            random_node = random.choices(node_list)
-            while random_node in random_node_list:
-                random_node = random.choices(node_list)
-            random_node_list.append(random_node)
+        if node_num == 1:
+            random_node_list = random.choices(node_list)[0]
+        else:
+            for times in range(node_num):
+                random_node = random.choices(node_list)[0]
+                while random_node in random_node_list:
+                    random_node = random.choices(node_list)[0]
+                random_node_list.append(random_node)
         return random_node_list
 
     def get_status(self, job_id):
         # 检查job status
         result = 'done'
-        job_status = get.status().job_status(job_id)
-        res = job_status['status']
-        while res != 'done':
-            time.sleep(5)
+        write_log.w2File().tolog('检查任务状态，job_id == %s' % job_id)
+        times = 1
+        try:
+            write_log.w2File().tolog('第 %s 次检查' % times)
             job_status = get.status().job_status(job_id)
             res = job_status['status']
-            if res == "failed":
-                write_log.w2File().tolog('ERROR: 调用api失败')
-                result = res
-                break
+            while res != 'done':
+                times += 1
+                time.sleep(5)
+                write_log.w2File().tolog('第 %s 次检查' % times)
+                job_status = get.status().job_status(job_id)
+                res = job_status['status']
+                if res == "failed":
+                    write_log.w2File().tolog('ERROR: 调用api失败')
+                    result = res
+                    break
+        except Exception as err:
+            write_log.w2File().tolog(err)
+            print(err)
+            exit(1)
         return result
 
 
@@ -45,7 +58,7 @@ class cluster_setting():
         # 共要给 13 个变量
         #   除开最后一个，其它12个都是create_cluster api里面必填的参数, 这12个参数的信息去api文档看，gitee上的文档有
         #       这12个变量名和api的参数变量名是一样的，可以直接对着api文档填写
-        #   最后一个(other_paras_dict)是非必填的参数
+        #   最后一个(other_paras_dict)是非必填的参数, 其值一定得是字符串，不能是其它类型的
         # 如果成功，会返回一个列表
         #   第0个是状态码
         #   第1个是新增分片的信息
@@ -87,6 +100,7 @@ class cluster_setting():
                 "paras": para
             }
         )
+        print(json_data)
         res = requests.post(url, data=json_data)
         if res.status_code == 200:
             write_log.w2File().tolog('调用 create_cluster 成功, 等待安装完成')
@@ -95,7 +109,9 @@ class cluster_setting():
         write_log.w2File().tolog(post_res)
         print(post_res)
         job_id = int(post_res['job_id'])
+        print('api发送完毕，开始检查任务状态')
         # 检查job status
+        time.sleep(5)
         job_status = self.get_status(job_id)
         if job_status == 'done':
             write_log.w2File().tolog('创建集群成功')
@@ -161,3 +177,44 @@ class cluster_setting():
             print('ERROR: add_shards 失败')
             result = 0
         return result
+
+    def delete_cluster_all(self):
+        # 会删除当前所有正在运行的集群
+        # 没有的话会跳过这个函数
+        result = 1
+
+        cluster_ids = info.node_info().show_all_running_cluster_id()
+        if not cluster_ids:
+            write_log.w2File().print_log('当前无正在运行的群集，跳过')
+            return 0
+        for cluster_id in cluster_ids:
+            time_stamp = int(time.time())
+            json_data = json.dumps({
+                    "version": "1.0",
+                    "job_id": "",
+                    "job_type": "delete_cluster",
+                    "timestamp": "%s" % time_stamp,
+                    "user_name": "kunlun_test",
+                    "paras": {
+                        "cluster_id": "%s" % cluster_id[0]
+                    }
+                }
+            )
+            write_log.w2File().tolog(json_data)
+            res = requests.post(self.url, json_data)
+            res_dict = json.loads(res.text)
+            job_id = res_dict['job_id']
+            write_log.w2File().tolog(res_dict)
+            print(res_dict)
+            # 检查job status
+            job_status = self.get_status(job_id)
+            if job_status == 'done':
+                write_log.w2File().tolog('delete_cluster %s 成功' % cluster_id[0])
+                print('delete_cluster %s 成功' % cluster_id[0])
+                job_status = get.status().job_status(job_id)
+                result = [job_status['status'], job_status['attachment']]
+            elif job_status == 'failed':
+                write_log.w2File().tolog('ERROR: add_shards %s 失败' % cluster_id[0])
+                print('ERROR: add_shards %s 失败' % cluster_id[0])
+                result = 0
+            return result

@@ -64,23 +64,69 @@ class node_info():
         self.meta_info = master().metadata()
         self.meta_conf = conf.get_conf_info().klustron_metadata()
 
+    def get_sql(self, sql):
+        meta_master = self.meta_info
+        meta_conf = self.meta_conf
+        conn = connect.My(meta_master[0], meta_master[1], meta_conf['user'], meta_conf['pass'], 'kunlun_metadata_db')
+        hosts = conn.sql_with_result(sql)
+        res = []
+        for host in hosts:
+            tmp = host[0]
+            res.append(tmp)
+        return res
+
+    def get_res(self, sql):
+        meta_master = self.meta_info
+        meta_conf = self.meta_conf
+        conn = connect.My(meta_master[0], meta_master[1], meta_conf['user'], meta_conf['pass'], 'kunlun_metadata_db')
+        res = conn.sql_with_result(sql)
+        return res
+
     def show_all_running_sever_nodes(self):
         # 获取正在运行的server nodes
         # 会返回两个列表
         # 第一个列表是正在运行的可以安装计算节点的机器ip
         # 第二个列表是正在运行的可以安装存储节点的机器ip
-        meta_master = self.meta_info
-        meta_conf = self.meta_conf
+        # meta_master = self.meta_info
+        # meta_conf = self.meta_conf
         comp_sql = "select hostaddr from server_nodes where machine_type = 'computer' and node_stats = 'running';"
         stor_sql = "select hostaddr from server_nodes where machine_type = 'storage' and node_stats = 'running';"
-        def get_sql(sql):
-            conn = connect.My(meta_master[0], meta_master[1], meta_conf['user'], meta_conf['pass'], 'kunlun_metadata_db')
-            hosts = conn.sql_with_result(sql)
-            res = []
-            for host in hosts:
-                tmp = host[0]
-                res.append(tmp)
-            return res
-        comp_hosts = get_sql(comp_sql)
-        stor_hosts = get_sql(stor_sql)
+        # def get_sql(sql):
+        #     conn = connect.My(meta_master[0], meta_master[1], meta_conf['user'], meta_conf['pass'], 'kunlun_metadata_db')
+        #     hosts = conn.sql_with_result(sql)
+        #     res = []
+        #     for host in hosts:
+        #         tmp = host[0]
+        #         res.append(tmp)
+        #     return res
+        comp_hosts = self.get_sql(comp_sql)
+        stor_hosts = self.get_sql(stor_sql)
         return comp_hosts, stor_hosts
+
+    def show_all_running_computer(self):
+        # 获取所有在运行的计算节点
+        # 返回一个列表
+        # 列表里面多个元组
+        #   每个元组里面第0个元素是ip，第1个元素是port, 2是用户， 3是密码
+        sql = "select hostaddr, port, user_name, passwd from comp_nodes where status = 'active';"
+        res = self.get_res(sql)
+        return res
+
+    def show_all_running_storage(self):
+        # 获取所有在运行的存储节点
+        # 返回一个元组
+        # 元组里面多个元组
+        #   每个元组里面第0个元素是ip，第1个元素是port， 2是用户， 3是密码
+        sql = "select hostaddr, port, user_name, passwd from shard_nodes where status = 'active';"
+        res = self.get_res(sql)
+        return res
+
+    def show_all_running_cluster_id(self):
+        # 获取所有在运行的存储节点
+        # 返回一个元组
+        # 元组里面多个元组
+        #   每个元组里面第0个元素是cluster_id
+        #   ((8,),)
+        sql = "select id from db_clusters where status = 'inuse';"
+        res = self.get_res(sql)
+        return res
