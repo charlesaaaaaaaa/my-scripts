@@ -1,10 +1,6 @@
 import time
-
 from base.api import post
-from base.other import write_log
-from base.other import connect
-from base.other import info
-from base.other import sys_opt
+from base.other import write_log, connect, info, sys_opt
 import random
 
 
@@ -84,15 +80,18 @@ def test_case():
     try:
         def connmy(sql):
             conn = connect.My(meta_info[0], int(meta_info[1]), meta_info[2], meta_info[3], 'kunlun_metadata_db')
-            res = conn.sql_with_result(sql)[0]
+            res = conn.sql_with_result(sql)
             return res
         max_cluster_id_sql = "select max(id) from db_clusters ;"
         max_shard_id_sql = "select max(shard_id) from shard_nodes;"
-        max_cluster_id = connmy(max_cluster_id_sql)[0]
-        max_shard_id = connmy(max_shard_id_sql)[0]
+        max_cluster_id = connmy(max_cluster_id_sql)[0][0]
+        max_shard_id = connmy(max_shard_id_sql)[0][0]
         new_master_sql = "select hostaddr, port, user_name, passwd from shard_nodes where db_cluster_id = %s and " \
                          "shard_id = %s and member_state = 'source';" % (max_cluster_id, max_shard_id)
-        new_shard_master_node = connmy(new_master_sql)
+        new_slave_sql = "select hostaddr, port, user_name, passwd from shard_nodes where db_cluster_id = %s and " \
+                        "shard_id = %s and member_state != 'source';" % (max_cluster_id, max_shard_id)
+        new_slave_master_node = connmy(new_slave_sql)
+        new_shard_master_node = connmy(new_master_sql)[0]
         print_log('当前新增加shard的 主节点是: %s:%s' % (new_shard_master_node[0], new_shard_master_node[1]))
         conn = connect.My(new_shard_master_node[0], int(new_shard_master_node[1]), new_shard_master_node[2],
                           new_shard_master_node[3], 'mysql')
@@ -108,7 +107,30 @@ def test_case():
         print('当前 新增加节点 mvcc 为 %s, 该用例失败' % mvcc_status)
         return [case, 0]
     elif mvcc_status == 'ON':
-        print('当前 新增加节点 mvcc 为 %s, 该用例成功' % mvcc_status)
-        return [case, 1]
+        print('当前 新增加节点 mvcc 为 %s, 检查成功' % mvcc_status)
+    sql = "show slave status;"
+    print('等待10s后检查备节点状态')
+    for i in range(len(new_slave_master_node)):
+        conn = connect.My(new_slave_master_node[i][0], int(new_slave_master_node[i][1]), new_slave_master_node[i][2],
+                    new_slave_master_node[i][3], 'mysql')
+        slave_status = conn.sql_with_result(sql)[0]
+        Last_IO_Errno = slave_status[36]
+        Last_IO_Error = slave_status[37]
+        if Last_IO_Errno == 0 and not Last_IO_Error:
+            print('succ: node - %s:%s\n\t Last_IO_Errno = %s\n\tLast_IO_Error = %s' % (new_slave_master_node[i][0],
+                                        new_slave_master_node[i][1], Last_IO_Errno, Last_IO_Error))
+        else:
+            print('ERROR: node - %s:%s\n\t Last_IO_Errno = %s\n\tLast_IO_Error = %s' % (new_slave_master_node[i][0],
+                                        new_slave_master_node[i][1], Last_IO_Errno, Last_IO_Error))
 
-
+    print('检查所有主备复制是否一制')
+    res = info.node_info().compare_shard_master_and_standby('postgres_$$_public')
+    return [case, res]
+    # storage_nodes_info_sql = "select shard_id, member_state, hostaddr, port, user_name, passwd from shard_nodes " \
+    #                          "where status = 'active' and db_cluster_id = %s;" % max_cluster_id
+    # storage_nodes_info = connmy(storage_nodes_info_sql)
+    # storage_nodes_dict = {}
+    # for i in range(len(storage_nodes_info)):
+    #     tmpdict = {storage_nodes_info[i][0]: storage_nodes_info}
+    #     storage_nodes_dict.update(tmpdict)
+    # print(storage_nodes_dict)

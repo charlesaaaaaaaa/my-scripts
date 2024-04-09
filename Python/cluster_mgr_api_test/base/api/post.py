@@ -209,12 +209,12 @@ class cluster_setting():
             # 检查job status
             job_status = self.get_status(job_id)
             if job_status == 'done':
-                write_log.w2File().tolog('delete_cluster %s 成功' % cluster_id[0])
-                print('delete_cluster %s 成功' % cluster_id[0])
+                write_log.w2File().tolog('delete_cluster cluster_id = %s 成功' % cluster_id[0])
+                print('delete_cluster cluster_id = %s 成功' % cluster_id[0])
                 job_status = get.status().job_status(job_id)
                 result = [job_status['status'], job_status['attachment']]
             elif job_status == 'failed':
-                write_log.w2File().tolog('ERROR: add_shards %s 失败' % cluster_id[0])
+                write_log.w2File().tolog('ERROR: delete_cluster cluster_id = %s 失败' % cluster_id[0])
                 print('ERROR: add_shards %s 失败' % cluster_id[0])
                 result = 0
             return result

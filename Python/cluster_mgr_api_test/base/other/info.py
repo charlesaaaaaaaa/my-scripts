@@ -130,3 +130,76 @@ class node_info():
         sql = "select id from db_clusters where status = 'inuse';"
         res = self.get_res(sql)
         return res
+
+    def compare_shard_master_and_standby(self, dbname):
+        meta_info = master().metadata()
+
+        def connmy(sql):
+            conn = connect.My(meta_info[0], int(meta_info[1]), meta_info[2], meta_info[3], 'kunlun_metadata_db')
+            res = conn.sql_with_result(sql)
+            return res
+
+        max_cluster_id_sql = "select max(id) from db_clusters ;"
+        max_cluster_id = connmy(max_cluster_id_sql)[0][0]
+        storage_nodes_info_sql = "select shard_id, member_state, hostaddr, port, user_name, passwd from shard_nodes " \
+                                 "where status = 'active' and db_cluster_id = %s;" % max_cluster_id
+        # shard_id_sql = "select shard_id from shard_nodes where status = 'active' and db_cluster_id = %s;" % max_cluster_id
+        # shard_id = connmy(shard_id_sql)[0]
+        storage_nodes_info = connmy(storage_nodes_info_sql)
+        storage_nodes_dict = {}
+        for i in range(len(storage_nodes_info)):
+            key = ''
+            tmp = [storage_nodes_info[i][1], storage_nodes_info[i][2], storage_nodes_info[i][3],
+                   storage_nodes_info[i][4], storage_nodes_info[i][5]]
+            try:
+                key = storage_nodes_dict[storage_nodes_info[i][0]]
+            except:
+                pass
+            if not key:
+                storage_nodes_dict.update({storage_nodes_info[i][0]: [tmp]})
+            else:
+                if storage_nodes_info[i][1] == 'source':
+                    storage_nodes_dict[storage_nodes_info[i][0]] = [tmp] + storage_nodes_dict[storage_nodes_info[i][0]]
+                else:
+                    storage_nodes_dict[storage_nodes_info[i][0]] += [tmp]
+        master_shard_dict = {}
+        for shard_nodes in storage_nodes_dict:
+            for shard_node in storage_nodes_dict[shard_nodes]:
+                if shard_node[0] == 'source':
+                    master_shard_dict.update({shard_nodes: shard_node})
+                    continue
+        print(storage_nodes_dict)
+        errnum = 1
+        for shard_num in storage_nodes_dict:
+            master_tables = []
+            print('正在检查shard %s' % shard_num)
+            master_node = master_shard_dict[shard_num]
+            for shard_node in storage_nodes_dict[shard_num]:
+                conn = connect.My(shard_node[1], int(shard_node[2]), shard_node[3], shard_node[4], dbname)
+                tables = conn.sql_with_result("SELECT TABLE_NAME FROM information_schema.tables where "
+                                              "TABLE_SCHEMA = '%s'" % dbname)
+                if shard_node[1] in master_node and shard_node[2] in master_node:
+                    master_tables = tables
+                else:
+                    if master_tables != tables:
+                        print('ERROR: shard %s 主备表数目不一致 -- 主 : %s , 备 : %s' % (
+                        shard_num, master_tables, tables))
+                        errnum = 0
+                        return errnum
+                    else:
+                        def get_table_contect(tbname):
+                            rep_conn = connect.My(shard_node[1], int(shard_node[2]), shard_node[3], shard_node[4],
+                                                  dbname)
+                            mas_conn = connect.My(master_node[1], int(master_node[2]), master_node[3], master_node[4],
+                                                  dbname)
+                            rep_txt = rep_conn.sql_with_result('select * from %s;' % tbname)
+                            mas_txt = mas_conn.sql_with_result('select * from %s;' % tbname)
+                            return mas_txt, rep_txt
+                        for tb_name in master_tables:
+                            mas_ctxt, rep_ctxt = get_table_contect(tb_name)
+                            if mas_ctxt != rep_ctxt:
+                                print('ERROR: shard %s 主备 %s 表数目不一致 -- 主 : %s , 备 : %s' % (
+                                    shard_num, tb_name, master_tables, tables))
+                                errnum = 0
+                                return errnum
+        return errnum
