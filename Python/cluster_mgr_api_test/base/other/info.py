@@ -198,8 +198,8 @@ class node_info():
                         for tb_name in master_tables:
                             mas_ctxt, rep_ctxt = get_table_contect(tb_name)
                             if mas_ctxt != rep_ctxt:
-                                print('ERROR: shard %s 主备 %s 表数目不一致 -- 主 : %s , 备 : %s' % (
-                                    shard_num, tb_name, master_tables, tables))
+                                print('ERROR: shard %s 主备 %s 表内容不一致 -- 主 : %s , 备 : %s' % (
+                                    shard_num, tb_name, mas_ctxt, rep_ctxt))
                                 errnum = 0
                                 return errnum
         return errnum
