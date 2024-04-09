@@ -1,8 +1,8 @@
 XpanelHost: '192.168.0.167'
 XpanelPort: 18851
 defUser: 'kunlun'
-aLiAccessKeyId: 'LTAI4GDKBxdwz28d6JxajD9E'
-aLiAccessKeySecret: 't6dJLzmCnrsnKjUnLg3pqRqUNrmlEE'
-Email: 'administrator@dm.huaruanyun.cn'
+aLiAccessKeyId: changeme
+aLiAccessKeySecret: changeme
+Email: changeme
 msgModeId: '华软网络告警'
-msgSignId: 'SMS_460850026'
+msgSignId: changeme
