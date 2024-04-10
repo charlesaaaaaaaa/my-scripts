@@ -71,7 +71,7 @@ class cluster_setting():
                 "cpu_limit_node": str(cpu_limit_node),"innodb_size": str(innodb_size),
                 "rocksdb_block_cache_size_M": str(rocksdb_block_cache_size_M), "data_storage_MB": str(data_storage_MB),
                 "log_storage_MB": str(log_storage_MB), "fullsync_level": str(fullsync_level)}
-        if other_paras_dict != {}:
+        if other_paras_dict:
             para.update(other_paras_dict)
         # 这里通过函数获取可以安装计算节点和存储节点并正在运行的机器ip
         comp_list, stor_list = info.node_info().show_all_running_sever_nodes()
@@ -215,6 +215,6 @@ class cluster_setting():
                 result = [job_status['status'], job_status['attachment']]
             elif job_status == 'failed':
                 write_log.w2File().tolog('ERROR: delete_cluster cluster_id = %s 失败' % cluster_id[0])
-                print('ERROR: add_shards %s 失败' % cluster_id[0])
+                print('ERROR: delete_shards id = %s 失败' % cluster_id[0])
                 result = 0
             return result
