@@ -1,7 +1,7 @@
 import subprocess
 import threading
 from multiprocessing import Process
-from time import sleep 
+from time import sleep
 from res.getconf import *
 from res.connection import *
 
@@ -31,7 +31,7 @@ class getFile():
                 lineNum = int(linetxt.decode('utf-8'))
                 sed_c = "sed -i '%ss/.*/%s = %s/' %s" % (lineNum, txt, replace_value, paths)
             except:
-                sed_c = "echo '%s = %s' >> %s" % (txt, replace_value, paths)
+                sed_c = "printf '\\n%s = %s' >> %s" % (txt, replace_value, paths)
         replace_c = ssh_c + '"' + sed_c + '"'
         #print(replace_c)
         subprocess.run(replace_c, shell=True)
@@ -51,7 +51,7 @@ class restart_component():
         stopPg = "ssh %s@%s '%s'" % (user, host, stopPg_c)
         subprocess.run(stopPg, shell=True)
 
-        startPg_c = 'cd %s; ./pg_ctl -D %s start 2>/dev/null ' % (binDir, datadir)
+        startPg_c = 'cd %s; ./pg_ctl -D %s start > /dev/null 2>&1' % (binDir, datadir)
         startPg = "ssh %s@%s '%s'" % (user, host, startPg_c)
         def start_threads(sql):
             subprocess.run(sql, shell=True)

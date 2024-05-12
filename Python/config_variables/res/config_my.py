@@ -107,7 +107,7 @@ class configure_storage():
                 host_len = total_port_len
             host_len_dict.update({host: [host_len, port_len_dict]})
         #print(host_len_dict)
-        max_variable_len = 20
+        #max_variable_len = 20
         first_title_name= '| variable_name \\'
         first_title = first_title_name + (' ' * (max_variable_len - len(first_title_name) - 2)) + 'host |'
         if max_variable_len <= 20:
