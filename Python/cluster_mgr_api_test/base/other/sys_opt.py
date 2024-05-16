@@ -17,6 +17,7 @@ def setting_variable(node_type, variable_name, value):
         print(txt)
 
     def get_res(node_info):
+        # 获取变量结果
         res = ''
         if node_type == 'storage':
             connmy = connect.My(node_info[0], int(node_info[1]), node_info[2], node_info[3], 'mysql')
@@ -29,6 +30,7 @@ def setting_variable(node_type, variable_name, value):
         return res
 
     def set_sql(node_info):
+        # 设置变量值
         if node_type == 'storage':
             conn = connect.My(node_info[0], int(node_info[1]), node_info[2], node_info[3], 'mysql')
             if str(value).isdigit():
@@ -107,4 +109,8 @@ def setting_variable(node_type, variable_name, value):
     print_log(first_row)
     print_log(second_row)
     print_log('=' * total_len)
+    return setting_variable(node_type, variable_name, value)
+
+def timer(func):
+    pass
 

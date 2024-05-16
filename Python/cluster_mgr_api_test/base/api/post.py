@@ -1,5 +1,5 @@
 from base.other import info
-from base.other import write_log
+from base.other import write_log, getconf, info
 from base.api import get
 import requests
 import time
@@ -10,6 +10,7 @@ class cluster_setting():
     def __init__(self):
         self.mgr_info = info.master().cluster_mgr()
         self.url = 'http://%s:%s/HttpService/Emit' % (self.mgr_info[0], self.mgr_info[1])
+        self.mgr_settings = getconf.get_conf_info().cluster_mgr()
 
     def random_nodes(self, node_num, node_list):
         # 在 节点ip列表 里面随机选择 node_num 个数的节点
@@ -49,6 +50,26 @@ class cluster_setting():
             exit(1)
         return result
 
+    def send_api_and_return_res(self, json_data, tmp_info):
+        # 发送api的
+        # 失败则返回1， 成功则返回其状态
+        write_log.w2File().tolog(json_data)
+        res = requests.post(self.url, json_data)
+        res_dict = json.loads(res.text)
+        job_id = res_dict['job_id']
+        write_log.w2File().tolog(res_dict)
+        print(res_dict)
+        # 检查job status
+        result = ''
+        job_status = self.get_status(job_id)
+        if job_status == 'done':
+            write_log.w2File().print_log(tmp_info + '成功')
+            job_status = get.status().job_status(job_id)
+            result = [job_status['status'], job_status['attachment']]
+        elif job_status == 'failed':
+            write_log.w2File().print_log(tmp_info + '失败')
+            result = 0
+        return result
 
     def create_cluster(self, user_name, nick_name, shard, nodes, comps, max_storage_size, max_connections,
                        cpu_cores, cpu_limit_node, innodb_size, rocksdb_block_cache_size_M, fullsync_level,
@@ -77,6 +98,12 @@ class cluster_setting():
         comp_list, stor_list = info.node_info().show_all_running_sever_nodes()
         stor_nodes_need = int(shard) * int(nodes)
         comps = int(comps)
+        comp_iplists_info = self.mgr_settings['comp_iplists']
+        if comp_iplists_info != 'all':
+            comp_list = comp_iplists_info.replace(' ', '').split(',')
+        stor_iplists_info = self.mgr_settings['stor_iplists']
+        if stor_iplists_info != 'all':
+            stor_list = stor_iplists_info.replace(' ', '').split(',')
         # 这里开始判断，如果要用到的计算节点数量或者存储节点数量小于可以安装的节点
         #   则随机从可安装的节点里面选择其中几个
         #   否则直接把所有可安装的节点全选上
@@ -121,17 +148,19 @@ class cluster_setting():
         elif job_status == 'failed':
             write_log.w2File().tolog('创建集群失败')
             print('创建集群失败')
-            result = 0
+            result = 1
         return result
 
     def add_shards(self, cluster_id, shards, nodes):
-        # 这里只要给cluster_id, shards, nodes
-        # storage_iplists 会自动生成
+        # 这里只要给cluster_id, shards, nodes, shard是要几个shard
+        # storage_iplists 会自动生成, nodes是要一个shard几个节点， 目前最小为2
         # 如果成功，会返回一个列表
         #   第0个是状态码
         #   第1个是新增分片的信息
-        result = 1
         comp_list, stor_list = info.node_info().show_all_running_sever_nodes()
+        stor_iplists_info = self.mgr_settings['stor_iplists']
+        if stor_iplists_info != 'all':
+            stor_list = stor_iplists_info.replace(' ', '').split(',')
         stor_nodes_need = int(shards) * int(nodes)
         # 这里开始判断，如果要用到的计算节点数量或者存储节点数量小于可以安装的节点
         #   则随机从可安装的节点里面选择其中几个
@@ -157,32 +186,13 @@ class cluster_setting():
                 }
             }
         )
-        write_log.w2File().tolog('开始调用 add_shards')
-        print('开始调用 add_shards')
-        write_log.w2File().tolog(json_data)
-        res = requests.post(self.url, json_data)
-        res_dict = json.loads(res.text)
-        job_id = res_dict['job_id']
-        write_log.w2File().tolog(res_dict)
-        print(res_dict)
-        # 检查job status
-        job_status = self.get_status(job_id)
-        if job_status == 'done':
-            write_log.w2File().tolog('add_shards 成功')
-            print('add_shards 成功')
-            job_status = get.status().job_status(job_id)
-            result = [job_status['status'], job_status['attachment']]
-        elif job_status == 'failed':
-            write_log.w2File().tolog('add_shards 失败')
-            print('ERROR: add_shards 失败')
-            result = 0
-        return result
+        tmp_info = 'add_shards '
+        res = self.send_api_and_return_res(json_data, tmp_info)
+        return res
 
     def delete_cluster_all(self):
         # 会删除当前所有正在运行的集群
         # 没有的话会跳过这个函数
-        result = 1
-
         cluster_ids = info.node_info().show_all_running_cluster_id()
         if not cluster_ids:
             write_log.w2File().print_log('当前无正在运行的群集，跳过')
@@ -200,21 +210,269 @@ class cluster_setting():
                     }
                 }
             )
-            write_log.w2File().tolog(json_data)
-            res = requests.post(self.url, json_data)
-            res_dict = json.loads(res.text)
-            job_id = res_dict['job_id']
-            write_log.w2File().tolog(res_dict)
-            print(res_dict)
-            # 检查job status
-            job_status = self.get_status(job_id)
-            if job_status == 'done':
-                write_log.w2File().tolog('delete_cluster cluster_id = %s 成功' % cluster_id[0])
-                print('delete_cluster cluster_id = %s 成功' % cluster_id[0])
-                job_status = get.status().job_status(job_id)
-                result = [job_status['status'], job_status['attachment']]
-            elif job_status == 'failed':
-                write_log.w2File().tolog('ERROR: delete_cluster cluster_id = %s 失败' % cluster_id[0])
-                print('ERROR: delete_shards id = %s 失败' % cluster_id[0])
-                result = 0
-            return result
+            tmp_info = 'delete_cluster cluster_id = %s '
+            res = self.send_api_and_return_res(json_data, tmp_info)
+            return res
+
+    def add_comps(self, cluster_id, comps_num):
+        # 新增计算节点
+        # 在id为几的cluster上新增，要增加几个计算节点，要增加的计算节点的ip列表
+        # 这里只要给cluster_id, shards, nodes
+        # storage_iplists 会自动生成
+        # 如果成功，会返回一个列表
+        #   第0个是状态码
+        #   第1个是新增分片的信息
+        comp_list, stor_list = info.node_info().show_all_running_sever_nodes()
+        comp_iplists_info = self.mgr_settings['stor_iplists']
+        if comp_iplists_info != 'all':
+            comps_iplist = comp_iplists_info.replace(' ', '').split(',')
+        # 这里开始判断，如果要用到的计算节点数量或者存储节点数量小于可以安装的节点
+        #   则随机从可安装的节点里面选择其中几个
+        #   否则直接把所有可安装的节点全选上
+        if int(comps_num) < len(comp_list):
+            comps_iplist = self.random_nodes(comps_num, comp_list)
+        else:
+            comps_iplist = comp_list
+        time_stamp = int(time.time())
+        json_data = json.dumps({
+                "version": "1.0",
+                "job_id": "",
+                "job_type": "add_comps",
+                "timestamp": "%s" % time_stamp,
+                "user_name": "kunlun_test",
+                "paras": {
+                    "cluster_id": "%s" % cluster_id,
+                    "comps": "%s" % comps_num,
+                    "computer_iplists":
+                        comps_iplist
+                }
+            }
+        )
+        tmp_info = 'add_comps '
+        res = self.send_api_and_return_res(json_data, tmp_info)
+        return res
+
+    def del_comps(self, cluster_id, comp_id):
+        time_stamp = int(time.time())
+        json_data = json.dumps({
+                "version": "1.0",
+                "job_id": "",
+                "job_type": "delete_comp",
+                "timestamp": "%s" % time_stamp,
+                "user_name": "kunlun_test",
+                "paras": {
+                    "cluster_id": "%s" % cluster_id,
+                    "comp_id": "%s" % comp_id
+                }
+            }
+        )
+        tmp_info = 'del_comps cluster_id = [%s] and comp_id = [%s]' % (cluster_id, comp_id)
+        res = self.send_api_and_return_res(json_data, tmp_info)
+        return res
+
+    def del_shard(self, cluster_id, shard_id):
+        time_stamp = int(time.time())
+        json_data = json.dumps({
+                "version": "1.0",
+                "job_id": "",
+                "job_type": "delete_shard",
+                "timestamp": "%s" % time_stamp,
+                "user_name": "kunlun_test",
+                "paras": {
+                    "cluster_id": "%s" % cluster_id,
+                    "shard_id": "%s" % shard_id
+                }
+            }
+        )
+        tmp_info = 'del_comps cluster_id = [%s] and sahrd_id = [%s]' % (cluster_id, shard_id)
+        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
+        return res
+
+    def add_nodes(self, cluster_id, shard_id, nodes_num):
+        # 增加存储节点
+        # 这里只要给cluster_id, shards, nodes, shard是要几个shard
+        # storage_iplists 会自动生成, nodes是要一个shard几个节点， 目前最小为2
+        # 如果成功，会返回一个列表
+        #   第0个是状态码
+        #   第1个是新增分片的信息
+        comp_list, stor_list = info.node_info().show_all_running_sever_nodes()
+        stor_iplists_info = self.mgr_settings['stor_iplists']
+        if stor_iplists_info != 'all':
+            stor_list = stor_iplists_info.replace(' ', '').split(',')
+        stor_nodes_need = int(nodes_num)
+        # 这里开始判断，如果要用到的计算节点数量或者存储节点数量小于可以安装的节点
+        #   则随机从可安装的节点里面选择其中几个
+        #   否则直接把所有可安装的节点全选上
+        if stor_nodes_need < len(stor_list):
+            stor_iplists = self.random_nodes(stor_nodes_need, stor_list)
+        else:
+            stor_iplists = stor_list
+        time_stamp = int(time.time())
+        json_data = json.dumps({
+                "version": "1.0",
+                "job_id": "",
+                "job_type": "add_nodes",
+                "timestamp": "%s" % time_stamp,
+                "user_name": "kunlun_test",
+                "paras": {
+                    "cluster_id": "%s" % cluster_id,
+                    "shard_id": "%s" % shard_id,
+                    "nodes": "%s" % nodes_num,
+                    "storage_iplists":
+                        stor_iplists
+                }
+            }
+        )
+        tmp_info = 'add_nodes '
+        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
+        return res
+
+    def del_nodes(self, cluster_id, shard_id, stor_node_host, stor_node_port):
+        time_stamp = int(time.time())
+        json_data = json.dumps({
+                "version": "1.0",
+                "job_id": "",
+                "job_type": "delete_node",
+                "timestamp": "%s" % time_stamp,
+                "user_name": "kunlun_test",
+                "paras": {
+                    "cluster_id": "%s" % cluster_id,
+                    "shard_id": "%s" % shard_id,
+                    "hostaddr": "%s" % stor_node_host,
+                    "port": "%s" % stor_node_port
+                }
+            }
+        )
+        tmp_info = 'del_nodes storage node [%s: %s] ' % (stor_node_host, stor_node_port)
+        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
+        return res
+
+    def repartition_tables(self, src_cluster_id, dst_cluster_id, repartition_tables):
+        # 表重分布
+        # "repartition_tables":"test_$$_public.t=>test1_$$_private.t2,test_$$_priv.ta=>test1_$$_priv1.tb"
+        time_stamp = int(time.time())
+        json_data = json.dumps({
+                "version": "1.0",
+                "job_id": "",
+                "job_type": "repartition_tables",
+                "timestamp": "1435749309",
+                "user_name": "kunlun_test",
+                "paras": {
+                    "src_cluster_id": "%s" % src_cluster_id,
+                    "dst_cluster_id": "%s" % dst_cluster_id,
+                    "repartition_tables": "%s" % repartition_tables
+                }
+            }
+        )
+        tmp_info = 'repartition_tables src_cluster_id [%s] - dst_cluster_id [%s] ' % (src_cluster_id, dst_cluster_id)
+        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
+        return res
+
+    def logical_backup(self, cluster_id, backup_type, backup_info):
+        # 表逻辑备份
+        # backup_type = db|schema|table
+        # backup_info: 一个列表，列表里面有两个二级字典，第0个字典是源，第1个字典是目标项。每个字典要包含db_table和备份时间
+        #       [
+        #           {
+        #             "db_table":"postgres_$$_public",
+        #             "backup_time":"01:00:00-02:00:00"
+        #           },
+        #           {
+        #             "db_table":"postgres_$$_test",
+        #             "backup_time":"01:00:00-02:00:00"
+        #           }
+        #     	]
+        time_stamp = int(time.time())
+        json_data = json.dumps({
+                "version": "1.0",
+                "job_id": "",
+                "job_type": "logical_backup",
+                "timestamp": "%s" % time_stamp,
+                "user_name": "kunlun_test",
+                "paras": {
+                    "cluster_id": "%s" % cluster_id,
+                    "backup_type": "%s" % backup_type,
+                    "backup":
+                        backup_info
+                }
+            }
+        )
+        tmp_info = 'logical_backup cluster_id[%s] backup_type[%s] ' % (cluster_id, backup_type)
+        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
+        return res
+
+    def logical_restore(self, src_cluster_id, dst_cluster_id, restore_type, restore_info):
+        # 表逻辑恢复（回档）
+        # restore_type = db|schema|table
+        # "restore":[{
+        # 		"db_table":"postgres_$$_public.t1",
+        # 		"restore_time":"2022-10-20 19:20:15"
+        # 	},{
+        # 		"db_table":"postgres_$$_public.t2",
+        # 		"restore_time":"2022-10-20 19:20:15"
+        # 	}]
+        time_stamp = int(time.time())
+        json_data = json.dumps({
+                "version": "1.0",
+                "job_id": "",
+                "job_type": "logical_restore",
+                "timestamp": "%s" % time_stamp,
+                "user_name": "kunlun_test",
+                "paras": {
+                    "src_cluster_id": "%s" % src_cluster_id,
+                    "dst_cluster_id": "%s" % dst_cluster_id,
+                    "restore_type": "%s" % restore_type,
+                    "restore":
+                        restore_info
+                }
+            }
+        )
+        tmp_info = 'logical_restore src_cluster_id [%s] dst_cluster_id [%s] restore_type [%s] ' \
+                   % (src_cluster_id, dst_cluster_id, restore_type)
+        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
+        return res
+
+    def create_rcr(self, src_cluster_id, dst_cluster_id):
+        # 建立rcr数据同步, 用户发起对两个cluster建立rcr数据同步
+        # "meta_db": "127.0.0.1:57001,127.0.0.2:57002"
+        meta_info = info.node_info().show_all_meta_ip_port_by_clustermgr_format()
+        time_stamp = int(time.time())
+        json_data = json.dumps({
+                "version": "1.0",
+                "job_id": "",
+                "job_type": "create_rcr",
+                "timestamp": "%s" % time_stamp,
+                "user_name": "kunlun_test",
+                "paras": {
+                   "master_info": {
+                        "meta_db": "%s" % meta_info,
+                        "cluster_id": "%s" % src_cluster_id
+                    },
+                   "cluster_id": "%s" % dst_cluster_id
+                }
+            }
+        )
+        tmp_info = 'create_rcr src_cluster_id [%s] dst_cluster_id[%s] '
+        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
+        return res
+
+    def set_noswitch(self, cluster_id, shard_id, timeout_second):
+        # 免切设置
+        time_stamp = int(time.time())
+        json_data = json.dumps({
+                "job_id": "",
+                "job_type": "set_noswitch",
+                "version": "1.0",
+                "timestamp": "%s" % time_stamp,
+                "user_name": "super_dba",
+                "paras": {
+                    "cluster_id": "%s" % cluster_id,
+                    "shard_id": "%s" % shard_id,
+                    "timeout": "%s" % timeout_second,
+                    "type": "1"
+                }
+            }
+        )
+        tmp_info = 'set_noswitch cluster_id [%s] shard_id [%s] timeout [%s] ' % (cluster_id, shard_id, timeout_second)
+        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
+        return res

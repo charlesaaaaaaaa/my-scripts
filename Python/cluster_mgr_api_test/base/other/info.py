@@ -91,14 +91,6 @@ class node_info():
         # meta_conf = self.meta_conf
         comp_sql = "select hostaddr from server_nodes where machine_type = 'computer' and node_stats = 'running';"
         stor_sql = "select hostaddr from server_nodes where machine_type = 'storage' and node_stats = 'running';"
-        # def get_sql(sql):
-        #     conn = connect.My(meta_master[0], meta_master[1], meta_conf['user'], meta_conf['pass'], 'kunlun_metadata_db')
-        #     hosts = conn.sql_with_result(sql)
-        #     res = []
-        #     for host in hosts:
-        #         tmp = host[0]
-        #         res.append(tmp)
-        #     return res
         comp_hosts = self.get_sql(comp_sql)
         stor_hosts = self.get_sql(stor_sql)
         return comp_hosts, stor_hosts
@@ -121,8 +113,13 @@ class node_info():
         res = self.get_res(sql)
         return res
 
+    def show_all_storage_with_id(self, shard_id):
+        sql = "select id, hostaddr, port, user_name, passwd from shard_nodes where shard_id = %s;" % shard_id
+        res = self.get_res(sql)
+        return res
+
     def show_all_running_cluster_id(self):
-        # 获取所有在运行的存储节点
+        # 获取所有在运行的存储节点的id
         # 返回一个元组
         # 元组里面多个元组
         #   每个元组里面第0个元素是cluster_id
@@ -131,7 +128,33 @@ class node_info():
         res = self.get_res(sql)
         return res
 
+    def show_all_running_shard_id(self):
+        # 获取所在在运行的shard_id
+        # 返回一个元组
+        # 元组里面多个元组
+        #   每个元组里面第0个元素是cluster_id
+        #   ((8,),)
+        sql = "select distinct(shard_id) from shard_nodes where status = 'active';"
+        res = self.get_res(sql)
+        return res
+
+    def show_all_meta_ip_port_by_clustermgr_format(self):
+        # 获取所有metadata的host和port, 返回一个str
+        # 返回结果：'192.168.0.0:3006,192.168.0.0:3007,192.168.0.1:3006'
+        sql = "select hostaddr, port from meta_db_nodes;"
+        result = self.get_res(sql)
+        res = ''
+        first = 0
+        for i in result:
+            tmp = '%s:%s' % (i[0], i[1])
+            if first == 0:
+                res += tmp
+            else:
+                res += ',%s' % tmp
+        return res
+
     def compare_shard_master_and_standby(self, dbname):
+        # 对比shard主和备的内容是否一致
         meta_info = master().metadata()
 
         def connmy(sql):
