@@ -118,6 +118,14 @@ class node_info():
         res = self.get_res(sql)
         return res
 
+    def show_all_running_storage_replice(self):
+        # 获取所有在运行的存储节点，返回一个元组，元组里面有多个二级元组，每个二级元组都是一个存储shard备节点的信息
+        # 二级元组如示：(cluster_id, shard_id, ip, port, user, pwd)
+        sql = "select db_cluster_id, shard_id, hostaddr, port, user_name, passwd from shard_nodes where " \
+              "member_state = 'replica' and status = 'active';"
+        res = self.get_res(sql)
+        return res
+
     def show_all_running_cluster_id(self):
         # 获取所有在运行的存储节点的id
         # 返回一个元组
@@ -135,6 +143,13 @@ class node_info():
         #   每个元组里面第0个元素是cluster_id
         #   ((8,),)
         sql = "select distinct(shard_id) from shard_nodes where status = 'active';"
+        res = self.get_res(sql)
+        return res
+
+    def show_all_running_cluster_id_and_shard_id(self):
+        # 获取所有正在支持的shard_id, 带上cluster id
+        # 如 ((5, 5,),(5, 6,),) [0]=cluster_id [1] = shard_id
+        sql = "select db_cluster_id, id from shards where status = 'inuse';"
         res = self.get_res(sql)
         return res
 

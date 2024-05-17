@@ -9,6 +9,7 @@ import subprocess
 class test_step:
     def __init__(self):
         self.meta_master_info = master().metadata()
+        self.meta_conf = getconf.get_conf_info().klustron_metadata()
 
     def meta_sql(self, sql, result_or_not):
         meta_master_info = self.meta_master_info
@@ -21,10 +22,10 @@ class test_step:
             conn.close()
             return res
 
-    def Create_cluster(self, shard, shard_nodes, comps, num, other_paras):
+    def Create_cluster(self, shard, shard_nodes, comps, num, other_paras, delay_time):
         # 创建一个集群
         nick_name = 'mulfunction_%s' % num
-        res = cluster_setting().create_cluster(user_name='kunlun_test', nick_name=nick_name, shard=shard,
+        res = cluster_setting(delay_time).create_cluster(user_name='kunlun_test', nick_name=nick_name, shard=shard,
                                               nodes=shard_nodes,
                                               comps=comps, max_storage_size=1024, max_connections=2000,
                                               cpu_limit_node='quota', innodb_size=1024, cpu_cores=8,
@@ -37,16 +38,16 @@ class test_step:
         # 重启 meta_data 集群主节点
         meta_master_info = self.meta_master_info
         print('当前meta_data集群主节点是 -- [%s: %s]' % (meta_master_info[0], meta_master_info[1]))
-        ssh_str = "ssh %s 'ps -ef | grep %s | grep basedir' | grep defualt" % \
-                  (meta_master_info[0], meta_master_info[1])
+        ssh_str = "ssh %s@%s 'ps -ef | grep %s | grep basedir' | grep default" % \
+                  (self.meta_conf['sys_user'], meta_master_info[0], meta_master_info[1])
         basedir_res = subprocess.Popen(ssh_str, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = basedir_res.communicate()
         print(str(stdout.decode()))
-        basedir = str(stdout.decode()).split('basedir=')[0].split(' ')[0]
+        basedir = str(stdout.decode()).split('basedir=')[1].split(' ')[0]
         print('其basedir是 -- [%s]\n\t正在重启主节点 ... ' % basedir)
         basedir += '/dba_tools'
-        restart_str = "ssh %s 'cd %s && bash stopmysql.sh %s && bash startmysql.sh %s'"\
-                      % (meta_master_info[0], basedir, meta_master_info[1], meta_master_info[1])
+        restart_str = "ssh %s@%s 'cd %s && ps -ef | grep %s | awk '{print \\$2}' | xargs kill -9 ; bash startmysql.sh %s'"\
+                      % (self.meta_conf['sys_user'], meta_master_info[0], basedir, meta_master_info[1], meta_master_info[1])
         print(restart_str)
         subprocess.run(restart_str, shell=True)
 

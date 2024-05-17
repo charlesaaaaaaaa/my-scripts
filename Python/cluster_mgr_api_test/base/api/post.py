@@ -7,10 +7,13 @@ import json
 import random
 
 class cluster_setting():
-    def __init__(self):
+    def __init__(self, relay_get_status_time):
+        # relay_get_status_time 就是在发送完api后多少s开始get status
         self.mgr_info = info.master().cluster_mgr()
+        self.mgr_conf = getconf.get_conf_info().cluster_mgr()
         self.url = 'http://%s:%s/HttpService/Emit' % (self.mgr_info[0], self.mgr_info[1])
         self.mgr_settings = getconf.get_conf_info().cluster_mgr()
+        self.relay_get_status_time = relay_get_status_time
 
     def random_nodes(self, node_num, node_list):
         # 在 节点ip列表 里面随机选择 node_num 个数的节点
@@ -32,6 +35,7 @@ class cluster_setting():
         times = 1
         try:
             write_log.w2File().tolog('第 %s 次检查' % times)
+            time.sleep(self.relay_get_status_time)
             job_status = get.status().job_status(job_id)
             res = job_status['status']
             while res != 'done':
@@ -476,3 +480,15 @@ class cluster_setting():
         tmp_info = 'set_noswitch cluster_id [%s] shard_id [%s] timeout [%s] ' % (cluster_id, shard_id, timeout_second)
         res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
         return res
+
+    def delete_all_storage_replice(self):
+        # 清除所有存储shard备节点
+        all_replice_nodes = info.node_info().show_all_running_storage_replice()
+        for replice_nodes in all_replice_nodes:
+            self.del_nodes(replice_nodes[0], replice_nodes[1], replice_nodes[2], replice_nodes[3])
+
+    def set_all_shard_noswitch(self, timeout_second):
+        # 把所有shard都设置为免切模式
+        all_shard_info = info.node_info().show_all_running_cluster_id_and_shard_id()
+        for shard_info in all_shard_info:
+            self.set_noswitch(shard_info[0], shard_info[1], timeout_second)

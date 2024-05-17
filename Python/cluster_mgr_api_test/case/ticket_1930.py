@@ -13,11 +13,11 @@ def test_case():
     print_log('开始测试 %s' % case)
     print_log('第一步： 创建集群，创建时开启global mvcc')
     print_log('尝试删除正在运行的集群')
-    post.cluster_setting().delete_cluster_all()
+    post.cluster_setting(0).delete_cluster_all()
     # other_paras_dict这个字典的所有key和value都要str类型的，不能是其它类型的，因为cluster_mgr api就是这样用的
     other_paras_dict = {'enable_global_mvcc': "1"}
     nick_name = 'ticket_1930'
-    cre_res = post.cluster_setting().create_cluster(user_name='kunlun_test', nick_name=nick_name, shard=1, nodes=3,
+    cre_res = post.cluster_setting(0).create_cluster(user_name='kunlun_test', nick_name=nick_name, shard=1, nodes=3,
                                                     comps=1, max_storage_size=1024, max_connections=2000,
                                                     cpu_limit_node='quota', innodb_size=1024, cpu_cores=8,
                                                     rocksdb_block_cache_size_M=1024, fullsync_level=1,
@@ -28,7 +28,7 @@ def test_case():
 
     print_log('第二步： 新增shard')
     cluster_id = cre_res[1]['cluster_id']
-    add_res = post.cluster_setting().add_shards(cluster_id=cluster_id, shards=1, nodes=3)
+    add_res = post.cluster_setting(0).add_shards(cluster_id=cluster_id, shards=1, nodes=3)
     if add_res == 0:
         return [case, 0]
 
