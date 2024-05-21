@@ -14,36 +14,52 @@ def case_res(res_list):
 
 def test():
     file_name = './log/malfunction.log'
+    the_line = '\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-'
     test_case = case_test()
     # case 1
+    print(the_line)
     test_case.case1_malfunction(file_name)
     # case 2
+    print(the_line)
     test_case.case2_malfunction(file_name)
     # case 3
+    print(the_line)
     test_case.case3_malfunction(file_name)
     # case 4
+    print(the_line)
     test_case.case4_malfunction(file_name)
     # case 5
+    print(the_line)
     test_case.case5_malfunction(file_name)
     # case 6
+    print(the_line)
     test_case.case6_malfunction(file_name)
     # case 7
+    print(the_line)
     test_case.case7_malfunction(file_name)
     # case 8
+    print(the_line)
     test_case.case8_malfunction(file_name)
     # case 9
+    print(the_line)
     test_case.case9_malfunction(file_name)
     # case 10
+    print(the_line)
     test_case.case10_malfunction(file_name)
     # case 12
+    print(the_line)
     test_case.case12_malfunction(file_name)
     # case 13
+    print(the_line)
     test_case.case13_malfunction(file_name)
     # case 14
+    print(the_line)
     test_case.case14_malfunction(file_name)
     # case 15
+    print(the_line)
     test_case.case15_malfunction(file_name)
     # case 22
+    print(the_line)
     test_case.case22_malfunction(file_name)
 
 if __name__ == "__main__":

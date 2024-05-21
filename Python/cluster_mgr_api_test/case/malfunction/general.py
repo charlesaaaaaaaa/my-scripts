@@ -15,11 +15,11 @@ class test_step:
         meta_master_info = self.meta_master_info
         conn = connect.My(meta_master_info[0], int(meta_master_info[1]), meta_master_info[2], meta_master_info[3]
                           , 'mysql')
-        if result_or_not == '0':
+        if result_or_not == 0:
             conn.ddl_sql(sql)
-        elif result_or_not == '1':
-            res = conn.sql_with_result(sql)
             conn.close()
+        elif result_or_not == 1:
+            res = conn.sql_with_result(sql)
             return res
 
     def Create_cluster(self, shard, shard_nodes, comps, num, other_paras, delay_time):
@@ -46,7 +46,7 @@ class test_step:
         basedir = str(stdout.decode()).split('basedir=')[1].split(' ')[0]
         print('其basedir是 -- [%s]\n\t正在重启主节点 ... ' % basedir)
         basedir += '/dba_tools'
-        restart_str = "ssh %s@%s 'cd %s && ps -ef | grep %s | awk '{print \\$2}' | xargs kill -9 ; bash startmysql.sh %s'"\
+        restart_str = "ssh %s@%s \"cd %s && ps -ef | grep %s | awk '{print \\$2}' | xargs kill -9 ; bash startmysql.sh %s\"" \
                       % (self.meta_conf['sys_user'], meta_master_info[0], basedir, meta_master_info[1], meta_master_info[1])
         print(restart_str)
         subprocess.run(restart_str, shell=True)
@@ -60,7 +60,7 @@ class test_step:
         print('当前主节点 [%s:%s] super_read_only 为 [%s]' % (meta_master_info[0], meta_master_info[1], old_value))
         print('开始设置: sql = [%s]' % set_sql)
         self.meta_sql(set_sql, 0)
-        new_value = self.meta_sql(set_sql, 1)[0][1]
+        new_value = self.meta_sql(get_sql, 1)[0][1]
         print('当前主节点 [%s:%s] super_read_only 为 [%s]' % (meta_master_info[0], meta_master_info[1], new_value))
         if old_value == 'OFF' and new_value == 'ON':
             print('设置成功！')
@@ -69,5 +69,26 @@ class test_step:
             print('设置失败！')
             return 1
 
+    def review_metadata_compupter(self):
+        comp_infos = node_info().show_all_running_computer()
+        print('开始检查所有计算节点是否可用')
+        for i in comp_infos:
+            host = i[0].split('.')[-1]
+            create_sql = 'create table if not exists test%s_%s(a int, b text)' % (host, i[1])
+            drop_sql = 'drop table if exists test%s_%s' % (host, i[1])
+            insert_sql = "insert into test%s_%s values(1, 'aabb'), (2, 'bbaa')" % (host, i[1])
+            del_sql = 'delete from test%s_%s where a = 2' % (host, i[1])
+            select_sql = 'select * from test%s_%s' % (host, i[1])
+            pg_c = connect.Pg(host=i[0], port=i[1], user=i[2], pwd=i[3], db='postgres')
+            pg_c.ddl_sql(drop_sql)
+            pg_c.ddl_sql(create_sql)
+            pg_c.ddl_sql(insert_sql)
+            pg_c.ddl_sql(del_sql)
+            res = pg_c.sql_with_result(select_sql)
+            print(res)
+            if len(res) == 1:
+                print('计算节点 %s: %s 正常' % (i[0], i[1]))
 
+    def tmp_function(self):
+        pass
 

@@ -2,6 +2,7 @@ import os
 import subprocess
 from base.other import info
 import threading
+import random
 from base.other import connect
 from base.other import write_log
 
@@ -110,6 +111,19 @@ def setting_variable(node_type, variable_name, value):
     print_log(second_row)
     print_log('=' * total_len)
     return setting_variable(node_type, variable_name, value)
+
+def create_insert_table(pg_connect_info, db, table_name):
+    create_sql = 'create table if not exists %s(id serial, b text);' % table_name
+    drop_sql = 'drop table if exists %s' % table_name
+    conn1 = connect.Pg(pg_connect_info[0], pg_connect_info[1], pg_connect_info[2], pg_connect_info[3], db)
+    conn1.ddl_sql(drop_sql)
+    conn1.ddl_sql(create_sql)
+    random_times = random.randint(5, 25)
+    for i in range(random_times):
+        val = '{}_{}_{}'.format(db, table_name, i + 1)
+        txt = 'insert into %s(txt) values(%s)' % (table_name, val)
+        conn1.ddl_sql(txt)
+    conn1.close()
 
 def timer(func):
     pass

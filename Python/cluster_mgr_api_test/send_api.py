@@ -19,7 +19,8 @@ def delete_all_replace():
 
 if __name__ == '__main__':
     ps = argparse.ArgumentParser(description='send cluster_api')
-    ps.add_argument('--action', help='[create_cluster]|[delete_all_cluster]')
+    ps.add_argument('--action', help='[create_cluster]|[delete_all_cluster]|[delete_all_storage_replace]'
+                                     '|[set_all_shard_noswitch]')
     ps.add_argument('--shard', help='shard number', default=1)
     ps.add_argument('--shard_nodes', help='shard nodes', default=3)
     ps.add_argument('--other_paras')

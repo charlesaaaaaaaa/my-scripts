@@ -85,6 +85,8 @@
 * base.other.info.node_info().show_all_meta_ip_port_by_clustermgr_format()
   * 获取所有metadata的host和port, 以cluster_mgr配置文件的格式 返回一个str
   * 返回结果如：'192.168.0.0:3006,192.168.0.0:3007,192.168.0.1:3006'
+* base.other.info.node_info().show_signal_master_storage_table(self, cluster_id, db, tb)
+  * 获取指定cluster和shard的主存储节点指定db.tb内容
 * base.other.info.node_info().compare_shard_master_and_standby(dbname)
   * 对比指定数据库的存储节点 **主备内容是否一致**
   * 返回1是成功，返回0是失败

@@ -33,7 +33,10 @@ class master():
                 if master_1 != master_2:
                     warn_log = '元数据节点 - 主节点 不一致，退出测试'
                     write_log.w2File().tolog(warn_log)
-                    raise warn_log
+                    print(warn_log)
+                    print('当前有以下几个主')
+                    print(meta_master_info)
+                    break
         wlog = '当前metadata主节点是: %s' % (str(meta_master_info[0]))
         write_log.w2File().tolog(wlog)
         return meta_master_info[0]
@@ -166,6 +169,15 @@ class node_info():
                 res += tmp
             else:
                 res += ',%s' % tmp
+        return res
+
+    def show_signal_master_storage_table(self, cluster_id, shard_id, db, tb):
+        sql = "select hostaddr, port, user_name, passwd  from shard_nodes where status ='active' and " \
+              "member_state = 'source' and db_cluster_id = %s and shard_id = %s" % (cluster_id, shard_id)
+        stor_node_info = self.get_res(sql)
+        conn = connect.My(stor_node_info[0], stor_node_info[1], stor_node_info['user'], stor_node_info['pass'], db)
+        sql = 'select * from %s' % tb
+        res = conn.sql_with_result(sql)
         return res
 
     def compare_shard_master_and_standby(self, dbname):

@@ -214,7 +214,7 @@ class cluster_setting():
                     }
                 }
             )
-            tmp_info = 'delete_cluster cluster_id = %s '
+            tmp_info = 'delete_cluster cluster_id = %s ' % cluster_id
             res = self.send_api_and_return_res(json_data, tmp_info)
             return res
 
@@ -405,6 +405,26 @@ class cluster_setting():
         res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
         return res
 
+    def cluster_restore(self, src_cluster_id, dst_cluster_id, restore_time):
+        # 集群回档（按时间点恢复集群）
+        time_stamp = int(time.time())
+        json_data = json.dumps({
+                "version": "1.0",
+                "job_id": "",
+                "job_type": "cluster_restore",
+                "timestamp": "1435749309",
+                "paras": {
+                    "src_cluster_id": "%s" % src_cluster_id,
+                    "dst_cluster_id": "%s" % dst_cluster_id,
+                    "restore_time": "%s" % restore_time
+                }
+            }
+        )
+        tmp_info = 'logical_restore src_cluster_id [%s] dst_cluster_id [%s] restore_time [%s] ' \
+                   % (src_cluster_id, dst_cluster_id, restore_time)
+        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
+        return res
+
     def logical_restore(self, src_cluster_id, dst_cluster_id, restore_type, restore_info):
         # 表逻辑恢复（回档）
         # restore_type = db|schema|table
@@ -478,8 +498,17 @@ class cluster_setting():
             }
         )
         tmp_info = 'set_noswitch cluster_id [%s] shard_id [%s] timeout [%s] ' % (cluster_id, shard_id, timeout_second)
-        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
-        return res
+        write_log.w2File().tolog(json_data)
+        res = requests.post(self.url, json_data)
+        res_dict = json.loads(res.text)
+        print(res_dict)
+        error_code = res_dict['error_code']
+        if error_code == "0":
+            print(tmp_info + '成功')
+            return 1
+        else:
+            print(tmp_info + '失败')
+            return 0
 
     def delete_all_storage_replice(self):
         # 清除所有存储shard备节点
