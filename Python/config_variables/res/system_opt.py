@@ -15,25 +15,24 @@ class getFile():
         ssh_c = "ssh %s@%s " % (user, self.hosts)
         cat_c = 'cat %s | grep -nw "%s" ' % (paths, txt)
         awk_c = '| awk -F: "{print \$1"}'
+        sed_c = ''
         find_line = ssh_c + "'" + cat_c + awk_c + "'"
         lines = subprocess.Popen(find_line, shell=True, stdout=subprocess.PIPE)
         linetxt = lines.stdout.read()
         try:
             lineNum = int(linetxt.decode('utf-8').split('\n')[-2])
             try:
-                if int(replace_value):
-                    sed_c = "sed -i '%ss/.*/%s = %s/' %s" % (lineNum, txt, replace_value, paths)
+                sed_c = "sed -i '%ss!.*!%s = %s!' %s" % (lineNum, txt, replace_value, paths)
             except:
                 replace_value = replace_value.replace('"', '')
-                sed_c = "sed -i \\\"%ss/.*/%s = '%s'/\\\" %s" % (lineNum, txt, replace_value, paths)
+                sed_c = "sed -i \\\"%ss!.*!%s = '%s'!\\\" %s" % (lineNum, txt, replace_value, paths)
         except Exception as err:
             try:
                 lineNum = int(linetxt.decode('utf-8'))
-                sed_c = "sed -i '%ss/.*/%s = %s/' %s" % (lineNum, txt, replace_value, paths)
+                sed_c = "sed -i '%ss!.*!%s = %s!' %s" % (lineNum, txt, replace_value, paths)
             except:
                 sed_c = "printf '\\n%s = %s' >> %s" % (txt, replace_value, paths)
         replace_c = ssh_c + '"' + sed_c + '"'
-        #print(replace_c)
         subprocess.run(replace_c, shell=True)
 
 class restart_component():
