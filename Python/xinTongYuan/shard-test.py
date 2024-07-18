@@ -103,9 +103,10 @@ def test():
     sql1 = "create table item(id int, name text, grp int) partition by range(grp)" #创建分区表，以id为分片字段
     print("use shard; \n%s" % (sql1))
     cur.execute(sql1)
-    for i in range(0, int(shardNum)):
-        shard = t2str(sid_list[i])
-        shard = int(shard)
+    for i in range(0, 6):
+        #shard = t2str(sid_list[i])
+        #shard = int(shard)
+        shard = shardNum
         timNum = 5 * i
         part = "CREATE TABLE item_%s PARTITION OF item FOR VALUES FROM (%d) TO (%d) with (shard = %s);" % (str(i), 1+timNum, 6+timNum, shard) ##创建分区表
         cur.execute(part)
@@ -130,7 +131,8 @@ def test():
     sql1 = "create table item(id int, name text, grp int) partition by range(grp)"
     print(sql1)
     cur.execute(sql1)
-    for i in range(0, int(shardNum)):
+    #for i in range(0, int(shardNum)):
+    for i in range(0, 6):
         timNum = 5 * i
         part = "CREATE TABLE item_%s PARTITION OF item FOR VALUES FROM (%d) TO (%d);" % (str(i), 1+timNum, 6+timNum)
         cur.execute(part)
