@@ -19,6 +19,7 @@ class getFile():
         find_line = ssh_c + "'" + cat_c + awk_c + "'"
         lines = subprocess.Popen(find_line, shell=True, stdout=subprocess.PIPE)
         linetxt = lines.stdout.read()
+        lineNum = 0
         try:
             lineNum = int(linetxt.decode('utf-8').split('\n')[-2])
             sed_delete = "sed -i '%sd' %s;" % (lineNum, paths)
@@ -28,12 +29,13 @@ class getFile():
             else:
                 sed_c = sed_delete
         except:
-            if replace_value != 'delete_this_field':
-                sed_c = "printf \\\'\\n%s = %s\\\' >> %s;" % (txt, replace_value, paths)
-            else:
-                sed_c = ';'
-        replace_c = ssh_c + '"' + sed_c + '"'
-        subprocess.run(replace_c, shell=True)
+            lineNum = 0
+            sed_c = "printf \\\'\\n%s = %s\\\' >> %s;" % (txt, replace_value, paths)
+        if replace_value == 'delete_this_field' and lineNum == 0:
+            pass
+        else:
+            replace_c = ssh_c + '"' + sed_c + '"'
+            subprocess.run(replace_c, shell=True)
 
     def replaceTxtRow_old(self, paths, txt, replace_value):
         user = self.user
