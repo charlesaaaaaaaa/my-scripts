@@ -35,7 +35,6 @@ class getFile():
             pass
         else:
             replace_c = ssh_c + '"' + sed_c + '"'
-            print(replace_c)
             subprocess.run(replace_c, shell=True)
 
     # def replaceTxtRow_old(self, paths, txt, replace_value):
