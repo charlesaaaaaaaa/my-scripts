@@ -30,44 +30,45 @@ class getFile():
                 sed_c = sed_delete
         except:
             lineNum = 0
-            sed_c = "printf \\\'\\n%s = %s\\\' >> %s;" % (txt, replace_value, paths)
+            sed_c = "printf \\\"\\n%s = %s\\\" >> %s;" % (txt, replace_value, paths)
         if replace_value == 'delete_this_field' and lineNum == 0:
             pass
         else:
             replace_c = ssh_c + '"' + sed_c + '"'
+            print(replace_c)
             subprocess.run(replace_c, shell=True)
 
-    def replaceTxtRow_old(self, paths, txt, replace_value):
-        user = self.user
-        ssh_c = "ssh %s@%s " % (user, self.hosts)
-        cat_c = 'cat %s | grep -nw "%s" ' % (paths, txt)
-        awk_c = '| awk -F: "{print \$1"}'
-        sed_c = ''
-
-        replace_value = replace_value.replace("'", "\\'")
-        find_line = ssh_c + "'" + cat_c + awk_c + "'"
-        lines = subprocess.Popen(find_line, shell=True, stdout=subprocess.PIPE)
-        linetxt = lines.stdout.read()
-        try:
-            lineNum = int(linetxt.decode('utf-8').split('\n')[-2])
-            try:
-                sed_c = "sed -i '%ss!.*!%s = %s!' %s" % (lineNum, txt, replace_value, paths)
-                if "'" in replace_value:
-                    sed_c = "sed -i '$%ss!.*!%s = %s!' %s" % (lineNum, txt, replace_value, paths)
-            except:
-                replace_value = replace_value.replace('"', '')
-                sed_c = "sed -i \\\"%ss!.*!%s = '%s'!\\\" %s" % (lineNum, txt, replace_value, paths)
-            if replace_value == 'delete_this_field':
-                sed_c = 'sed -i "%sd" %s' % (lineNum, paths)
-        except Exception as err:
-            try:
-                lineNum = int(linetxt.decode('utf-8'))
-                sed_c = "sed -i '%ss!.*!%s = %s!' %s" % (lineNum, txt, replace_value, paths)
-            except:
-                sed_c = "printf '\\n%s = %s' >> %s" % (txt, replace_value, paths)
-        replace_c = ssh_c + '"' + sed_c + '"'
-        print(replace_c)
-        subprocess.run(replace_c, shell=True)
+    # def replaceTxtRow_old(self, paths, txt, replace_value):
+    #     user = self.user
+    #     ssh_c = "ssh %s@%s " % (user, self.hosts)
+    #     cat_c = 'cat %s | grep -nw "%s" ' % (paths, txt)
+    #     awk_c = '| awk -F: "{print \$1"}'
+    #     sed_c = ''
+    #
+    #     replace_value = replace_value.replace("'", "\\'")
+    #     find_line = ssh_c + "'" + cat_c + awk_c + "'"
+    #     lines = subprocess.Popen(find_line, shell=True, stdout=subprocess.PIPE)
+    #     linetxt = lines.stdout.read()
+    #     try:
+    #         lineNum = int(linetxt.decode('utf-8').split('\n')[-2])
+    #         try:
+    #             sed_c = "sed -i '%ss!.*!%s = %s!' %s" % (lineNum, txt, replace_value, paths)
+    #             if "'" in replace_value:
+    #                 sed_c = "sed -i '$%ss!.*!%s = %s!' %s" % (lineNum, txt, replace_value, paths)
+    #         except:
+    #             replace_value = replace_value.replace('"', '')
+    #             sed_c = "sed -i \\\"%ss!.*!%s = '%s'!\\\" %s" % (lineNum, txt, replace_value, paths)
+    #         if replace_value == 'delete_this_field':
+    #             sed_c = 'sed -i "%sd" %s' % (lineNum, paths)
+    #     except Exception as err:
+    #         try:
+    #             lineNum = int(linetxt.decode('utf-8'))
+    #             sed_c = "sed -i '%ss!.*!%s = %s!' %s" % (lineNum, txt, replace_value, paths)
+    #         except:
+    #             sed_c = "printf \\\"\\n%s = %s\\\" >> %s" % (txt, replace_value, paths)
+    #     replace_c = ssh_c + '"' + sed_c + '"'
+    #     print(replace_c)
+    #     subprocess.run(replace_c, shell=True)
 
 class restart_component():
     def __init__(self, hosts):
