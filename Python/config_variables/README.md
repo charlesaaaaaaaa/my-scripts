@@ -16,6 +16,8 @@
     * storage：仅修改所有存储节点的变量，不操作计算节点
   * `only_show_variables` [on]|[off] 是否仅展示变量，不修改变量
 
+* 如果要删除某一个参数，则key名为参数名，value为 delete_this_field ,注意 delete_this_field 不要加括号
+  * 如 test_field = delete_this_field
 * `[server_settings]`
   * 这个是放计算节点的变量及其值的地方
   * 计算节点一定是会修改本地的配置文件且重启计算节点
