@@ -14,10 +14,10 @@ class w2File():
         f.close()
 
     def print_log(self, txt):
-        self.tolog(txt)
+        self.tolog('%s\n' % txt)
         print(txt)
 
     def toOther(self, file_name, txt):
         with open(file_name, 'a', encoding='utf-8') as f:
-            f.write(txt)
+            f.write('%s\n' % txt)
         f.close()

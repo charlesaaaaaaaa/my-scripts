@@ -1,5 +1,5 @@
 from base.other import info
-from base.other import write_log, getconf, info
+from base.other import write_log, getconf, info, connect
 from base.api import get
 import requests
 import time
@@ -45,7 +45,9 @@ class cluster_setting():
                 job_status = get.status().job_status(job_id)
                 res = job_status['status']
                 if res == "failed":
+                    err_info = job_status['error_info']
                     write_log.w2File().tolog('ERROR: 调用api失败')
+                    write_log.w2File().print_log('ERROR: %s' % err_info)
                     result = res
                     break
         except Exception as err:
@@ -58,13 +60,13 @@ class cluster_setting():
         # 发送api的
         # 失败则返回1， 成功则返回其状态
         write_log.w2File().tolog(json_data)
+        print(json_data)
         res = requests.post(self.url, json_data)
         res_dict = json.loads(res.text)
         job_id = res_dict['job_id']
         write_log.w2File().tolog(res_dict)
         print(res_dict)
         # 检查job status
-        result = ''
         job_status = self.get_status(job_id)
         if job_status == 'done':
             write_log.w2File().print_log(tmp_info + '成功')
@@ -75,9 +77,10 @@ class cluster_setting():
             result = 0
         return result
 
-    def create_cluster(self, user_name, nick_name, shard, nodes, comps, max_storage_size, max_connections,
-                       cpu_cores, cpu_limit_node, innodb_size, rocksdb_block_cache_size_M, fullsync_level,
-                       data_storage_MB, log_storage_MB, other_paras_dict):
+    def create_cluster(self, shard, nodes, comps, user_name='super_dba', nick_name='test_db', max_storage_size=1024,
+                       max_connections=2000, cpu_cores=8, cpu_limit_node='quota', innodb_size=1024,
+                       rocksdb_block_cache_size_M=1024, fullsync_level=1, data_storage_MB=1024, log_storage_MB=1024,
+                       other_paras_dict=None):
         # 这个函数就是用来发送创建集群的api
         # 当前只有rbr，所以不用设置ha_mode
         # 共要给 13 个变量
@@ -113,10 +116,14 @@ class cluster_setting():
         #   否则直接把所有可安装的节点全选上
         if stor_nodes_need < len(stor_list):
             storage_iplists = self.random_nodes(stor_nodes_need, stor_list)
+            if stor_nodes_need == 1:
+                storage_iplists = storage_iplists.split(' ')
         else:
             storage_iplists = stor_list
         if comps < len(comp_list):
             computer_iplists = self.random_nodes(comps, comp_list)
+            if comps == 1:
+                computer_iplists = computer_iplists.split(' ')
         else:
             computer_iplists = comp_list
         iplist = {"storage_iplists": storage_iplists, "computer_iplists": computer_iplists}
@@ -129,7 +136,7 @@ class cluster_setting():
                 "timestamp": str(time_stamp),
                 "user_name": user_name,
                 "paras": para
-            }
+            }, indent=4
         )
         print(json_data)
         res = requests.post(url, data=json_data)
@@ -188,7 +195,7 @@ class cluster_setting():
                     "storage_iplists":
                         storage_iplists
                 }
-            }
+            }, indent=4
         )
         tmp_info = 'add_shards '
         res = self.send_api_and_return_res(json_data, tmp_info)
@@ -212,11 +219,11 @@ class cluster_setting():
                     "paras": {
                         "cluster_id": "%s" % cluster_id[0]
                     }
-                }
+                }, indent=4
             )
             tmp_info = 'delete_cluster cluster_id = %s ' % cluster_id
             res = self.send_api_and_return_res(json_data, tmp_info)
-            return res
+        return res
 
     def add_comps(self, cluster_id, comps_num):
         # 新增计算节点
@@ -250,7 +257,7 @@ class cluster_setting():
                     "computer_iplists":
                         comps_iplist
                 }
-            }
+            }, indent=4
         )
         tmp_info = 'add_comps '
         res = self.send_api_and_return_res(json_data, tmp_info)
@@ -268,7 +275,7 @@ class cluster_setting():
                     "cluster_id": "%s" % cluster_id,
                     "comp_id": "%s" % comp_id
                 }
-            }
+            }, indent=4
         )
         tmp_info = 'del_comps cluster_id = [%s] and comp_id = [%s]' % (cluster_id, comp_id)
         res = self.send_api_and_return_res(json_data, tmp_info)
@@ -286,7 +293,7 @@ class cluster_setting():
                     "cluster_id": "%s" % cluster_id,
                     "shard_id": "%s" % shard_id
                 }
-            }
+            }, indent=4
         )
         tmp_info = 'del_comps cluster_id = [%s] and sahrd_id = [%s]' % (cluster_id, shard_id)
         res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
@@ -325,7 +332,7 @@ class cluster_setting():
                     "storage_iplists":
                         stor_iplists
                 }
-            }
+            }, indent=4
         )
         tmp_info = 'add_nodes '
         res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
@@ -345,7 +352,7 @@ class cluster_setting():
                     "hostaddr": "%s" % stor_node_host,
                     "port": "%s" % stor_node_port
                 }
-            }
+            }, indent=4
         )
         tmp_info = 'del_nodes storage node [%s: %s] ' % (stor_node_host, stor_node_port)
         res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
@@ -366,7 +373,7 @@ class cluster_setting():
                     "dst_cluster_id": "%s" % dst_cluster_id,
                     "repartition_tables": "%s" % repartition_tables
                 }
-            }
+            }, indent=4
         )
         tmp_info = 'repartition_tables src_cluster_id [%s] - dst_cluster_id [%s] ' % (src_cluster_id, dst_cluster_id)
         res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
@@ -399,7 +406,7 @@ class cluster_setting():
                     "backup":
                         backup_info
                 }
-            }
+            }, indent=4
         )
         tmp_info = 'logical_backup cluster_id[%s] backup_type[%s] ' % (cluster_id, backup_type)
         res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
@@ -418,7 +425,7 @@ class cluster_setting():
                     "dst_cluster_id": "%s" % dst_cluster_id,
                     "restore_time": "%s" % restore_time
                 }
-            }
+            }, indent=4
         )
         tmp_info = 'logical_restore src_cluster_id [%s] dst_cluster_id [%s] restore_time [%s] ' \
                    % (src_cluster_id, dst_cluster_id, restore_time)
@@ -449,17 +456,18 @@ class cluster_setting():
                     "restore":
                         restore_info
                 }
-            }
+            }, indent=4
         )
         tmp_info = 'logical_restore src_cluster_id [%s] dst_cluster_id [%s] restore_type [%s] ' \
                    % (src_cluster_id, dst_cluster_id, restore_type)
         res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
         return res
 
-    def create_rcr(self, src_cluster_id, dst_cluster_id):
+    def create_rcr(self, src_cluster_id, dst_cluster_id, meta_info=None):
         # 建立rcr数据同步, 用户发起对两个cluster建立rcr数据同步
         # "meta_db": "127.0.0.1:57001,127.0.0.2:57002"
-        meta_info = info.node_info().show_all_meta_ip_port_by_clustermgr_format()
+        if not meta_info:
+            meta_info = info.node_info().show_all_meta_ip_port_by_clustermgr_format()
         time_stamp = int(time.time())
         json_data = json.dumps({
                 "version": "1.0",
@@ -474,9 +482,52 @@ class cluster_setting():
                     },
                    "cluster_id": "%s" % dst_cluster_id
                 }
-            }
+            }, indent=4
         )
-        tmp_info = 'create_rcr src_cluster_id [%s] dst_cluster_id[%s] '
+        tmp_info = 'create_rcr meta_db=[%s] src_cluster_id=[%s] dst_cluster_id=[%s] ' % (meta_info, src_cluster_id,
+                                                                                             dst_cluster_id)
+        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
+        return res
+
+    def create_rcr_with_thelatest_clusters(self):
+        the_latest_cluster_id_sql = 'select id from db_clusters where status = "inuse" order by id desc limit 1;'
+        second_lastest_cluster_id_sql = 'select id from db_clusters where status = "inuse" order by id desc limit 1, 1;'
+        meta_master_info = info.master().metadata()
+        the_latest_cluster_id = connect.My(host=meta_master_info[0], port=meta_master_info[1], user=meta_master_info[2],
+                                           pwd=meta_master_info[3], db='kunlun_metadata_db').sql_with_result(the_latest_cluster_id_sql)[0][0]
+        second_lastest_cluster_id = connect.My(host=meta_master_info[0], port=meta_master_info[1], user=meta_master_info[2],
+                                           pwd=meta_master_info[3], db='kunlun_metadata_db').sql_with_result(second_lastest_cluster_id_sql)[0][0]
+        res = self.create_rcr(second_lastest_cluster_id, the_latest_cluster_id)
+        return res
+
+    def delete_rcr(self, num=1):
+        # num是元数据信息中正在运行的rcr里面第几个，第一个就是1，第二个就是2
+        rcr_infos = info.node_info().show_all_running_rcr_info()
+        total_rcr = len(rcr_infos)
+        if total_rcr < num:
+            write_log.w2File().print_log('当前正在运行的rcr个数为[%s], 指定的序号[%s]超过最大数，故跳过' % (total_rcr, num))
+            return 1
+        else:
+            num = num - 1
+            rcr_info = rcr_infos[num]
+
+        time_stamp = int(time.time())
+        json_data = json.dumps({
+            "version": "1.0",
+            "job_id": "",
+            "job_type": "delete_rcr",
+            "timestamp": "%s" % time_stamp,
+            "user_name": "kunlun_test",
+            "paras": {
+                "master_info": {
+                "meta_db": "%s" % rcr_info[0],
+                "cluster_id": "%s" % rcr_info[1]
+                },
+            "cluster_id": "%s" % rcr_info[2]
+            }
+        })
+        tmp_info = 'delete_rcr meta_db=[%s] src_cluster_id=[%s] dst_cluster_id=[%s] ' % (rcr_info[0], rcr_info[1],
+                                                                                         rcr_info[2])
         res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
         return res
 
@@ -495,7 +546,7 @@ class cluster_setting():
                     "timeout": "%s" % timeout_second,
                     "type": "1"
                 }
-            }
+            }, indent=4
         )
         tmp_info = 'set_noswitch cluster_id [%s] shard_id [%s] timeout [%s] ' % (cluster_id, shard_id, timeout_second)
         write_log.w2File().tolog(json_data)

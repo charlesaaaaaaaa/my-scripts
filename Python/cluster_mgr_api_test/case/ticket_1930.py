@@ -1,12 +1,14 @@
 import time
 from base.api import post
-from base.other import write_log, connect, info, sys_opt
+from base.other import write_log, connect, info, sys_opt, getconf
+import subprocess
 import random
 
 
 def print_log(txt):
     write_log.w2File().tolog(txt)
     print(txt)
+
 
 def test_case():
     case = 'ticket_#1930'
@@ -17,38 +19,27 @@ def test_case():
     # other_paras_dict这个字典的所有key和value都要str类型的，不能是其它类型的，因为cluster_mgr api就是这样用的
     other_paras_dict = {'enable_global_mvcc': "1"}
     nick_name = 'ticket_1930'
-    cre_res = post.cluster_setting(0).create_cluster(user_name='kunlun_test', nick_name=nick_name, shard=1, nodes=3,
-                                                    comps=1, max_storage_size=1024, max_connections=2000,
-                                                    cpu_limit_node='quota', innodb_size=1024, cpu_cores=8,
-                                                    rocksdb_block_cache_size_M=1024, fullsync_level=1,
-                                                    data_storage_MB=1024, log_storage_MB=1024,
-                                                    other_paras_dict=other_paras_dict)
+    cre_res = post.cluster_setting(0).create_cluster(user_name='kunlun_test', nick_name=nick_name, shard=1, nodes=2,
+                                                    comps=1, other_paras_dict=other_paras_dict)
     if cre_res == 0:
         return [case, 0]
 
     print_log('第二步： 新增shard')
     cluster_id = cre_res[1]['cluster_id']
-    add_res = post.cluster_setting(0).add_shards(cluster_id=cluster_id, shards=1, nodes=3)
+    add_res = post.cluster_setting(0).add_shards(cluster_id=cluster_id, shards=1, nodes=2)
     if add_res == 0:
         return [case, 0]
 
     print_log('设置变量')
-    # pgs = {'statement_timeout': 7200000, 'mysql_read_timeout': 7200, 'mysql_write_timeout': 7200,
-    #        'lock_timeout': 7200000, 'log_min_duration_statement': 7200000}
-    mys = {'lock_wait_timeout': 7200, 'net_read_timeout': 7200, 'net_write_timeout': 7200,
-           'innodb_lock_wait_timeout': 7200}
-    # for i in pgs:
-    #     sys_opt.setting_variable('computer', i, pgs[i])
-    for i in mys:
-        sys_opt.setting_variable('storage', i, mys[i])
+    sys_opt.run_set_variables()
 
     print_log('第三步： 进行写操作')
+    # 在所有计算节点中随机选择其中一个
     comp_sql = "select hostaddr, port, user_name, passwd from comp_nodes where status = 'active' " \
                "and db_cluster_id = %s;" % cluster_id
     meta_info = info.master().metadata()
     conn = connect.My(meta_info[0], int(meta_info[1]), meta_info[2], meta_info[3], 'kunlun_metadata_db')
     comps = conn.sql_with_result(comp_sql)
-    # 在所有计算节点中随机选择其中一个
     comp_info = random.choices(comps)
     print_log('       开始对 %s 进行写操作' % comp_info)
     try:
@@ -123,7 +114,7 @@ def test_case():
             print('ERROR: node - %s:%s\n\t Last_IO_Errno = %s\n\tLast_IO_Error = %s' % (new_slave_master_node[i][0],
                                         new_slave_master_node[i][1], Last_IO_Errno, Last_IO_Error))
 
-    print('检查所有主备复制是否一制')
+    print('检查所有主备复制是否一致')
     res = info.node_info().compare_shard_master_and_standby('postgres_$$_public')
     return [case, res]
     # storage_nodes_info_sql = "select shard_id, member_state, hostaddr, port, user_name, passwd from shard_nodes " \

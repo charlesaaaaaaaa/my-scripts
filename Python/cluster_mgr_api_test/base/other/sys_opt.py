@@ -1,10 +1,15 @@
 import os
 import subprocess
-from base.other import info
+from base.other import info,getconf
 import threading
 import random
 from base.other import connect
 from base.other import write_log
+
+def run_set_variables():
+    variables_path = getconf.get_conf_info().cluster_mgr()['config_variables_path']
+    start_script = "cd %s; python3 config_variables.py" % variables_path
+    subprocess.run(start_script, shell=True)
 
 def setting_variable(node_type, variable_name, value):
     # 用来设置变量的
@@ -121,7 +126,7 @@ def create_insert_table(pg_connect_info, db, table_name):
     random_times = random.randint(5, 25)
     for i in range(random_times):
         val = '{}_{}_{}'.format(db, table_name, i + 1)
-        txt = 'insert into %s(txt) values(%s)' % (table_name, val)
+        txt = "insert into %s(b) values('%s');" % (table_name, val)
         conn1.ddl_sql(txt)
     conn1.close()
 

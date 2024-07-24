@@ -107,6 +107,12 @@ class node_info():
         res = self.get_res(sql)
         return res
 
+    def show_all_running_computer_with_id(self):
+        # 和上面差不多，但第0个元素是id
+        sql = "select id, hostaddr, port, user_name, passwd from comp_nodes where status = 'active';"
+        res = self.get_res(sql)
+        return res
+
     def show_all_running_storage(self):
         # 获取所有在运行的存储节点
         # 返回一个元组
@@ -167,13 +173,22 @@ class node_info():
             tmp = '%s:%s' % (i[0], i[1])
             if first == 0:
                 res += tmp
+                first = 1
             else:
                 res += ',%s' % tmp
         return res
 
+    def show_all_running_rcr_info(self):
+        # 获取所有正在运行的rcr集群信息
+        # 返回结果：
+        sql = 'select master_rcr_meta, master_cluster_id, slave_cluster_id from cluster_rcr_infos where status = ' \
+              '"running";'
+        result = self.get_res(sql)
+        return result
+
     def show_signal_master_storage_table(self, cluster_id, shard_id, db, tb):
-        sql = "select hostaddr, port, user_name, passwd  from shard_nodes where status ='active' and " \
-              "member_state = 'source' and db_cluster_id = %s and shard_id = %s" % (cluster_id, shard_id)
+        sql = "select hostaddr, port, user_name, passwd  from shard_nodes where status ='active' and member_state = " \
+              "'source' and db_cluster_id = %s and shard_id = %s" % (cluster_id, shard_id)
         stor_node_info = self.get_res(sql)
         conn = connect.My(stor_node_info[0], stor_node_info[1], stor_node_info['user'], stor_node_info['pass'], db)
         sql = 'select * from %s' % tb

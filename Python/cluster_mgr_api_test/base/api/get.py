@@ -21,7 +21,7 @@ class mgr_infos():
             "timestamp": "%s" % now_timestamp,
             "paras": {
             }
-        })
+        }, indent=4)
         res = requests.post(url, data=json_data)
         print(res.text)
 
@@ -46,7 +46,7 @@ class status():
                         table_list
                     ]
                 }
-            }
+            }, indent=4
         )
 
     def job_status(self, job_id):
@@ -61,7 +61,7 @@ class status():
                 "user_name": "kunlun_test",
                 "paras": {
                 }
-            }
+            }, indent=4
         )
         res = requests.post(url, json_data)
         res_dict = json.loads(res.text)

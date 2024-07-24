@@ -35,13 +35,25 @@
   * 表逻辑恢复（回档）
 * base.api.post.cluster_setting().create_rcr(meta_info, src_cluster_id, dst_cluster_id)
   * 建立rcr数据同步, 用户发起对两个cluster建立rcr数据同步
+  * 如果没有指定meta_info 则默认设置为当前元数据集群的信息
+* base.api.post.cluster_setting().create_rcr_with_thelatest_clusters()
+  * 用最新的两个集群新建rcr数据同步集群，于同一个元数据节点下
+* base.api.post.cluster_setting().delete_rcr(self, num=1)
+  * 删除rcr数据同步
+  * num是元数据信息中正在运行的rcr里面第几个，第一个就是1，第二个就是2
+* base.api.post.cluster_setting().set_noswitch(self, cluster_id, shard_id, timeout_second):
+  * 免切设置，指定cluster_id和shard_id设置免切
+* base.api.post.cluster_setting().delete_all_storage_replice()
+  * 删除所有shard的备节点
+* base.api.post.cluster_setting().set_all_shard_noswitch(self, timeout_second)
+  * 把所有shard都设置成免切
 # other 目录
 ## connect
 * base.other.connect.Pg(host, port, user, pwd, db).ddl_sql(sql)
   * pg 执行一条sql并commit，不会返回值
 * base.other.connect.Pg(同上).sql_with_result(sql)
   * pg 执行一条构sql并commit且关闭游标连接，返回一个列表
-* base.other.connect.Pg(同上).colse()
+* base.other.connect.Pg(同上).close()
   * pg 关闭游标连接
 * base.other.connect.My(host, port, user, pwd, db).ddl_sql
   * mysql 执行一条sql并commit，不会返回值
@@ -85,6 +97,9 @@
 * base.other.info.node_info().show_all_meta_ip_port_by_clustermgr_format()
   * 获取所有metadata的host和port, 以cluster_mgr配置文件的格式 返回一个str
   * 返回结果如：'192.168.0.0:3006,192.168.0.0:3007,192.168.0.1:3006'
+* base.other.info.node_info().show_all_running_rcr_info(self)
+  * 获取所有的rcr数据同步信息
+  * 返回结果如：((master_meta_db, master_cluster_id, slave_cluster_id), (...))
 * base.other.info.node_info().show_signal_master_storage_table(self, cluster_id, db, tb)
   * 获取指定cluster和shard的主存储节点指定db.tb内容
 * base.other.info.node_info().compare_shard_master_and_standby(dbname)
@@ -96,6 +111,8 @@
 | node_type     | ['computer'] or ['storage'] |   
 | variable_name | 变量名                         |
 | value         | 变量值                         |
+* base.other.sys_opt.run_set_variables()
+  * 就是用调用config_variables脚本去设置各个节点的变量，要注意脚本配置要先设置好
 * base.other.sys_opt.setting_variable(node_type, variable_name, value).print_log(txt)
   * 把内容打印在屏幕上的同时写入日志文件里
 * base.other.sys_opt.setting_variable(node_type, variable_name, value).get_res(node_info)

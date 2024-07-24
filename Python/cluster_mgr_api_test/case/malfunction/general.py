@@ -71,6 +71,9 @@ class test_step:
 
     def review_metadata_compupter(self):
         comp_infos = node_info().show_all_running_computer()
+        # 1 成功 2 不存在计算节点
+        if not comp_infos:
+            return 2
         print('开始检查所有计算节点是否可用')
         for i in comp_infos:
             host = i[0].split('.')[-1]
@@ -88,6 +91,7 @@ class test_step:
             print(res)
             if len(res) == 1:
                 print('计算节点 %s: %s 正常' % (i[0], i[1]))
+        return 1
 
     def tmp_function(self):
         pass
