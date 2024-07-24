@@ -7,8 +7,8 @@ class getMetadata():
         self.dbInfo = readcnf().getKunlunInfo()
 
     def Master(self):
-        sql = "select hostaddr, port, user_name, passwd from pg_cluster_meta_nodes where is_master = 't';"
-        masterInfo = connPg().pgReturn(sql)
+        sql = "select hostaddr, port, user_name, passwd from meta_db_nodes where member_state = 'source';"
+        masterInfo = connMeta().myReturn(sql)
         # [hostaddr, port, user_name, passwd]
         return masterInfo
 
@@ -89,18 +89,14 @@ class getServer():
             hostList = []
             for infos in serverInfo[host]:
                 dataDir = conn.pgReturn_other(infos[0], infos[1], infos[2], infos[3], dataSql)[0][0]
-                get_basedir = "ssh %s@%s 'ps -ef | grep %s | grep bin ' | " \
-                              "grep %s | grep -v 'ps -ef'" % (self.sysUser, infos[0], infos[1], dataDir)
-                basedir_res = subprocess.Popen(get_basedir, shell = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
-                stdout, stderr = basedir_res.communicate()
-                print(str(stdout.decode()))
-                baseDir = str(stdout.decode()).split('/bin')[0].split(' ')[-1]
-                #print(basedir_res, get_basedir)
+                get_basedir = "ssh %s@%s 'ps -ef | grep %s | grep bin | head -1' | " \
+                              "grep %s" % (self.sysUser, infos[0], infos[1], dataDir)
+                basedir_res = subprocess.Popen(get_basedir, shell = True, stdout = subprocess.PIPE)
+                baseDir = str(basedir_res.stdout.readlines()).split(' ')[-3].split('/bin')[0]
                 #basePath = dataDir.split('/server_datadir')[0]
                 #baseDir = basePath + '/instance_binaries/computer/' + str(infos[1]) + '/kunlun-server-' + Versions
                 dataDir += '/postgresql.conf'
                 tmpList = [baseDir, dataDir, infos[1]]
-                print(tmpList)
                 hostList.append(tmpList)
             tmpDict = {host: hostList}
             server_path_info.update(tmpDict)

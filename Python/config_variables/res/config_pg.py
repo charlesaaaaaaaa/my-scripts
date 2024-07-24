@@ -173,5 +173,5 @@ class configure_server():
         for i in l:
             i.join()
 
-        print('sleep 10s ...\n')
-        sleep(10)
+        print('sleep 3s ...\n')
+        sleep(3)

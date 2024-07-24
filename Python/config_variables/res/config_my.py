@@ -22,7 +22,10 @@ class configure_storage():
                 conn = connMy(infos[0], infos[1], infos[2], infos[3], 'mysql')
                 for key in variables:
                     sql = 'SET PERSIST %s = %s' % (key, variables[key])
-                    conn.myNotReturn(sql)
+                    try:
+                        conn.myNotReturn(sql)
+                    except Exception as err:
+                        print(err)
 
     def show_variables_old(self):
         Infos = self.Infos
