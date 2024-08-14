@@ -17,7 +17,7 @@
   * 增加一个shard
 * base.api.post.cluster_setting().delete_cluster_all()
   * 清理掉所有集群
-* base.api.post.cluster_setting().add_comps(cluster_id, comps_num, comps_iplist)
+* base.api.post.cluster_setting().add_comps(cluster_id, comps_num)
   * 增加计算节点
 * base.api.post.cluster_setting().del_comps(cluster_id, comp_id)
   * 删除计算节点

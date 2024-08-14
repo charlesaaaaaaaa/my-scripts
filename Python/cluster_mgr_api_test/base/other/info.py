@@ -155,6 +155,14 @@ class node_info():
         res = self.get_res(sql)
         return res
 
+    def show_specify_shard_master_node(self, shard_id):
+        # 获取指定的shard主节点信息
+        # 结果 = [hostaddr, port, user_name, passwd], 返回一级元组
+        sql = 'select hostaddr, port, user_name, passwd from shard_nodes where shard_id = "%s" and member_state = ' \
+              '"source";' % shard_id
+        res = self.get_res(sql)[0]
+        return res
+
     def show_all_running_cluster_id_and_shard_id(self):
         # 获取所有正在支持的shard_id, 带上cluster id
         # 如 ((5, 5,),(5, 6,),) [0]=cluster_id [1] = shard_id

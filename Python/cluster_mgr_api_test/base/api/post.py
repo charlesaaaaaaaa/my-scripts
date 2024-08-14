@@ -207,7 +207,7 @@ class cluster_setting():
         cluster_ids = info.node_info().show_all_running_cluster_id()
         if not cluster_ids:
             write_log.w2File().print_log('当前无正在运行的群集，跳过')
-            return 0
+            return 1
         for cluster_id in cluster_ids:
             time_stamp = int(time.time())
             json_data = json.dumps({
@@ -223,12 +223,14 @@ class cluster_setting():
             )
             tmp_info = 'delete_cluster cluster_id = %s ' % cluster_id
             res = self.send_api_and_return_res(json_data, tmp_info)
-        return res
+            if res == 0:
+                return res
+        return 1
 
     def add_comps(self, cluster_id, comps_num):
         # 新增计算节点
         # 在id为几的cluster上新增，要增加几个计算节点，要增加的计算节点的ip列表
-        # 这里只要给cluster_id, shards, nodes
+        # 这里只要给cluster_id, comps_num(要增加的计算节点个数)
         # storage_iplists 会自动生成
         # 如果成功，会返回一个列表
         #   第0个是状态码
@@ -365,8 +367,8 @@ class cluster_setting():
         json_data = json.dumps({
                 "version": "1.0",
                 "job_id": "",
-                "job_type": "repartition_tables",
-                "timestamp": "1435749309",
+                "job_type": "table_repartition",
+                "timestamp": "%s" % time_stamp,
                 "user_name": "kunlun_test",
                 "paras": {
                     "src_cluster_id": "%s" % src_cluster_id,
@@ -500,6 +502,29 @@ class cluster_setting():
         res = self.create_rcr(second_lastest_cluster_id, the_latest_cluster_id)
         return res
 
+    def manualsw_rcr(self, meta_info, src_cluster_id, dst_cluster_id, delay=30):
+        time_stamp = int(time.time())
+        json_data = json.dumps({
+                "version": "1.0",
+                "job_id": "",
+                "job_type": "manualsw_rcr",
+                "timestamp": "%s" % time_stamp,
+                "user_name": "kunlun_test",
+                "paras": {
+                   "master_info": {
+                        "meta_db": "%s" % meta_info,
+                        "cluster_id": "%s" % src_cluster_id
+                    },
+                    "cluster_id": "%s" % dst_cluster_id,
+                    "allow_sw_delay": "%s" % delay
+                }
+            }, indent=4
+        )
+        tmp_info = 'manualsw_rcr meta_db=[%s] src_cluster_id=[%s] dst_cluster_id=[%s] ' % (meta_info, src_cluster_id,
+                                                                                         dst_cluster_id)
+        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
+        return res
+
     def delete_rcr(self, num=1):
         # num是元数据信息中正在运行的rcr里面第几个，第一个就是1，第二个就是2
         rcr_infos = info.node_info().show_all_running_rcr_info()
@@ -525,7 +550,7 @@ class cluster_setting():
                 },
             "cluster_id": "%s" % rcr_info[2]
             }
-        })
+        }, indent=4)
         tmp_info = 'delete_rcr meta_db=[%s] src_cluster_id=[%s] dst_cluster_id=[%s] ' % (rcr_info[0], rcr_info[1],
                                                                                          rcr_info[2])
         res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
@@ -572,3 +597,113 @@ class cluster_setting():
         all_shard_info = info.node_info().show_all_running_cluster_id_and_shard_id()
         for shard_info in all_shard_info:
             self.set_noswitch(shard_info[0], shard_info[1], timeout_second)
+
+    def rebuild_node(self, shard_id, cluster_id, node_host, node_port, need_backup=0, hdfs_host='hdfs', pv_limit=10, allow_pull_from_master=1, allow_replica_delay=15):
+        # 重建存储节点
+        time_stamp = int(time.time())
+        json_data = json.dumps(
+            {
+                "version": "1.0",
+                "job_id": "",
+                "job_type": "rebuild_node",
+                "timestamp": "%s" % time_stamp,
+                "user_name": "kunlun_test",
+                "paras": {
+                    "shard_id": "%s" % shard_id,
+                    "cluster_id": "%s" % cluster_id,
+                    "rb_nodes": [
+                        {
+                            "hostaddr": "%s" % node_host,
+                            "port": "%s" % node_port,
+                            "need_backup": "%s" % need_backup,
+                            "hdfs_host": "%s" % hdfs_host,
+                            "pv_limit": "%s" % pv_limit
+                        }
+                    ],
+                    "allow_pull_from_master": "%s" % allow_pull_from_master,
+                    "allow_replica_delay": "%s" % allow_replica_delay
+                }
+            }, indent=4
+        )
+        tmp_info = 'rebuild node cluster_id[%s] shard_id[%s] host[%s] port[%s]' % (cluster_id, shard_id, node_host,
+                                                                                   node_port)
+        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
+        return res
+
+    def manual_backup_cluster(self, cluster_id):
+        time_stamp = int(time.time())
+        json_data = json.dumps({
+                "version": "1.0",
+                "job_id": "",
+                "job_type": "manual_backup_cluster",
+                "timestamp": "%s" % time_stamp,
+                "user_name": "kunlun_test",
+                "paras": {
+                    "cluster_id": "%s" % cluster_id
+                }
+            }, indent=4
+        )
+        tmp_info = 'manual backup cluster_id[%s]' % cluster_id
+        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
+        return res
+
+    def expand_cluster(self, cluster_id, src_shard_id, dst_shard_id, table_list):
+        stamp_time = int(time.time())
+        json_data = json.dumps({
+              "version": "1.0",
+              "job_id": "",
+              "job_type": "expand_cluster",
+              "timestamp": "%s" % stamp_time,
+              "user_name": "kunlun_test",
+              "paras": {
+                "cluster_id": "%s" % cluster_id,
+                "src_shard_id": "%s" % src_shard_id,
+                "dst_shard_id": "%s" % dst_shard_id,
+                "table_list": table_list
+              }
+            }, indent=4
+        )
+        tmp_info = 'manual backup cluster_id[%s] src_shard_id[%s] dst_shard_id[%s] ' \
+                   'table_list[%s]' % (cluster_id, src_shard_id, dst_shard_id, table_list)
+        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
+        return res
+
+    def control_instance(self, host, port, machine_type, control_type):
+        stamp_time = int(time.time())
+        json_data = json.dumps({
+            "version": "1.0",
+            "job_id": "",
+            "job_type": "control_instance",
+            "timestamp": "%s" % stamp_time,
+            "paras": {
+                "hostaddr": "%s" % host,
+                "port": "%s" % port,
+                "machine_type": "%s" % machine_type,
+                "control": "%s" % control_type
+                }
+            }
+        )
+        tmp_info = 'control instance host[%s] port[%s] manchine_type[%s] control_type[%s]' % (host, port, machine_type,
+                                                                                              control_type)
+        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
+        return res
+
+    def update_cluster_coldback_time_period(self, cluster_id, time_period_str=None):
+        # 应该是用来修改冷备时间的api
+        # time_period_str == "01:00:00-02:00:00", 应该是这个格式
+        stamp_time = int(time.time())
+        json_data = json.dumps({
+            "version": "1.0",
+            "job_id": "",
+            "job_type": "update_cluster_coldback_time_period",
+            "timestamp": "1435749309",
+            "user_name": "kunlun_test",
+            "paras": {
+                   "cluster_id": "%s" % cluster_id,
+                   "time_period_str": "%s" % time_period_str
+                     }
+            }, indent=4
+        )
+        tmp_info = 'update cluster coldback time period cluster_id[%s] time_period[%s]' % (cluster_id, time_period_str)
+        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
+        return res

@@ -6,10 +6,62 @@ import random
 from base.other import connect
 from base.other import write_log
 
+
 def run_set_variables():
     variables_path = getconf.get_conf_info().cluster_mgr()['config_variables_path']
     start_script = "cd %s; python3 config_variables.py" % variables_path
     subprocess.run(start_script, shell=True)
+
+
+def set_server_nodes_timeout(timeout_time=7200):
+    server_node_dict = info.node_info().show_all_running_computer()
+    var_list1 = ["mysql_write_timeout", "mysql_read_timeout"]
+    var_list2 = ["statement_timeout", "lock_timeout", "log_min_duration_statement"]
+    timeout_time_ms = timeout_time * 1000
+    try:
+        for server in server_node_dict:
+            pg = connect.Pg(server[0], server[1], server[2], server[3], 'postgres')
+            for var1 in var_list1:
+                sql = 'alter system set %s = %s;' % (var1, timeout_time)
+                pg.ddl_sql(sql)
+            for var2 in var_list2:
+                sql = 'alter system set %s = %s;' % (var2, timeout_time_ms)
+                pg.ddl_sql(sql)
+            pg.close()
+    except Exception as err:
+        print(err)
+        return 0
+    return 1
+
+
+def set_storage_nodes_timeout(timeout_time=7200):
+    timeout_time *= 1000
+    storage_node_info = info.node_info().show_all_running_storage()
+    var_list = ["lock_wait_timeout", "net_read_timeout", "net_write_timeout", "fullsync_timeout", "innodb_lock_wait_timeout"]
+    try:
+        for storage in storage_node_info:
+            my = connect.My(storage[0], storage[1], storage[2], storage[3], 'mysql')
+            for var in var_list:
+                sql = 'set persist %s = %s' % (var, timeout_time)
+                my.ddl_sql(sql)
+            my.close()
+    except Exception as err:
+        print(err)
+        return 0
+    return 1
+
+def set_timeout(timeout=7200):
+    show_topic("设置超时变量", 2)
+    res = set_server_nodes_timeout(timeout_time=timeout)
+    t_res = 0
+    if res == 0:
+        t_res += 1
+    res = set_storage_nodes_timeout(timeout_time=timeout)
+    if res == 0:
+        t_res += 1
+    if t_res != 0:
+        return 0
+    return 1
 
 def setting_variable(node_type, variable_name, value):
     # 用来设置变量的
@@ -18,6 +70,7 @@ def setting_variable(node_type, variable_name, value):
     # value = 变量值
     variable_list, nodes = [], []
     first_row = ''
+
     def print_log(txt):
         write_log.w2File().tolog(txt)
         print(txt)
@@ -117,6 +170,7 @@ def setting_variable(node_type, variable_name, value):
     print_log('=' * total_len)
     return setting_variable(node_type, variable_name, value)
 
+
 def create_insert_table(pg_connect_info, db, table_name):
     create_sql = 'create table if not exists %s(id serial, b text);' % table_name
     drop_sql = 'drop table if exists %s' % table_name
@@ -130,6 +184,39 @@ def create_insert_table(pg_connect_info, db, table_name):
         conn1.ddl_sql(txt)
     conn1.close()
 
+
 def timer(func):
     pass
 
+
+def show_topic(txt, level=1):
+    write_log.w2File().tolog(txt)
+    len_txt = len(str(txt).encode('GB2312'))
+    if level == 1:
+        split_str = '#'
+    elif level == 2:
+        split_str = '='
+    elif level == 3:
+        split_str = '-'
+    len_split = len_txt + 4
+    txt1 = split_str * len_split
+    if level != 1:
+        split_str = '|'
+    txt2 = '%s %s %s' % (split_str, txt, split_str)
+    txt = "%s\n%s\n%s" % (txt1, txt2, txt1)
+    if level == 1:
+        txt = '\n' + txt
+    print(txt)
+
+
+def pg_show_table(signal_server_list, table_name, schema='public', database='postgres'):
+    sql = """select column_name, data_type, is_nullable, column_default from information_schema.columns where table_name
+     = '%s' and table_schema = '%s';""" % (table_name, schema)
+    server = signal_server_list
+    pg = connect.Pg(host=server[0], port=server[1], user=server[2], pwd=server[3], db=database)
+    try:
+        res = pg.sql_with_result(sql)
+    except Exception as err:
+        print(err)
+        return 0
+    return res
