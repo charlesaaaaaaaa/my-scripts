@@ -102,8 +102,14 @@ class connMeta():
 
 class connPg():
     def __init__(self):
+        self.conf = readcnf().getKunlunInfo()
         sql = 'select hostaddr, port, user_name, passwd from comp_nodes where status = "active" limit 1;'
-        self.pg_info = connMeta().myReturn(sql)[0]
+        try:
+            self.pg_info = connMeta().myReturn(sql)[0]
+        except:
+            print("未获取到有效的集群节点信息，请检查当前元数据节点 [%s:%s] 下是否存在klustron集群" % (self.conf['meta_host'],
+                  self.conf['meta_port']))
+            exit(0)
 
     def pgNotReturn(self, sql):
         conf = self.pg_info
