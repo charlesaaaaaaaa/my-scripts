@@ -11,6 +11,7 @@ class test_step:
         self.meta_master_info = master().metadata()
         self.meta_conf = getconf.get_conf_info().klustron_metadata()
 
+
     def meta_sql(self, sql, result_or_not):
         meta_master_info = self.meta_master_info
         conn = connect.My(meta_master_info[0], int(meta_master_info[1]), meta_master_info[2], meta_master_info[3]

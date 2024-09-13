@@ -1,4 +1,5 @@
 import time
+from base.other import sys_opt
 
 class w2File():
     def __init__(self):
@@ -15,7 +16,7 @@ class w2File():
 
     def print_log(self, txt):
         self.tolog('%s\n' % txt)
-        print(txt)
+        sys_opt.show_topic(txt, 3)
 
     def toOther(self, file_name, txt):
         with open(file_name, 'a', encoding='utf-8') as f:

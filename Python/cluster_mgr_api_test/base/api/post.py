@@ -28,6 +28,48 @@ class cluster_setting():
                 random_node_list.append(random_node)
         return random_node_list
 
+    def select_nodes_in_order(self, node_num, node_type='server'):
+        tb = 'comp_nodes'
+        conf_iplist = self.mgr_settings['comp_iplists']
+        if node_type == 'storage':
+            tb = "shard_nodes"
+            conf_iplist = self.mgr_settings['stor_iplists']
+        sql = "select hostaddr, count(hostaddr) a from %s where status" \
+              " = 'active' group by hostaddr order by a;" % tb
+        ip_list = conf_iplist.replace(' ', '').split(',')
+        if node_num >= len(ip_list):
+            node_list = ip_list
+            return node_list
+        try:
+            res = info.node_info().get_res(sql=sql)
+            if not res:
+                print(res)
+                res = 0
+        except:
+            res = 0
+        node_list = []
+        print(res)
+        if res == 0:
+            for i in range(node_num):
+                node_list.append(ip_list[i])
+            return node_list
+        if len(res) < len(ip_list):
+            for i in res:
+                ip_list.remove(i[0])
+            if len(ip_list) >= node_num:
+                for ip in range(node_num):
+                    node_list.append(ip_list[ip])
+            else:
+                for ip in ip_list:
+                    node_list.append(ip)
+                node_num -= len(ip_list)
+                for ip in range(node_num):
+                    node_list.append(res[ip][0])
+        else:
+            for i in range(node_num):
+                node_list.append(res[i][0])
+        return node_list
+
     def get_status(self, job_id):
         # 检查job status
         result = 'done'
@@ -54,6 +96,7 @@ class cluster_setting():
             write_log.w2File().tolog(err)
             print(err)
             exit(1)
+        print('job_status: %s' % job_status)
         return result
 
     def send_api_and_return_res(self, json_data, tmp_info):
@@ -77,16 +120,49 @@ class cluster_setting():
             result = 0
         return result
 
+    def send_api_and_return_metares(self, json_data, sql, tmp_info, sleep_time=0):
+        # 发送api的
+        # 但检查结果是直接在元数据集群里面找结果的，有部分的api get_status是有问题的
+        # 如果要在sql里面加上job_id，则直接在sql里面加上"$job_id"就行
+        write_log.w2File().tolog(json_data)
+        print(json_data)
+        res = requests.post(self.url, json_data)
+        res_dict = json.loads(res.text)
+        write_log.w2File().tolog(res_dict)
+        print(res_dict)
+        if "$job_id" in sql:
+            job_id = res_dict['job_id']
+            print(job_id)
+            sql = sql.replace('$job_id', str(job_id))
+
+        print(sql)
+        time.sleep(sleep_time)
+        sql_res = info.node_info().get_res(sql)
+        print(str(sql_res))
+        sql_res = sql_res[0][0]
+        while sql_res == "ongoing":
+            time.sleep(5)
+            sql_res = info.node_info().get_res(sql)[0][0]
+        print("meta_sql: %s \n\tresult: %s" % (sql, sql_res))
+        if sql_res == "done":
+            write_log.w2File().print_log(tmp_info + '成功')
+            result = 1
+        else:
+            write_log.w2File().print_log(tmp_info + '失败')
+            result = 0
+        return result
+
     def create_cluster(self, shard, nodes, comps, user_name='super_dba', nick_name='test_db', max_storage_size=1024,
                        max_connections=2000, cpu_cores=8, cpu_limit_node='quota', innodb_size=1024,
                        rocksdb_block_cache_size_M=1024, fullsync_level=1, data_storage_MB=1024, log_storage_MB=1024,
-                       other_paras_dict=None):
+                       dbcfg=0, other_paras_dict=None):
         # 这个函数就是用来发送创建集群的api
         # 当前只有rbr，所以不用设置ha_mode
         # 共要给 13 个变量
         #   除开最后一个，其它12个都是create_cluster api里面必填的参数, 这12个参数的信息去api文档看，gitee上的文档有
         #       这12个变量名和api的参数变量名是一样的，可以直接对着api文档填写
-        #   最后一个(other_paras_dict)是非必填的参数, 其值一定得是字符串，不能是其它类型的
+        #   最后一个(other_paras_dict)是非必填的参数, 字典类型，字典值一定得是字符串，不能是其它类型的
+        #     如：other_paras_dict={"install_proxysql": "1"}
         # 如果成功，会返回一个列表
         #   第0个是状态码
         #   第1个是新增分片的信息
@@ -98,7 +174,7 @@ class cluster_setting():
                 "max_connections": str(max_connections), "cpu_cores": str(cpu_cores),
                 "cpu_limit_node": str(cpu_limit_node),"innodb_size": str(innodb_size),
                 "rocksdb_block_cache_size_M": str(rocksdb_block_cache_size_M), "data_storage_MB": str(data_storage_MB),
-                "log_storage_MB": str(log_storage_MB), "fullsync_level": str(fullsync_level)}
+                "log_storage_MB": str(log_storage_MB), "dbcfg": str(dbcfg), "fullsync_level": str(fullsync_level)}
         if other_paras_dict:
             para.update(other_paras_dict)
         # 这里通过函数获取可以安装计算节点和存储节点并正在运行的机器ip
@@ -115,15 +191,17 @@ class cluster_setting():
         #   则随机从可安装的节点里面选择其中几个
         #   否则直接把所有可安装的节点全选上
         if stor_nodes_need < len(stor_list):
-            storage_iplists = self.random_nodes(stor_nodes_need, stor_list)
-            if stor_nodes_need == 1:
-                storage_iplists = storage_iplists.split(' ')
+            #storage_iplists = self.random_nodes(stor_nodes_need, stor_list)
+            storage_iplists = self.select_nodes_in_order(node_num=stor_nodes_need, node_type='storage')
+            #if stor_nodes_need == 1:
+            #    storage_iplists = storage_iplists.split(' ')
         else:
             storage_iplists = stor_list
         if comps < len(comp_list):
-            computer_iplists = self.random_nodes(comps, comp_list)
-            if comps == 1:
-                computer_iplists = computer_iplists.split(' ')
+            computer_iplists = self.select_nodes_in_order(node_num=comps, node_type='server')
+            #computer_iplists = self.random_nodes(comps, comp_list)
+            #if comps == 1:
+            #    computer_iplists = computer_iplists.split(' ')
         else:
             computer_iplists = comp_list
         iplist = {"storage_iplists": storage_iplists, "computer_iplists": computer_iplists}
@@ -197,9 +275,37 @@ class cluster_setting():
                 }
             }, indent=4
         )
-        tmp_info = 'add_shards '
+        tmp_info = 'add_shards cluster_id[%s] shards[%s] nodes[%s] ' % (cluster_id, shards, nodes)
         res = self.send_api_and_return_res(json_data, tmp_info)
         return res
+
+    def delete_clsuter(self, cluster_id=None):
+        if cluster_id == None:
+            cluster_ids = info.node_info().show_all_running_cluster_id()
+            try:
+                cluster_id_1 = cluster_ids[0]
+                print("当前存在的cluster_id有: %s" % str(cluster_ids))
+            except Exception as err:
+                print('当前无正在运行的cluster')
+                exit(0)
+            exit(0)
+        time_stamp = int(time.time())
+        json_data = json.dumps({
+            "version": "1.0",
+            "job_id": "",
+            "job_type": "delete_cluster",
+            "timestamp": "%s" % time_stamp,
+            "user_name": "kunlun_test",
+            "paras": {
+                "cluster_id": "%s" % cluster_id
+                }
+            }, indent=4
+        )
+        tmp_info = 'delete_cluster cluster_id = %s ' % cluster_id
+        res = self.send_api_and_return_res(json_data, tmp_info)
+        if res == 0:
+            return res
+        return 1
 
     def delete_cluster_all(self):
         # 会删除当前所有正在运行的集群
@@ -421,7 +527,7 @@ class cluster_setting():
                 "version": "1.0",
                 "job_id": "",
                 "job_type": "cluster_restore",
-                "timestamp": "1435749309",
+                "timestamp": str(time_stamp),
                 "paras": {
                     "src_cluster_id": "%s" % src_cluster_id,
                     "dst_cluster_id": "%s" % dst_cluster_id,
@@ -429,8 +535,13 @@ class cluster_setting():
                 }
             }, indent=4
         )
-        tmp_info = 'logical_restore src_cluster_id [%s] dst_cluster_id [%s] restore_time [%s] ' \
+        tmp_info = 'cluster_restore src_cluster_id [%s] dst_cluster_id [%s] restore_time [%s] ' \
                    % (src_cluster_id, dst_cluster_id, restore_time)
+        # 去元数据集群上查结果
+        # sql = 'select status from restore_log  where general_log_id = $job_id order by id desc limit 1;'
+        # res = self.send_api_and_return_metares(json_data=json_data, sql=sql, tmp_info=tmp_info, sleep_time=30)
+
+        # 使用 get_status 查结果
         res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
         return res
 
@@ -462,6 +573,11 @@ class cluster_setting():
         )
         tmp_info = 'logical_restore src_cluster_id [%s] dst_cluster_id [%s] restore_type [%s] ' \
                    % (src_cluster_id, dst_cluster_id, restore_type)
+        # 去元数据集群上查结果
+        # sql = 'select status from restore_log  where general_log_id = $job_id order by id desc limit 1;'
+        # res = self.send_api_and_return_metares(json_data=json_data, sql=sql, tmp_info=tmp_info, sleep_time=30)
+
+        # 直接用get_status查
         res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
         return res
 
@@ -632,6 +748,7 @@ class cluster_setting():
 
     def manual_backup_cluster(self, cluster_id):
         time_stamp = int(time.time())
+        nick_name = info.node_info().show_cluster_nick_name(cluster_id=cluster_id)
         json_data = json.dumps({
                 "version": "1.0",
                 "job_id": "",
@@ -639,12 +756,15 @@ class cluster_setting():
                 "timestamp": "%s" % time_stamp,
                 "user_name": "kunlun_test",
                 "paras": {
-                    "cluster_id": "%s" % cluster_id
+                    "cluster_id": "%s" % cluster_id,
+                    "nick_name": "%s" % nick_name
                 }
             }, indent=4
         )
         tmp_info = 'manual backup cluster_id[%s]' % cluster_id
-        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
+        meta_sql = "select status from cluster_general_job_log where " \
+                   "job_type='shard_coldbackup' order by id desc limit 1"
+        res = self.send_api_and_return_metares(json_data=json_data, sql=meta_sql, tmp_info=tmp_info)
         return res
 
     def expand_cluster(self, cluster_id, src_shard_id, dst_shard_id, table_list):
@@ -696,7 +816,7 @@ class cluster_setting():
             "version": "1.0",
             "job_id": "",
             "job_type": "update_cluster_coldback_time_period",
-            "timestamp": "1435749309",
+            "timestamp": "%s" % stamp_time,
             "user_name": "kunlun_test",
             "paras": {
                    "cluster_id": "%s" % cluster_id,
@@ -705,5 +825,29 @@ class cluster_setting():
             }, indent=4
         )
         tmp_info = 'update cluster coldback time period cluster_id[%s] time_period[%s]' % (cluster_id, time_period_str)
+        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
+        return res
+
+    def update_instance_cgroup(self, ip, port, node_type='mysql', cpu_cores=8, cgroup_mode='quota'):
+        # node_type = [mysql]|[pg], cgroup_mode = [quota]|[share]
+        # 修改 MySQL 或者 PostgreSQL 实例的资源隔离参数
+        stamp_time = int(time.time())
+        json_data = json.dumps({
+            "version": "1.0",
+            "job_id": "",
+            "job_type": "update_instance_cgroup",
+            "timestamp": "%s" % stamp_time,
+            "user_name": "kunlun_test",
+            "paras": {
+                "ip": "%s" % ip,
+                "port": "%s" % port,
+                "type": "%s" % node_type,
+                "cpu_cores": "%s" % cpu_cores,
+                "cgroup_mode": "%s" % cgroup_mode
+                }
+            }, indent=4
+        )
+        tmp_info = 'update_instance_cgroup ip=[%s], port[%s], type[%s], cpu_cores[%s], cgroup_mode[%s]' \
+                   '' % (ip, port, node_type, cpu_cores, cgroup_mode)
         res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
         return res

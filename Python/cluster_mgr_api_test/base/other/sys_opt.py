@@ -8,6 +8,7 @@ from base.other import write_log
 
 
 def run_set_variables():
+    write_log.w2File().print_log('开始设置超时参数')
     variables_path = getconf.get_conf_info().cluster_mgr()['config_variables_path']
     start_script = "cd %s; python3 config_variables.py" % variables_path
     subprocess.run(start_script, shell=True)
@@ -216,6 +217,10 @@ def pg_show_table(signal_server_list, table_name, schema='public', database='pos
     pg = connect.Pg(host=server[0], port=server[1], user=server[2], pwd=server[3], db=database)
     try:
         res = pg.sql_with_result(sql)
+        print('| column_name | data_type | is_nullable | column_default |')
+        for i in res:
+            i = str(i).replace('(', '| ').replace(')', ' |').replace(',', ' |')
+            print(i)
     except Exception as err:
         print(err)
         return 0

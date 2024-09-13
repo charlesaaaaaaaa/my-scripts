@@ -18,3 +18,8 @@ class get_conf_info():
         cnf.read('./conf/config.conf', encoding='utf-8')
         klustron_metadata_info = dict(cnf.items('klustron_metadata'))
         return klustron_metadata_info
+
+    def cdc_info(self):
+        self.cnf.read('./conf/config.conf', encoding='utf-8')
+        cdc_cnf = dict(self.cnf.items('cdc_info'))
+        return cdc_cnf

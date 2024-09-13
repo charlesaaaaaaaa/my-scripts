@@ -21,7 +21,7 @@ def ticket_test():
 
 
 def daily_test():
-    test_suite = smoke_test.TestCase(2)
+    test_suite = smoke_test
     case_res(test_suite.install_cluster())
     case_res(test_suite.add_comps())
     case_res(test_suite.add_shards())
@@ -39,6 +39,8 @@ def daily_test():
     case_res(test_suite.rcr_smoke())
     case_res(test_suite.expand_tg())
     case_res(test_suite.install_rbrcluster_degrade())
+    case_res(test_suite.cgroup_smoke())
+    case_res(test_suite.proxysql_smoke())
 
 
 def caict():

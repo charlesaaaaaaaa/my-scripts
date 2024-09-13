@@ -361,12 +361,13 @@ class CaictCase:
         if res == 0:
             return [case, res]
         show_topic("检查shard状态", 2)
-        res = set_timeout(18000)
+        #res = set_timeout(18000)
         if res == 0:
             return [case, res]
         res = StorageState().show_read_only()
         if res == 0:
             return [case, res]
+        run_set_variables()
         show_topic("创建分区表并灌3万行数据", 2)
         shard_ids = info.node_info().show_all_running_shard_id()
         server = info.node_info().show_all_running_computer()[-1]

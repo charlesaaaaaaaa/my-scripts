@@ -66,3 +66,7 @@ class status():
         res = requests.post(url, json_data)
         res_dict = json.loads(res.text)
         return res_dict
+
+    def job_state(self, job_id):
+        # 异步api结果查询
+        pass

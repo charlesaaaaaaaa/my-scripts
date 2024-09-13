@@ -194,6 +194,11 @@ class node_info():
         result = self.get_res(sql)
         return result
 
+    def show_cluster_nick_name(self, cluster_id):
+        sql = "select nick_name from db_clusters where id = %s" % cluster_id
+        result = self.get_res(sql)[0][0]
+        return result
+
     def show_signal_master_storage_table(self, cluster_id, shard_id, db, tb):
         sql = "select hostaddr, port, user_name, passwd  from shard_nodes where status ='active' and member_state = " \
               "'source' and db_cluster_id = %s and shard_id = %s" % (cluster_id, shard_id)
@@ -201,6 +206,13 @@ class node_info():
         conn = connect.My(stor_node_info[0], stor_node_info[1], stor_node_info['user'], stor_node_info['pass'], db)
         sql = 'select * from %s' % tb
         res = conn.sql_with_result(sql)
+        return res
+
+    def show_all_running_proxysql(self):
+        # 在安装了proxysql的情况下，展示出所有正在活动的proxysql节点的ip host user pass
+        # 示例 ((ip, host, user, pass)[, (...), ...])
+        sql = "select hostaddr, port, user_name, passwd from proxysql_nodes where status = 'active';"
+        res = self.get_res(sql)
         return res
 
     def compare_shard_master_and_standby(self, dbname):
