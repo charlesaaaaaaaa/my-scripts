@@ -165,7 +165,7 @@ class alarm_test():
             print(div)
         sleep(2)
         print(tmpEle)
-        driver.moveToXpanth(tmpEle)
+        driver.scrollIntoView_Xpath(tmpEle)
         sleep(3)
         driver.click_Xpath(tmpEle)
         compare_str = '%s_%s' % (db_host, db_port)

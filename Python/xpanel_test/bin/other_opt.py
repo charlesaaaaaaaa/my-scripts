@@ -50,3 +50,7 @@ class getElements():
     def system_manage(self):
         conf = self.get('system_manage')
         return conf
+
+    def multi_tenan(self):
+        conf = self.get('multi-tenancy')
+        return conf

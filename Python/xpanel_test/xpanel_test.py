@@ -17,8 +17,15 @@ def test():
     loading().load_and_change_pwd()
     loading().load_and_change_pwd()
     genResList(cluster_list().add_new_cluster())
+    genResList(cluster_list().add_repartition())
+    genResList(cluster_list().add_comp())
+    genResList(cluster_list().del_comp())
+    genResList(cluster_list().del_replica())
+    genResList(cluster_list().rebuild_node())
+    genResList(cluster_list().manual_swich_master())
+    genResList(cluster_list().delete_all_cluster())
     genResList(cluster_list().config_variables())
-    genResList(cluster_list().monitor())
+    # genResList(cluster_list().monitor())
     # genResList(cluster_list().tmp())
     res = resList
     return res
@@ -46,3 +53,4 @@ if __name__ == "__main__":
         exit(0)
     else:
         exit(1)
+
