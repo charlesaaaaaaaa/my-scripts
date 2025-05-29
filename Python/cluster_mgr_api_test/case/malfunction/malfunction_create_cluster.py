@@ -54,6 +54,7 @@ class case_test:
         return res
 
     def case1_malfunction(self, file_name):
+        tmp_res = 0
         case_name = 'case1: 创建集群时，只重启元数据集群的主'
         print(case_name)
         global case_status
@@ -62,6 +63,7 @@ class case_test:
             res = cluster_setting(0).delete_cluster_all()
             if res == 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             lt = []
@@ -70,6 +72,7 @@ class case_test:
                 res = test_step().Create_cluster(1, 3, 1, 1, [], 300)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
             def thread2():
@@ -88,13 +91,17 @@ class case_test:
                 case_status += '| 成功 |'
             elif res_num == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
         except Exception as err:
+            tmp_res = 0
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case2_malfunction(self, file_name):
+        tmp_res = 0
         case_name = 'case2: 创建集群时，元数据集群的主设置只读'
         print(case_name)
         global case_status
@@ -103,6 +110,7 @@ class case_test:
             res_num = cluster_setting(0).delete_cluster_all()
             if res_num == 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             lt = []
@@ -111,6 +119,7 @@ class case_test:
                 res = test_step().Create_cluster(1, 3, 1, 1, [], 300)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
             def thread2():
@@ -129,13 +138,16 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case3_malfunction(self, file_name):
+        tmp_res = 0
         # cluster_id, comps_num, comps_iplist
         case_name = 'case3: add_comps时，只重启元数据集群的主'
         print(case_name)
@@ -145,6 +157,7 @@ class case_test:
             res = self.reinstall_clsuter()
             if res == 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             lt = []
@@ -156,6 +169,7 @@ class case_test:
                 res = cluster_setting(300).add_comps(cluster_id, 1)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
             def thread2():
@@ -174,14 +188,17 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
 
     def case4_malfunction(self, file_name):
+        tmp_res = 0
         case_name = 'case4: add_comps时，元数据集群的主设置只读'
         print(case_name)
         global case_status
@@ -190,6 +207,7 @@ class case_test:
             res = self.reinstall_clsuter()
             if res == 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             lt = []
@@ -201,6 +219,7 @@ class case_test:
                 res = cluster_setting(300).add_comps(cluster_id, 1)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -221,13 +240,16 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case5_malfunction(self, file_name):
+        tmp_res = 0
         # cluster_id, comp_id
         case_name = 'case5: del_comps时，只重启元数据集群的主'
         print(case_name)
@@ -245,6 +267,7 @@ class case_test:
                 res_num += 1
             if res_num != 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             comp_ids = node_info().show_all_running_computer_with_id()
@@ -255,6 +278,7 @@ class case_test:
                 res = cluster_setting(300).del_comps(cluster_id, comp_id)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -275,13 +299,16 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case6_malfunction(self, file_name):
+        tmp_res = 0
         case_name = 'case6: del_comps时，元数据集群的主设置只读'
         print(case_name)
         global case_status
@@ -304,6 +331,7 @@ class case_test:
                 res = cluster_setting(300).del_comps(cluster_id, comp_id)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -324,13 +352,16 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case7_malfunction(self, file_name):
+        tmp_res = 0
         # add_shards(self, cluster_id, shards, nodes):
         case_name = 'case7: add_shard时，只重启元数据集群的主'
         print(case_name)
@@ -340,6 +371,7 @@ class case_test:
             res = self.reinstall_clsuter()
             if res == 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             lt = []
@@ -350,6 +382,7 @@ class case_test:
                 res = cluster_setting(300).add_shards(cluster_id, 1, 2)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -370,13 +403,16 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case8_malfunction(self, file_name):
+        tmp_res = 0
         case_name = 'case8: add_shard时，元数据集群的主设置只读'
         print(case_name)
         global case_status
@@ -385,6 +421,7 @@ class case_test:
             res = self.reinstall_clsuter()
             if res == 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             lt = []
@@ -395,6 +432,7 @@ class case_test:
                 res = cluster_setting(300).add_shards(cluster_id, 1, 2)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -415,13 +453,16 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case9_malfunction(self, file_name):
+        tmp_res = 0
         case_name = 'case9: del_shard时，只重启元数据集群的主'
         print(case_name)
         global case_status
@@ -438,6 +479,7 @@ class case_test:
                 res_num += 1
             if res_num != 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             new_shard_id = node_info().show_all_running_shard_id()[-1][0]
@@ -447,6 +489,7 @@ class case_test:
                 res = cluster_setting(300).del_shard(cluster_id, new_shard_id)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -467,13 +510,16 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case10_malfunction(self, file_name):
+        tmp_res = 0
         case_name = 'case10: "del_shard时，元数据集群的主设置只读'
         print(case_name)
         global case_status
@@ -490,6 +536,7 @@ class case_test:
                 res_num += 1
             if res_num != 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             new_shard_id = node_info().show_all_running_shard_id()[-1][0]
@@ -499,6 +546,7 @@ class case_test:
                 res = cluster_setting(300).del_shard(cluster_id, new_shard_id)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -519,13 +567,16 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case11_malfunction(self, file_name):
+        tmp_res = 0
         case_name = 'case11: 回档时，只重启元数据集群的主'
         print(case_name)
         global case_status
@@ -544,6 +595,7 @@ class case_test:
                 res_num += 1
             if res_num != 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             lt = []
@@ -558,6 +610,7 @@ class case_test:
                                                            restore_time=restore_time)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -578,13 +631,16 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case12_malfunction(self, file_name):
+        tmp_res = 0
         # add_nodes(cluster_id, shard_id, nodes_num):
         case_name = 'case12: add_node时，只重启元数据集群的主'
         print(case_name)
@@ -594,6 +650,7 @@ class case_test:
             res = self.reinstall_clsuter()
             if res == 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             lt = []
@@ -605,6 +662,7 @@ class case_test:
                 res = cluster_setting(300).add_nodes(cluster_id, shard_id, 1)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -625,13 +683,16 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case13_malfunction(self, file_name):
+        tmp_res = 0
         case_name = 'case13: add_node时，元数据集群的主设置只读'
         print(case_name)
         global case_status
@@ -640,6 +701,7 @@ class case_test:
             res = self.reinstall_clsuter()
             if res == 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             lt = []
@@ -651,6 +713,7 @@ class case_test:
                 res = cluster_setting(300).add_nodes(cluster_id, shard_id, 1)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -671,13 +734,16 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case14_malfunction(self, file_name):
+        tmp_res = 0
         # del_nodes(self, cluster_id, shard_id, stor_node_host, stor_node_port):
         case_name = 'case14: del_node时，只重启元数据集群的主'
         print(case_name)
@@ -696,6 +762,7 @@ class case_test:
                 res_num += 1
             if res_num != 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             new_node_info = node_info().show_all_storage_with_id(shard_id)[-1]
@@ -706,6 +773,7 @@ class case_test:
                 res = cluster_setting(300).del_nodes(cluster_id, shard_id, new_node_host, new_node_port)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -726,13 +794,16 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case15_malfunction(self, file_name):
+        tmp_res = 0
         case_name = 'case15: del_node时，元数据集群的主设置只读'
         print(case_name)
         global case_status
@@ -750,6 +821,7 @@ class case_test:
                 res_num += 1
             if res_num != 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             new_node_info = node_info().show_all_storage_with_id(shard_id)[-1]
@@ -760,6 +832,7 @@ class case_test:
                 res = cluster_setting(300).del_nodes(cluster_id, shard_id, new_node_host, new_node_port)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -780,13 +853,16 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case16_malfunction(self, file_name):
+        tmp_res = 0
         # repartition_tables(self, src_cluster_id, dst_cluster_id, repartition_tables)
         # "repartition_tables": "test_$$_public.t=>test1_$$_private.t2,test_$$_priv.ta=>test1_$$_priv1.tb"
         case_name = 'case16: table_repatition时，只重启元数据集群的主'
@@ -808,6 +884,7 @@ class case_test:
                 res_num += 1
             if res_num != 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             lt = []
@@ -824,6 +901,7 @@ class case_test:
                                                               repartition_tables=repartition_tables)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -844,19 +922,23 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
             src_tb_content = node_info().show_signal_master_storage_table(src_cluster_id, src_shard_id, db, src_tbname)
             dst_tb_content = node_info().show_signal_master_storage_table(dst_cluster_id, dst_shard_id, db, dst_tbname)
             if src_tb_content == dst_tb_content:
                 print('同步成功')
             else:
                 print('同步失败')
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case17_malfunction(self, file_name):
+        tmp_res = 0
         case_name = 'case17: table_repatition时，元数据集群的主设置只读'
         print(case_name)
         global case_status
@@ -876,6 +958,7 @@ class case_test:
                 res_num += 1
             if res_num != 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             lt = []
@@ -892,6 +975,7 @@ class case_test:
                                                               repartition_tables=repartition_tables)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -912,19 +996,23 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
             src_tb_content = node_info().show_signal_master_storage_table(src_cluster_id, src_shard_id, db, src_tbname)
             dst_tb_content = node_info().show_signal_master_storage_table(dst_cluster_id, dst_shard_id, db, dst_tbname)
             if src_tb_content == dst_tb_content:
                 print('同步成功')
             else:
                 print('同步失败')
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case18_malfunction(self, file_name):
+        tmp_res = 0
         case_name = 'case18: 逻辑备份时，只重启元数据集群的主'
         print(case_name)
         global case_status
@@ -936,6 +1024,7 @@ class case_test:
             res = self.reinstall_clsuter()
             if res == 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             src_pg_info = node_info().show_all_running_computer()[-1]
@@ -957,6 +1046,7 @@ class case_test:
                 res = cluster_setting(300).logical_backup(src_cluster_id, 'table', backup_info)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -977,19 +1067,23 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
             src_tb_content = node_info().show_signal_master_storage_table(src_cluster_id, src_shard_id, db, src_tbname)
             dst_tb_content = node_info().show_signal_master_storage_table(src_cluster_id, src_shard_id, db, dst_tbname)
             if src_tb_content == dst_tb_content:
                 print('同步成功')
             else:
                 print('同步失败')
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case19_malfunction(self, file_name):
+        tmp_res = 0
         case_name = 'case19: 逻辑备份时，元数据集群的主设置只读'
         print(case_name)
         global case_status
@@ -1001,6 +1095,7 @@ class case_test:
             res = self.reinstall_clsuter()
             if res == 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             src_pg_info = node_info().show_all_running_computer()[-1]
@@ -1022,6 +1117,7 @@ class case_test:
                 res = cluster_setting(300).logical_backup(src_cluster_id, 'table', backup_info)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -1042,19 +1138,23 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
             src_tb_content = node_info().show_signal_master_storage_table(src_cluster_id, src_shard_id, db, src_tbname)
             dst_tb_content = node_info().show_signal_master_storage_table(src_cluster_id, src_shard_id, db, dst_tbname)
             if src_tb_content == dst_tb_content:
                 print('同步成功')
             else:
                 print('同步失败')
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case20_malfunction(self, file_name):
+        tmp_res = 0
         # logical_restore(self, src_cluster_id, dst_cluster_id, restore_type, restore_info):
         case_name = 'case20: 逻辑回档时，只重启元数据集群的主'
         db = 'postgres'
@@ -1076,6 +1176,7 @@ class case_test:
                 res_num += 1
             if res_num != 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             lt, restore_info = [], []
@@ -1095,6 +1196,7 @@ class case_test:
                                                            restore_type='table', restore_info=restore_info)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -1115,21 +1217,25 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
             src_tb_content = node_info().show_signal_master_storage_table(src_cluster_id, src_shard_id, db, src_tbname)
             dst_tb_content = node_info().show_signal_master_storage_table(dst_cluster_id, dst_shard_id, db, dst_tbname)
             if src_tb_content == dst_tb_content:
                 print('同步成功')
             else:
                 print('同步失败')
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
 
 
     def case21_malfunction(self, file_name):
+        tmp_res = 0
         case_name = 'case21: 逻辑回档时，元数据集群的主设置只读'
         print(case_name)
         global case_status
@@ -1160,6 +1266,7 @@ class case_test:
                                                            restore_type='table', restore_info=restore_info)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -1180,19 +1287,23 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
             src_tb_content = node_info().show_signal_master_storage_table(src_cluster_id, src_shard_id, db, src_tbname)
             dst_tb_content = node_info().show_signal_master_storage_table(dst_cluster_id, dst_shard_id, db, dst_tbname)
             if src_tb_content == dst_tb_content:
                 print('同步成功')
             else:
                 print('同步失败')
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]
 
     def case22_malfunction(self, file_name):
+        tmp_res = 0
         case_name = 'case22: create_rcr时，只重启元数据集群的主'
         print(case_name)
         global case_status
@@ -1207,6 +1318,7 @@ class case_test:
                 res_num += 1
             if res_num != 0:
                 case_status += '| 失败 '
+                tmp_res = 1
             else:
                 case_status += '| 成功 '
             lt = []
@@ -1219,6 +1331,7 @@ class case_test:
                 res = cluster_setting(300).create_rcr(src_cluster_id, dst_cluster_id)
                 if res == 0:
                     case_status += '| 失败 '
+                    tmp_res = 1
                 else:
                     case_status += '| 成功 '
 
@@ -1239,8 +1352,10 @@ class case_test:
                 case_status += '| 成功 |'
             elif res == 2:
                 case_status += '| 不存在 |'
+                tmp_res = 1
         except Exception as err:
             print(err)
             sleep(300)
             case_status += '| %s |' % err
         write_log.w2File().toOther(file_name=file_name, txt=case_status)
+        return [case_name, tmp_res]

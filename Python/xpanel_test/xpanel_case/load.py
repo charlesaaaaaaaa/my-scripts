@@ -19,20 +19,50 @@ class loading():
         password = elements['password']
         print('正在尝试 登录并修改 xpanel初始用户密码')
         try:
-            driver.send_Xpath(name, 'super_dba')
-            driver.send_Xpath(password, 'super_dba')
-            driver.click_Xpath(elements['commit_button'])
-            driver.send_Xpath(elements['new_pwd'], xlanelInfo['password'])
-            driver.send_Xpath(elements['new_pwd_again'], xlanelInfo['password'])
-            driver.click_Xpath(elements['change_button'])
+            try:
+                driver.send_Xpath(name, 'super_dba')
+                driver.send_Xpath(password, 'super_dba')
+                driver.click_Xpath(elements['commit_button'])
+                driver.send_Xpath(elements['new_pwd'], xlanelInfo['password'])
+                # driver.send_Xpath(elements['new_pwd_again'], xlanelInfo['password'])
+                # driver.click_Xpath(elements['change_button'])
+            except:
+                print('当前无法修改密码，是否已经修改过？')
+                sleep(3)
+                driver.click_Xpath(elements['commit_button'])
+                driver.send_Xpath(elements['new_pwd'], xlanelInfo['password'])
+            finally:
+                driver.send_Xpath(elements['new_pwd_again'], xlanelInfo['password'])
+                driver.click_Xpath(elements['change_button'])
         except:
-            print('当前无法修改密码，是否已经修改过？')
+            pass
 
     def load(self):
         driver = self.driver
         elements = self.conf.loadInterface()
         xpanelInfo = self.xpanelInfo
+        sleep(1)
         driver.send_Xpath(elements['user'], xpanelInfo['user'])
         driver.send_Xpath(elements['password'], xpanelInfo['password'])
         driver.click_Xpath(elements['commit_button'])
         return driver
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

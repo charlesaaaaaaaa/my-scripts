@@ -103,10 +103,9 @@ def test():
     sql1 = "create table item(id int, name text, grp int) partition by range(grp)" #创建分区表，以id为分片字段
     print("use shard; \n%s" % (sql1))
     cur.execute(sql1)
-    for i in range(0, 6):
-        #shard = t2str(sid_list[i])
-        #shard = int(shard)
-        shard = shardNum
+    for i in range(0, int(shardNum)):
+        shard = t2str(sid_list[i])
+        shard = int(shard)
         timNum = 5 * i
         part = "CREATE TABLE item_%s PARTITION OF item FOR VALUES FROM (%d) TO (%d) with (shard = %s);" % (str(i), 1+timNum, 6+timNum, shard) ##创建分区表
         cur.execute(part)
@@ -115,7 +114,8 @@ def test():
 
     print('load 1000 row data ...')
     connect_pg(Host, Port, User, Pwd, 'shard', 'y')
-    for grp in range(1,11):
+    tmp_range = int(shardNum) * 5 + 1
+    for grp in range(1, tmp_range):
         for Id in range(1, 101):
             Ids = Id + (grp -1) * 100
             txt = 'testdata%d' % (Ids)
@@ -131,21 +131,21 @@ def test():
     sql1 = "create table item(id int, name text, grp int) partition by range(grp)"
     print(sql1)
     cur.execute(sql1)
-    #for i in range(0, int(shardNum)):
-    for i in range(0, 6):
+    for i in range(0, int(shardNum)):
         timNum = 5 * i
         part = "CREATE TABLE item_%s PARTITION OF item FOR VALUES FROM (%d) TO (%d);" % (str(i), 1+timNum, 6+timNum)
         cur.execute(part)
-        print('pg:%s' % (part))
     close_pg('pass')
 
     print('load 1000 row data ...')
     connect_pg(srcHost, srcPort, srcUser, srcPwd, 'shard', 'y')
-    for grp in range(1,11):
+    tmp_range = int(shardNum) * 5 + 1
+    for grp in range(1, tmp_range):
         for Id in range(1, 101):
             Ids = Id + (grp -1) * 100
             txt = 'testdata%d' % (Ids)
-            cur.execute("insert into item values(%d, '%s', %d)" % (Ids, txt, grp))
+            a = "insert into item values(%d, '%s', %d)" % (Ids, txt, grp)
+            cur.execute(a)
     close_pg('pass')
 
     print("\n检查klustron数据是否正确分布,数据是否无误")
@@ -175,9 +175,9 @@ def test():
 
     print("(分片字段grp：每100个数据分一组。如grp=1，id列从1到100，grp=2，id列101到200)\n2）	采用where条件对分片字段过滤，查询单条数据；")
     num = 0
-    ranInt = random.randint(1, 10)
+    ranInt = random.randint(1, tmp_range - 1)
     ran100 = random.randint(1, 100)
-    ran1000 = random.randint(1, 1000)
+    ran1000 = random.randint(1, (tmp_range - 1) * 100)
     sql = "select * from item where grp = %d limit 1 offset %d" % (ranInt, ran100)
     print('%s:%s : %s:' % (Host, Port, sql))
     connect_pg(Host, Port, User, Pwd, 'shard', 'y')

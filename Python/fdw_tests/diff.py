@@ -11,6 +11,7 @@ def test():
     expected_list = []
     select_start = 0
     total_select_count = 0
+    fail_list=[]
     fail_select_count = 0
     f_name = '%s:' % str(output).split('/')[-1]
     file_name_times = 0
@@ -116,6 +117,8 @@ def test():
                             if ' ' != i:
                                 err_out_r += i
                         if err_out_r != err_exp_r:
+                            err_diff={output_list[0]: [err_out_r, err_exp_r]}
+                            fail_list.append(err_diff)
                             fail_signal = 1
                             #print('exp: %s' % err_exp_r)
                             #print('out: %s' % err_out_r)
@@ -141,6 +144,8 @@ def test():
                 continue
     total_query = 'select query count: %s' % total_select_count
     fail_query = 'fail query count: %s' % fail_select_count
+    for i in fail_list:
+        print(i)
     print('=' * 25 + '|')
     print('%s' % f_name + ' ' * (25 - len(f_name)) + '|')
     print( total_query + ' ' * (25 - len(total_query)) + '|')

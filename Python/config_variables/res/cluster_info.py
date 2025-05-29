@@ -24,14 +24,15 @@ class getStorage():
         return storage_host_info
 
     def Infos(self):
-        hostInfo = self.Hosts()
+        # hostInfo = self.Hosts()
         storage_info = {}
-        conn = connPg()
-        for host in hostInfo:
-            sql = 'select hostaddr, port, user_name, passwd from pg_shard_node where hostaddr = \'%s\'' % host
-            values = conn.pgReturn(sql)
-            tmpDict = {host[0]: values}
-            storage_info.update(tmpDict)
+        sql = "select distinct(hostaddr) from shard_nodes where status = 'active';"
+        values = connMeta().myReturn(sql)
+        for i in values:
+            sql = "select hostaddr, port, user_name, passwd from shard_nodes where status = 'active' and hostaddr = '%s'" % i[0]
+            res = connMeta().myReturn(sql)
+            tmp_dict = {i[0]: res}
+            storage_info.update(tmp_dict)
         return storage_info
 
     def Paths(self):
@@ -89,12 +90,10 @@ class getServer():
             hostList = []
             for infos in serverInfo[host]:
                 dataDir = conn.pgReturn_other(infos[0], infos[1], infos[2], infos[3], dataSql)[0][0]
-                get_basedir = "ssh %s@%s 'ps -ef | grep %s | grep bin | head -1' | " \
+                get_basedir = "ssh %s@%s 'ps -ef | grep %s | grep -v grep | grep bin' | " \
                               "grep %s" % (self.sysUser, infos[0], infos[1], dataDir)
-                basedir_res = subprocess.Popen(get_basedir, shell = True, stdout = subprocess.PIPE)
+                basedir_res = subprocess.Popen(get_basedir, shell=True, stdout=subprocess.PIPE)
                 baseDir = str(basedir_res.stdout.readlines()).split(' ')[-3].split('/bin')[0]
-                #basePath = dataDir.split('/server_datadir')[0]
-                #baseDir = basePath + '/instance_binaries/computer/' + str(infos[1]) + '/kunlun-server-' + Versions
                 dataDir += '/postgresql.conf'
                 tmpList = [baseDir, dataDir, infos[1]]
                 hostList.append(tmpList)

@@ -4,8 +4,6 @@ import multiprocessing
 import time
 import pymysql
 import subprocess
-import requests
-import json
 
 
 def get_meta(sql):
@@ -27,7 +25,6 @@ def run_shell(command):
     # print(command)
     output = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding='utf-8')
     res = output.communicate()
-    # output.terminate()
     return res
 
 
@@ -38,47 +35,18 @@ def write_file(file_path, txt):
     f.close()
 
 
-def get_cdc_master():
-    # info_type : [ipport] | [id] | [both]
-    # 获取失败时会返回一个0
-    cdc_url = 'http://%s/kunlun_cdc' % cdc
-    timestamp = time.time()
-    json_data = json.dumps({
-        "version": "1.0",
-        "job_id": "",
-        "job_type": "get_leader",
-        "timestamp": "%s" % timestamp,
-        "user_name": "kunlun_test"
-    }, indent=4)
-    result = requests.post(url=cdc_url, data=json_data)
-    result_txt = json.loads(result.text)
-    print(json_data)
-    print(result_txt)
-    if result_txt['error_info'] != 'Ok':
-        return 0
-    cdc_info = result_txt['attachment']
-    cdc_ipport = cdc_info['ipPort']
-    tmp_res = cdc_ipport.split(':')
-    res = [tmp_res[0], tmp_res[1]]
-    return res
-
-
 def get_node_info():
     # 获取元数据下所有节点信息，返回一个字典
-    if cdc == 0:
-        cluster_mgr_sql = "select hostaddr, port from cluster_mgr_nodes where member_state = 'source';"
-        meta_node_sql = 'select hostaddr, port from meta_db_nodes;'
-        shard_node_sql = "select hostaddr, port from shard_nodes where status = 'active';"
-        comp_node_sql = "select hostaddr, port from comp_nodes where status = 'active';"
-        cluster_info = get_meta(sql=cluster_mgr_sql)
-        meta_node_info = get_meta(sql=meta_node_sql)
-        shard_node_info = get_meta(sql=shard_node_sql)
-        comp_node_info = get_meta(sql=comp_node_sql)
-        res_dict = {'cluster_mgr': cluster_info, 'metadata': meta_node_info, 'shard_node': shard_node_info, 'comp_node': comp_node_info}
-    else:
-        res_dict = {'cdc': [get_cdc_master()]}# 遍历这个字典
-
+    cluster_mgr_sql = "select hostaddr, port from cluster_mgr_nodes where member_state = 'source';"
+    meta_node_sql = 'select hostaddr, port from meta_db_nodes;'
+    shard_node_sql = "select hostaddr, port from shard_nodes where status = 'active';"
+    comp_node_sql = "select hostaddr, port from comp_nodes where status = 'active';"
+    cluster_info = get_meta(sql=cluster_mgr_sql)
+    meta_node_info = get_meta(sql=meta_node_sql)
+    shard_node_info = get_meta(sql=shard_node_sql)
+    comp_node_info = get_meta(sql=comp_node_sql)
     machine_list = []
+    res_dict = {'cluster_mgr': cluster_info, 'metadata': meta_node_info, 'shard_node': shard_node_info, 'comp_node': comp_node_info}
     # 遍历这个字典
     for compont in res_dict:
         for node in res_dict[compont]:
@@ -97,9 +65,6 @@ def get_pid(host, port, pid_type='comp_node'):
         comm = "ssh kunlun@%s \"ps -ef | grep %s | grep 'pid-file' | grep -v grep | awk '{print \\$2}'\"" % (host, port)
     elif pid_type == 'cluster_mgr':
         comm = "ssh kunlun@%s \"sudo lsof -i:%s | grep cluster_m | awk '{print \\$2}' | tail -1\"" % (host, port)
-    if pid_type == 'cdc':
-        cdc_port = str(cdc).split(':')[1]
-        comm = "ssh kunlun@%s \"sudo lsof -i:%s | awk '{print \\$2}' | tail -1\"" % (host, cdc_port)
     res = run_shell(command=comm)
     pid = str(res[0]).replace('\n', '')
     return pid
@@ -124,6 +89,7 @@ class ShowStat:
 
     def show_machine_mem(self, host):
         # 主要看mem-total, mem-used, swap-total, swap-used
+        res_list = []
         comm = 'ssh kunlun@%s "free -h | tail -2"' % host
         res_tuple = str(run_shell(command=comm)).split('\\n')
         res_list = []
@@ -140,7 +106,7 @@ class ShowStat:
         res_dict = {}
         device_list = str(device).split(',')
         for dev in device_list:
-            comm = 'ssh kunlun@%s "iostat -hd -p %s | grep -w %s"' % (host, dev, dev)
+            comm = 'ssh kunlun@%s "iostat -hd -p %s 1 2 | grep -w %s | tail -1"' % (host, dev, dev)
             res = run_shell(command=comm)
             split_list = list(filter(None, res[0].split()))
             new_string = ' '.join(split_list)
@@ -160,17 +126,16 @@ class ShowStat:
         res_list = [res[2], res[3]]
         return res_list
 
-
     def show_node_disk(self, host, pid):
         # 主要是获取kB_rd/s[3]   kB_wr/s[4]
-        comm = 'ssh kunlun@%s "pidstat -H -d -p %s | tail -1"' % (host, pid)
+        # comm = 'ssh kunlun@%s "pidstat -Hhd --dec=0 -p %s 1 1 | tail -1"' % (host, pid)
+        comm = 'ssh kunlun@%s "pidstat -Hhd --Human -p %s 1 1 | tail -1"' % (host, pid)
         res = run_shell(command=comm)
         split_list = list(filter(None, res[0].split()))
         new_string = ' '.join(split_list)
         res = new_string.split(' ')
         res_list = [res[3], res[4]]
         return res_list
-
 
     def start(self):
         def show_node_pid(node_list, pid_type):
@@ -363,28 +328,6 @@ class ShowStat:
                 sleep_time = interval - spend_time
                 time.sleep(sleep_time)
 
-        def cdc_node_info():
-            cdc_master = self.node_info['cdc']
-            file_path = '%s/cdc_master.log' % output_dir
-
-            # 写标题
-            sec_title_list = [['%cpu', 6], ['%mem', 6], ['kB_rd/s', 8], ['kB_wr/s', 8]]
-            write_title(cdc_master, file_path, 5, second_title_list=sec_title_list, f_column_title_list=['time'])
-            the_times = 0
-            pid_list = show_node_pid(cdc_master, 'cdc')
-            # print(pid_list)
-            while True:
-                start_time = time.time()
-                the_times += 1
-                write_node_info(node_list=cdc_master, file=file_path, pid_list=pid_list, second_title_list=sec_title_list)
-                if the_times == 50:
-                    the_times = 0
-                    pid_list = show_node_pid(cdc_master, 'metadata')
-                end_time = time.time()
-                spend_time = end_time - start_time
-                sleep_time = interval - spend_time
-                time.sleep(sleep_time)
-
         def machine_cpu_info():
             machine_list = self.node_info['machine_info']
             file_path = '%s/cpu.log' % output_dir
@@ -509,18 +452,14 @@ class ShowStat:
 
         # 开启多进程
         pl = []
-        if cdc == 0:
-            p = multiprocessing.Process(target=comp_node_info)
-            pl.append(p)
-            p = multiprocessing.Process(target=stor_node_info)
-            pl.append(p)
-            p = multiprocessing.Process(target=meta_node_info)
-            pl.append(p)
-            p = multiprocessing.Process(target=cluster_node_info)
-            pl.append(p)
-        else:
-            p = multiprocessing.Process(target=cdc_node_info)
-            pl.append(p)
+        p = multiprocessing.Process(target=comp_node_info)
+        pl.append(p)
+        p = multiprocessing.Process(target=stor_node_info)
+        pl.append(p)
+        p = multiprocessing.Process(target=meta_node_info)
+        pl.append(p)
+        p = multiprocessing.Process(target=cluster_node_info)
+        pl.append(p)
         p = multiprocessing.Process(target=machine_cpu_info)
         pl.append(p)
         p = multiprocessing.Process(target=machine_mem_info)
@@ -547,7 +486,6 @@ if __name__ == '__main__':
     ps.add_argument('--delimiter', type=str, default='|', help='每个值之前的分割符， 默认"|"')
     ps.add_argument('--disk_device', type=str, help='硬盘盘符，超过1个盘符时用逗号隔开, 默认"nvme0n1,nvme1n1"', default='nvme0n1,nvme1n1')
     ps.add_argument('--runtime', type=int, help='该脚本的运行时间，以秒记，默认为0则不限制', default=0)
-    ps.add_argument('--cdc', type=str, help='--cdc 192.168.0.1:18801, 任意一个cdc节点就行', default=0)
     args = ps.parse_args()
     meta = args.meta
     output_dir = args.output
@@ -555,6 +493,5 @@ if __name__ == '__main__':
     delimiter = args.delimiter
     disk_device = args.disk_device
     run_time = args.runtime
-    cdc = args.cdc
     ShowStat().start()
 

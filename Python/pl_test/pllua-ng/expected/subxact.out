@@ -1,0 +1,167 @@
+--
+\set VERBOSITY terse
+--
+create table xatst (a integer);
+do language pllua $$
+  local stmt = spi.prepare([[ insert into xatst values ($1) ]]);
+  stmt:execute(1);
+  pcall(function() stmt:execute(2) end)
+  stmt:execute(3);
+$$;
+-- should now be two different xids in xatst, and 3 rows
+select count(*), count(distinct age(xmin)) from xatst;
+ count | count 
+-------+-------
+     3 |     2
+(1 row)
+
+truncate table xatst;
+do language pllua $$
+  local stmt = spi.prepare([[ insert into xatst values ($1) ]]);
+  stmt:execute(1);
+  print(pcall(function() stmt:execute(2) error("foo") end))
+  stmt:execute(3);
+$$;
+INFO:  false	[string "DO-block"]:4: foo
+-- should now be one xid in xatst, and 2 rows
+select count(*), count(distinct age(xmin)) from xatst;
+ count | count 
+-------+-------
+     2 |     1
+(1 row)
+
+truncate table xatst;
+do language pllua $$
+  local stmt = spi.prepare([[ insert into xatst values ($1) ]]);
+  stmt:execute(1);
+  print(pcall(function() stmt:execute(2) spi.error("foo") end))
+  stmt:execute(3);
+$$;
+INFO:  false	ERROR: XX000 foo
+-- should now be one xid in xatst, and 2 rows
+select count(*), count(distinct age(xmin)) from xatst;
+ count | count 
+-------+-------
+     2 |     1
+(1 row)
+
+do language pllua $$
+  local function f() for r in spi.rows([[ select * from xatst order by a ]]) do print(r) end end
+  print(pcall(f))
+$$;
+INFO:  (1)
+INFO:  (3)
+INFO:  true
+do language pllua $$
+  local function f() for r in spi.rows([[ select * from xatst order by a ]]) do print(r) end end
+  local function f2() error("foo") end
+  print(pcall(f2))
+  f()
+$$;
+INFO:  false	[string "DO-block"]:3: foo
+INFO:  (1)
+INFO:  (3)
+do language pllua $$
+  local function f(e) print("error",e) for r in spi.rows([[ select * from xatst order by a ]]) do print(r) end end
+  local function f2() error("foo") end
+  print(xpcall(f2,f))
+$$;
+INFO:  error	[string "DO-block"]:3: foo
+INFO:  (1)
+INFO:  (3)
+INFO:  false	nil
+truncate table xatst;
+do language pllua $$
+  local stmt = spi.prepare([[ insert into xatst values ($1) ]]);
+  local function f(e) print("error",e) stmt:execute(3) end
+  local function f2() stmt:execute(2) error("foo") end
+  stmt:execute(1)
+  print(xpcall(f2,f))
+$$;
+INFO:  error	[string "DO-block"]:4: foo
+INFO:  false	nil
+-- should now be one xid in xatst, and 2 rows
+select count(*), count(distinct age(xmin)) from xatst;
+ count | count 
+-------+-------
+     2 |     1
+(1 row)
+
+do language pllua $$
+  local function f(e) error("bar") end
+  local function f2() error("foo") end
+  print(xpcall(f2,f))
+$$;
+INFO:  false	error in error handling
+-- tricky error-in-error cases:
+--
+-- pg error inside xpcall handler func needs to abort out to the
+-- parent of the xpcall, not the xpcall itself.
+begin;
+-- we get (harmless) warnings with lua53 but not with luajit for this
+-- case. suppress them.
+set local client_min_messages = error;
+do language pllua $$
+  local function f(e) spi.error("nested") end
+  local function f2() error("foo") end
+  -- don't print the result because it differs with luajit, all that
+  -- really matters here is that we don't crash and don't reach the
+  -- last print
+  pcall(function()
+          print("entering xpcall");
+          print("inner xpcall", xpcall(f2,f))
+          print("should not be reached")
+        end)
+$$;
+INFO:  entering xpcall
+commit;
+do language pllua $$
+  local level = 0
+  local function f(e) level = level + 1 if level==1 then print("in error handler",level,e) spi.error("nested") end end
+  local function f2() error("foo") end
+  print("outer pcall",
+        pcall(function()
+                print("entering xpcall");
+                print("inner xpcall", xpcall(f2,f))
+		print("should not be reached")
+              end))
+$$;
+INFO:  entering xpcall
+INFO:  in error handler	1	[string "DO-block"]:4: foo
+INFO:  outer pcall	false	ERROR: XX000 nested
+do language pllua $$
+  print(lpcall(function() error("caught") end))
+$$;
+INFO:  false	[string "DO-block"]:2: caught
+do language pllua $$
+  print(lpcall(function() spi.error("not caught") end))
+$$;
+ERROR:  not caught
+-- make sure PG errors in coroutines are propagated (but not lua errors)
+do language pllua $$
+  local c = coroutine.create(function() coroutine.yield() error("caught") end)
+  print(coroutine.resume(c))
+  print(coroutine.resume(c))
+$$;
+INFO:  true
+INFO:  false	[string "DO-block"]:2: caught
+do language pllua $$
+  local c = coroutine.create(function() coroutine.yield() spi.error("not caught") end)
+  print(coroutine.resume(c))
+  print(coroutine.resume(c))
+$$;
+INFO:  true
+ERROR:  not caught
+-- error object funcs
+do language pllua $$
+  local err = require 'pllua.error'
+  local r,e = pcall(function() spi.error("22003", "foo", "bar", "baz") end)
+  print(err.type(e), err.category(e), err.errcode(e))
+  print(e.severity, e.category, e.errcode, e.sqlstate, e.message, e.detail, e.hint)
+  local r,e = pcall(function() error("foo") end)
+  print(err.type(e), err.category(e), err.errcode(e), e)
+$$;
+INFO:  error	data_exception	numeric_value_out_of_range
+INFO:  error	data_exception	numeric_value_out_of_range	22003	foo	bar	baz
+INFO:  nil	nil	nil	[string "DO-block"]:6: foo
+--end

@@ -1,6 +1,9 @@
 import random
 from bin.other_opt import *
 from xpanel_case.load import *
+from xpanel_case.verify_results import *
+from xpanel_case import consfailover_case
+from bin.load import load_data
 
 class cluster_list():
     def __init__(self):
@@ -21,7 +24,7 @@ class cluster_list():
         # 获取第一行记录的操作名称和操作状态
         opt_res = driver.gettxt_Xpanth(ele['the_first_opt_result'])
         opt_name = driver.gettxt_Xpanth(ele['the_first_opt_name'])
-        print(opt_name, opt_res)
+        sleep(1)
         return opt_name, opt_res
 
     def get_opt_history_result(self, opt_name):
@@ -29,20 +32,27 @@ class cluster_list():
         # 直接结果为非 ongoing, 要给一个opt_name, 就是操作的名称，如主备切换，重做备机节点等
         # 返回 非ongoing状态 或者 0，当为0时代表当前第一个操作记录名不是指定的操作名
         history_opt_name, opt_res = self.the_first_opt_status()
-        if history_opt_name == opt_name:
-            while opt_res == 'ongoing':
-                opt_name, opt_res = self.the_first_opt_status()
+        print(history_opt_name, opt_res)
+        if opt_name == history_opt_name:
+            while 'ongoing' in opt_res:
                 sleep(2)
-            return opt_res
+                history_opt_name, opt_res = self.the_first_opt_status()
+            print(history_opt_name, opt_res)
+            if 'done' in opt_res:
+                return 1
+            else:
+                return 0
         else:
-            print('第一个操作记录非 主备切换')
+            print('第一个操作记录非 [%s]' % opt_name)
             return 0
 
-    def delete_all_cluster(self):
+    @timer
+    def delete_all_cluster(self, show_case=1, consfailover=0):
         driver = self.driver
         ele = self.elements
         case = '删除集群'
-        print('=== 现在测试用例为 %s ===' % case)
+        if show_case == 1:
+            print('=== 现在测试用例为 %s ===' % case)
         res = 0
         def review_status(elements, succdict, second_elements ,errordict):
             # 两个elememt, 可以相同也可以不相同，但第一个一定要给成功的提示语，第二个一定要给失败的提示语
@@ -95,33 +105,58 @@ class cluster_list():
                 driver.send_Xpath(ele['warning_code_input'], codes)
                 sleep(1)
                 driver.click_Xpath(ele['warning_code_commit'])
-                review_status(ele['cluster_delete_info'], '删除完成100%', ele['cluster_delete_second_info'], '删除shard失败')
+                if consfailover != 0:
+                    if consfailover == 1:
+                        res = consfailover_case.kill_metadata_master()
+                    if consfailover == 2:
+                        res = consfailover_case.kill_cluster_mgr_master()
+                    if consfailover == 3:
+                        res = consfailover_case.restart_xpanel_server()
+                    if res == 1:
+                        res = self.get_opt_history_result(case)
+                    return [case, res]
+                # review_status(ele['cluster_delete_info'], '删除完成100%', ele['cluster_delete_second_info'], '删除shard失败')
                 res = 1
                 driver.click_Xpath(ele['cluster_delete_info_close'])
                 delete_times += 1
         except:
             if res == 1:
                 if delete_times >= 1:
-                    print('delete all clusters done')
+                    print('已删除所有集群')
                 else:
-                    print('Currently, not exists any cluster, skip')
+                    print('当前没有正在运行的集群')
                 return [case, 1]
             elif res == 0:
                 return [case, 0]
 
     @timer
-    def add_new_cluster(self):
+    def add_new_cluster(self, db_shard_num=0, db_shard_node_num=0, pg_select_node=0, dont_delete_clsuter=0, dont_check_status=0, show_case=1,
+                        cluster_name=None, consfailover=0, dont_set_var=0, install_proxysql=0, close_page=1):
+        # db_shard_num: 创建的集群shard数量，默认0时，调用配置文件值
+        # db_shard_node_num: 每个shard的副本数，默认0时，调用配置文件值
+        # pg_select_node: 计算节点个数，默认0时，调用配置文件值
+        # dont_delete_clsuter: 为0时会在创建之前删除所有的可能存在的集群，默认0时，会删除集群
+        # dont_check_status: 不检查集群状态，默认为0时，会检查集群状态
+        # show_case: 展示现在在做什么； cluster_name: 新增的cluster_name
+        # consfailover: 1 - 3, 分别对应三个故障操作
+        # dont_set_var: 不去设置超时变量
+        # install_proxysql: 安装proxysql集群
         resList = []
         result = 1
-        caseName = "创建集群"
-        print('=== 现在测试用例为 %s ===' % caseName)
+        caseName = "新增集群"
+        if show_case == 1:
+            print('=== 现在测试用例为 %s ===' % caseName)
         driver = self.driver
         ele = self.elements
         conf = getconf().getXpanelInfo()
-        cluster_name = conf['cluster_name']
-        db_shard_num = conf['shard_num']
-        db_shard_node_num = conf['shard_node_num']
-        pg_select_node = conf['pg_node']
+        if not cluster_name:
+            cluster_name = conf['cluster_name']
+        if db_shard_num == 0:
+            db_shard_num = conf['shard_num']
+        if db_shard_node_num == 0:
+            db_shard_node_num = conf['shard_node_num']
+        if pg_select_node == 0:
+            pg_select_node = conf['pg_node']
         driver.click_Xpath(ele['cluster_list'])
         # 检查状态安装或者删除集群的状态
         global a
@@ -162,32 +197,44 @@ class cluster_list():
                         a = 0
                         return a
 
-        # 现在尝试能否删除存在的集群，不存在集群的话就直接跳过
         delete_times = 0
-        try:
-            print('try to delete clusters ...')
-            while True:
-                txt = ''
-                driver.click_Xpath(ele['cluster_list_setting_button'])
-                driver.click_Xpath(ele['cluster_list_setting_delete_cluster_button'])
-                sleep(1)
-                txt = driver.gettxt_Xpanth(ele['warning_info'])
-                print(txt)
-                codes = txt.split('=')[1]
-                driver.send_Xpath(ele['warning_code_input'], codes)
-                sleep(1)
-                driver.click_Xpath(ele['warning_code_commit'])
-                review_status(ele['cluster_delete_info'], '删除完成100%', ele['cluster_delete_second_info'], '删除shard失败')
-                driver.click_Xpath(ele['cluster_delete_info_close'])
-                delete_times += 1
-        except:
-            if delete_times >= 1:
-                print('delete all clusters done')
-            else:
-                print('Currently, not exists any cluster, skip')
-        driver.click_Xpath(ele['cluster_list_add_cluster_button'])
+        if dont_delete_clsuter == 0:
+            try:
+                print('现在尝试能否删除存在的集群，不存在集群的话就直接跳过')
+                print('try to delete clusters ...')
+                while True:
+                    txt = ''
+                    driver.click_Xpath(ele['cluster_list_setting_button'])
+                    driver.click_Xpath(ele['cluster_list_setting_delete_cluster_button'])
+                    sleep(1)
+                    txt = driver.gettxt_Xpanth(ele['warning_info'])
+                    print(txt)
+                    codes = txt.split('=')[1]
+                    driver.send_Xpath(ele['warning_code_input'], codes)
+                    sleep(1)
+                    driver.click_Xpath(ele['warning_code_commit'])
+                    self.get_opt_history_result(opt_name='删除集群')
+                    # review_status(ele['cluster_delete_info'], '删除完成100%', ele['cluster_delete_second_info'], '删除shard失败')
+                    # driver.click_Xpath(ele['cluster_delete_info_close'])
+                    delete_times += 1
+                    print('点击 集群管理')
+                    driver.click_Xpath(ele['cluster_manage_button'])
+                    print('点击 集群列表')
+                    driver.click_Xpath(ele['cluster_list'])
+            except:
+                if delete_times >= 1:
+                    print('已删除所有集群')
+                else:
+                    print('当前没有正在运行的集群')
+        print('点击 增加集群')
+        driver.click_class('el-icon-plus')
+        sleep(3)
+        # driver.click_Xpath(ele['cluster_list_add_cluster_button'])
+        print('填写 集群名 [%s]' % cluster_name)
         driver.clearAndSend_Xpath(ele['cluster_list_add_cluster_business_name'], cluster_name)
+        print('点击 下一步')
         driver.click_Xpath(ele['cluster_list_add_cluster_next_1'])
+        print('根据本脚本配置文件选择存储节点及计算节点')
         driver.click_Xpath(ele['cluster_list_add_cluster_dblist_button'])
         rangeHead = ele['cluster_list_add_cluster_dblist_button_range']
         #循环点三个db的节点选项
@@ -221,19 +268,43 @@ class cluster_list():
                 driver.click_Xpath(eles)
             num += 1
         driver.click_Xpath(ele['cluster_list_add_cluster_next_2'])
+        print('shard_num = [%s], shard_nodes = [%s], pg_nodes = [%s]' % (db_shard_num, db_shard_node_num, pg_select_node))
         driver.clearAndSend_Xpath(ele['cluster_list_add_cluster_shard_num'], db_shard_num)
         driver.clearAndSend_Xpath(ele['cluster_list_add_cluster_shardnode_num'], db_shard_node_num)
         driver.clearAndSend_Xpath(ele['cluster_list_add_cluster_pg_totalnum'], pg_select_node)
+        if install_proxysql == 1:
+            print('点击 [安装proxysql]')
+            driver.click_Xpath(ele['cluster_list_install_proxysql'])
+        print('点击 下一步 -- 确认')
         driver.click_Xpath(ele['cluster_list_add_cluster_next_3'])
         driver.click_Xpath(ele['cluster_list_add_cluster_commit_button'])
+        if consfailover != 0:
+            if consfailover == 1:
+                res = consfailover_case.kill_metadata_master()
+            if consfailover == 2:
+                res = consfailover_case.kill_cluster_mgr_master()
+            if consfailover == 3:
+                res = consfailover_case.restart_xpanel_server()
+            if res == 1:
+                res = self.get_opt_history_result(caseName)
+            return [caseName, res]
         sleep(10)
-        #检查集群是否完成
+        print('检查结果')
         #resList.append(review_status(ele['install_db_info'], '新增shard成功', '新增shard失败'))
         #resList.append(review_status(ele['install_pg_info'], '新增computer成功', '新增computer失败'))
-        resList.append(review_status(ele['install_cluster_info'], '安装完成100%', ele['install_cluster_second_info'], '新增集群失败'))
+        # resList.append(review_status(ele['install_cluster_second_info'], '新增集群成功', ele['install_cluster_second_info'], '新增集群失败'))
+        resList.append(self.get_opt_history_result('新增集群'))
         for i in resList:
             if i == 0:
                 result = 0
+                return [caseName, result]
+        # 检查所有计算节点都要冒烟成功
+        if dont_set_var == 0:
+            set_storage_variables()
+        if result == 1 and dont_check_status == 0:
+            result = Verify().comps()
+        if close_page == 1:
+            driver.close()
         res = [caseName, result]
         return res
 
@@ -429,7 +500,8 @@ class cluster_list():
         res = [caseName, a]
         return res
 
-    def add_repartition(self):
+    @timer
+    def add_storage(self, consfailover=0):
         case = '添加存储节点'
         print('=== 现在测试用例为 %s ===' % case)
         try:
@@ -437,17 +509,15 @@ class cluster_list():
             ele = self.elements
             conf = getconf().getXpanelInfo()
             db_list = str(conf['stor_list']).replace(' ', '').split(',')
-            # 进入集群列表设置界面
+            print('进入集群列表设置界面')
             driver.click_Xpath(ele['cluster_list_setting_button'])
             sleep(2)
-            # 点击shard列表
+            print('点击shard列表, 点击 增加存储节点')
             driver.click_Xpath(ele['cluster_shard_list'])
             sleep(2)
-            # 点击 增加存储节点
             driver.click_Xpath(ele['add_storage_node_button'])
-            # 点击 选择计算机
+            print('点击 选择计算机, 选择 计算节点')
             driver.click_Xpath(ele['choice_server'])
-            # 这是就是遍历这个计算机host列表
             # 如果对应的host在配置文件的存储节点列表里面的话，直接点击然后退出
             num = 1
             while True:
@@ -458,39 +528,53 @@ class cluster_list():
                     driver.click_Xpath(server_host)
                     break
                 num += 1
-            # 点击 选择计算机，主要是用来收回下拉框的
+            print('点击 选择计算机，主要是用来收回下拉框的')
             driver.click_Xpath(ele['choice_server'])
-            # 点击 shard名称选项
+            print('点击 shard名称选项，点击 第一个shard选择')
             driver.click_Xpath(ele['select_shard_name'])
-            # 点击 第一个shard选择
             driver.click_Xpath(ele['shard_name_1'])
-            # 存储节点数量改为1
+            print('存储节点数量改为1')
             driver.clearAndSend_Xpath(ele['shard_num_input'], 1)
-            # 点击 确认
+            print('点击 确认')
             driver.click_Xpath(ele['add_shard_commit'])
+            if consfailover != 0:
+                if consfailover == 1:
+                    res = consfailover_case.kill_metadata_master()
+                if consfailover == 2:
+                    res = consfailover_case.kill_cluster_mgr_master()
+                if consfailover == 3:
+                    res = consfailover_case.restart_xpanel_server()
+                if res == 1:
+                    res = self.get_opt_history_result(case)
+                return [case, res]
             sleep(2)
-            # 检查xpanel结果
-            txt = driver.gettxt_Xpanth(ele['add_replica_res_txt'])
-            txt_bak = txt
-            print(txt_bak)
-            while '正在添加存储节点' in txt:
-                # 当两个文件不一样的时候把新文本给到备文本，然后打印备文本，一样就不打印了
-                if txt != txt_bak:
-                    txt_bak = txt
-                    print(txt_bak)
-                sleep(1)
-                txt = driver.gettxt_Xpanth(ele['add_replica_res_txt'])
-            print(txt)
-            if txt == '添加存储节点成功':
-                res = 1
-            else:
-                res = 0
+            print('检查xpanel结果')
+            res = self.get_opt_history_result('添加存储节点')
+            # txt = driver.gettxt_Xpanth(ele['add_replica_res_txt'])
+            # txt_bak = txt
+            # print(txt_bak)
+            # while '正在添加存储节点' in txt:
+            #     # 当两个文件不一样的时候把新文本给到备文本，然后打印备文本，一样就不打印了
+            #     if txt != txt_bak:
+            #         txt_bak = txt
+            #         print(txt_bak)
+            #     sleep(1)
+            #     txt = driver.gettxt_Xpanth(ele['add_replica_res_txt'])
+            # print(txt)
+            # if txt == '添加存储节点成功':
+            #     res = 1
+            # else:
+            #     res = 0
         except Exception as err:
             print(err)
             res = 0
+        if res == 1:
+            # 检查所有计算节点都要冒烟成功
+            res = Verify().comps()
         return [case, res]
 
-    def add_comp(self):
+    @timer
+    def add_comp(self, consfailover=0):
         case = '添加计算节点'
         print('=== 现在测试用例为 %s ===' % case)
         try:
@@ -498,16 +582,14 @@ class cluster_list():
             ele = self.elements
             conf = getconf().getXpanelInfo()
             comp_list = str(conf['comp_list']).replace(' ', '').split(',')
-            # 点进集群设置
+            print(' 点进集群设置')
             driver.click_Xpath(ele['cluster_list'])
             driver.click_Xpath(ele['cluster_list_setting_button'])
-            # 点击 左边的 计算节点列表
+            print('点击 左边的 计算节点列表, 点击 添加计算节点')
             driver.click_Xpath(ele['computer_node_list'])
-            # 点击 添加计算节点
             driver.click_Xpath(ele['add_computer_button'])
-            # 点击 选择计算机 下拉框
+            print('点击 选择计算机 下拉框, 选择 计算机host')
             driver.click_Xpath(ele['choice_computer_server'])
-            # 选择 计算机host
             num = 1
             while True:
                 eles = ele['computer_server_list_range'] + 'li[%s]/span' % num
@@ -516,45 +598,59 @@ class cluster_list():
                     driver.click_Xpath(eles)
                     break
                 num += 1
-            # 点击 选择计算机 下拉框, 把下拉框收起来
+            print('点击 选择计算机 下拉框, 把下拉框收起来')
             driver.click_Xpath(ele['choice_computer_server'])
-            # 清空并发送数字1到计算节点个数文本框里面
+            print('清空并发送数字1到计算节点个数文本框里面')
             driver.clearAndSend_Xpath(ele['computer_node_count'], 1)
-            # 点击 确定
+            print('点击 确定')
             driver.click_Xpath(ele['add_computer_submit'])
-            # 检查结果
-            txt = driver.gettxt_Xpanth(ele['add_computer_res_txt'])
-            txt_bak = ''
-            while '正在添加计算节点' in txt:
-                sleep(1)
-                if txt != txt_bak:
-                    txt_bak = txt
-                    print(txt_bak)
-                txt = driver.gettxt_Xpanth(ele['add_computer_res_txt'])
-            print(txt)
-            if txt == '添加计算节点成功':
-                res = 1
-            else:
-                res = 0
-            # 点击 弹窗的 x 关掉弹窗
-            driver.click_Xpath(ele['add_computer_close_res'])
+            if consfailover != 0:
+                if consfailover == 1:
+                    res = consfailover_case.kill_metadata_master()
+                if consfailover == 2:
+                    res = consfailover_case.kill_cluster_mgr_master()
+                if consfailover == 3:
+                    res = consfailover_case.restart_xpanel_server()
+                if res == 1:
+                    res = self.get_opt_history_result(case)
+                return [case, res]
+            print('检查结果')
+            res = self.get_opt_history_result('添加计算节点')
+            # txt = driver.gettxt_Xpanth(ele['add_computer_res_txt'])
+            # txt_bak = ''
+            # while '正在添加计算节点' in txt:
+            #     sleep(1)
+            #     if txt != txt_bak:
+            #         txt_bak = txt
+            #         print(txt_bak)
+            #     txt = driver.gettxt_Xpanth(ele['add_computer_res_txt'])
+            # print(txt)
+            # if txt == '添加计算节点成功':
+            #     res = 1
+            # else:
+            #     res = 0
+            # print('点击 弹窗的 x 关掉弹窗')
+            # driver.click_Xpath(ele['add_computer_close_res'])
         except Exception as err:
             print(err)
             res = 0
+        if res == 1:
+            # 检查所有计算节点都要冒烟成功
+            res = Verify().comps()
         return [case, res]
 
-    def del_comp(self):
+    @timer
+    def del_comp(self, consfailover=0):
         case = '删除计算节点'
         print('=== 现在测试用例为 %s ===' % case)
         try:
             driver = self.driver
             ele = self.elements
-            conf = getconf().getXpanelInfo()
-            # 点击 集群列表 -- 设置 -- 计算节点列表
+            print('点击 集群列表 -- 设置 -- 计算节点列表')
             driver.click_Xpath(ele['cluster_list'])
             driver.click_Xpath(ele['cluster_list_setting_button'])
             driver.click_Xpath(ele['computer_node_list'])
-            # 开始计算有几个计算节点
+            print('开始计算有几个计算节点')
             num = 0
             while True:
                 num += 1
@@ -565,9 +661,9 @@ class cluster_list():
                     num -= 1
                     print('当前有[%s]个计算节点' % num)
                     break
-            # 点击 最上面的那行计算节点的删除键
+            print('点击 最上面的那行计算节点的删除键')
             driver.click_Xpath(ele['delete_top1_computer'])
-            # 获取 确认码
+            print('获取 确认码')
             num = 1
             while True:
                 try:
@@ -579,106 +675,154 @@ class cluster_list():
                 except:
                     pass
                 num += 1
-            # 把 确认码 输入到文本框里
+            print('把 确认码 输入到文本框里')
             eles = '/html/body/div[%s]' % num + ele['delete_computer_code_input_tail']
             driver.clearAndSend_Xpath(eles, txt)
-            # 点击 确认
+            print('点击 确认')
             eles = '/html/body/div[%s]' % num + ele['delete_computer_commit_tail']
             print(eles)
             driver.click_Xpath(eles)
-            # 检查结果
+            if consfailover != 0:
+                if consfailover == 1:
+                    res = consfailover_case.kill_metadata_master()
+                if consfailover == 2:
+                    res = consfailover_case.kill_cluster_mgr_master()
+                if consfailover == 3:
+                    res = consfailover_case.restart_xpanel_server()
+                if res == 1:
+                    res = self.get_opt_history_result(case)
+                return [case, res]
+            print('检查结果')
             sleep(30)
-            txt = driver.gettxt_Xpanth(ele['delete_computer_res_txt'])
-            txt_bak = ''
-            while '正在删除计算节点' in txt:
-                if txt != txt_bak:
-                    txt_bak = txt
-                    print(txt_bak)
-            print(txt)
-            if txt == '删除计算节点成功':
-                res = 1
-            else:
-                res = 0
-            # 点击 x 关掉弹窗
-            driver.click_Xpath(ele['delete_computer_close_button'])
+            res = self.get_opt_history_result('删除计算节点')
+            # txt = driver.gettxt_Xpanth(ele['delete_computer_res_txt'])
+            # txt_bak = ''
+            # while '正在删除计算节点' in txt:
+            #     if txt != txt_bak:
+            #         txt_bak = txt
+            #         print(txt_bak)
+            # print(txt)
+            # if txt == '删除计算节点成功':
+            #     res = 1
+            # else:
+            #     res = 0
+            # print('点击 x 关掉弹窗')
+            # driver.click_Xpath(ele['delete_computer_close_button'])
         except Exception as err:
             print(err)
             res = 0
+        if res == 1:
+            # 检查所有计算节点都要冒烟成功
+            res = Verify().comps()
         return [case, res]
 
-    def del_replica(self):
+    @timer
+    def del_replica(self, consfailover=0):
         case = '删除存储节点'
         print('=== 现在测试用例为 %s ===' % case)
         try:
             driver = self.driver
             ele = self.elements
-            # 点击 集群列表 -- 设置 -- 存储节点列表
+            print('点击 集群列表 -- 设置 -- 存储节点列表')
             driver.click_Xpath(ele['cluster_list'])
             driver.click_Xpath(ele['cluster_list_setting_button'])
             driver.click_Xpath(ele['cluster_list_shard_list'])
+            print('点击 第一个存储节点的 删除键')
             driver.click_Xpath(ele['delele_storage_button'])
+            print('把确认case输入到输入框里面')
             txt = driver.gettxt_Xpanth(ele['delete_storage_tips'])
             txt = txt.split('=')[1]
             driver.clearAndSend_Xpath(ele['delete_storage_code_input'], txt)
+            print('点击 确认')
             driver.click_Xpath(ele['delete_storage_commit'])
+            if consfailover != 0:
+                if consfailover == 1:
+                    res = consfailover_case.kill_metadata_master()
+                if consfailover == 2:
+                    res = consfailover_case.kill_cluster_mgr_master()
+                if consfailover == 3:
+                    res = consfailover_case.restart_xpanel_server()
+                if res == 1:
+                    res = self.get_opt_history_result(case)
+                return [case, res]
             sleep(1)
-            txt = driver.gettxt_Xpanth(ele['delete_storage_res_txt'])
-            txt_bak = ''
-            while '正在删除存储节点' in txt:
-                if txt != txt_bak:
-                    txt_bak = txt
-                    print(txt_bak)
-                txt = driver.gettxt_Xpanth(ele['delete_storage_res_txt'])
-            print(txt)
-            if txt == '删除存储节点成功':
-                print('succ')
-                res = 1
-            else:
-                print('fail')
-                res = 0
+            print('检查结果')
+            res = self.get_opt_history_result('删除存储节点')
+            # txt = driver.gettxt_Xpanth(ele['delete_storage_res_txt'])
+            # txt_bak = ''
+            # while '正在删除存储节点' in txt:
+            #     if txt != txt_bak:
+            #         txt_bak = txt
+            #         print(txt_bak)
+            #     txt = driver.gettxt_Xpanth(ele['delete_storage_res_txt'])
+            # print(txt)
+            # if txt == '删除存储节点成功':
+            #     print('succ')
+            #     res = 1
+            # else:
+            #     print('fail')
+            #     res = 0
         except Exception as err:
             print(err)
             res = 0
+        if res == 1:
+            # 检查所有计算节点都要冒烟成功
+            res = Verify().comps()
         return [case, res]
 
-    def rebuild_node(self):
+    @timer
+    def rebuild_node(self, consfailover=0):
         case = '重做备机'
         print('=== 现在测试用例为 %s ===' % case)
         driver = self.driver
         ele = self.elements
-        # 集群列表 = cluster_list， 设置 = cluster_list_setting_button, shard列表 = cluster_list_shard_list
+        print('点击 集群列表 -- 设置 -- shard列表')
         driver.click_Xpath(ele['cluster_list'])
         driver.click_Xpath(ele['cluster_list_setting_button'])
         driver.click_Xpath(ele['cluster_list_shard_list'])
-        # 鼠标放在 更多 上面以显示出重做备机的选项
+        print('鼠标放在 更多 上面以显示出重做备机的选项')
         driver.moveToXpanth(ele['rebuild_node_more_button'])
-        # 点击 重做备机
+        print('点击 重做备机')
         driver.click_Xpath(ele['rebuild_node_button'])
-        # 点击 确认
+        print('点击 确认')
         sleep(1)
         driver.click_Xpath(ele['rebuild_node_commit'])
+        if consfailover != 0:
+            if consfailover == 1:
+                res = consfailover_case.kill_metadata_master()
+            if consfailover == 2:
+                res = consfailover_case.kill_cluster_mgr_master()
+            if consfailover == 3:
+                res = consfailover_case.restart_xpanel_server()
+            if res == 1:
+                res = self.get_opt_history_result(case)
+            return [case, res]
         sleep(20)
-        # 获取结果
-        txt = ''
-        try:
-            txt = driver.gettxt_Xpanth(ele['rebuild_node_res_txt'])
-        except:
-            pass
-        while 'xPaTh FaIl' in txt:
-            try:
-                txt = driver.gettxt_Xpanth(ele['rebuild_node_res_txt'])
-                sleep(3)
-            except:
-                pass
-        print(txt)
-        if txt == '重做备机节点成功':
-            res = 1
-        else:
-            res = 0
-
+        print('获取结果')
+        res = self.get_opt_history_result('重做备机节点')
+        # txt = ''
+        # try:
+        #     txt = driver.gettxt_Xpanth(ele['rebuild_node_res_txt'])
+        # except:
+        #     pass
+        # while 'xPaTh FaIl' in txt:
+        #     try:
+        #         txt = driver.gettxt_Xpanth(ele['rebuild_node_res_txt'])
+        #         sleep(3)
+        #     except:
+        #         pass
+        # print(txt)
+        # if txt == '重做备机节点成功':
+        #     res = 1
+        # else:
+        #     res = 0
+        if res == 1:
+            # 检查所有计算节点都要冒烟成功
+            res = Verify().comps()
         return [case, res]
 
-    def manual_swich_master(self):
+    @timer
+    def manual_swich_master(self, consfailover=0):
         case = '主备切换'
         print('=== 现在测试用例为 %s ===' % case)
         ele = self.elements
@@ -711,14 +855,24 @@ class cluster_list():
             print('code = [%s]' % txt)
             print('点击 确认')
             driver.click_Xpath(ele['manual_switch_commit_button_2'])
+            if consfailover != 0:
+                if consfailover == 1:
+                    res = consfailover_case.kill_metadata_master()
+                if consfailover == 2:
+                    res = consfailover_case.kill_cluster_mgr_master()
+                if consfailover == 3:
+                    res = consfailover_case.restart_xpanel_server()
+                if res == 1:
+                    res = self.get_opt_history_result(case)
+                return [case, res]
             sleep(30)
             print('点击 弹窗的 x 关闭按钮, 然后刷新页面快速返回集群列表页面')
             driver.click_Xpath(ele['manual_switch_close_alert_button'])
-            print('获取 操作记录里面第一个记录的状态，只要不是done都是认为api失败了')
-            opt_status = self.get_opt_history_result(case)
-            if opt_status != ' done ':
-                print(opt_status)
-                return [case, 0]
+            # print('获取 操作记录里面第一个记录的状态，只要不是done都是认为api失败了')
+            # opt_status = self.get_opt_history_result(case)
+            # if opt_status != ' done ':
+            #     print(opt_status)
+            #     return [case, 0]
             driver.reflush()
             print('遍历 集群存储节点列表，查看哪个是主，确认后直接退出')
             try:
@@ -748,5 +902,553 @@ class cluster_list():
         except Exception as err:
             print(err)
             res = 0
+        if res == 1:
+            # 检查所有计算节点都要冒烟成功
+            res = Verify().comps()
+        if res == 1:
+            res = self.get_opt_history_result(opt_name='主备切换')
         return [case, res]
 
+    @timer
+    def unswitch_setting(self, consfailover=0):
+        case = '免切设置'
+        print('=== 现在测试用例为 %s ===' % case)
+        driver = self.driver
+        ele = self.elements
+        try:
+            print('点击 集群免切设置 -- 免切设置')
+            driver.click_Xpath(ele['cluster_unswitch_settings'])
+            driver.click_Xpath(ele['unswitch_setting'])
+            sleep(1)
+            print('点击 all(集群)')
+            driver.click_Xpath(ele['unswitch_cluster_all'])
+            print('点击 选择sahrd -- 第一个shard', end='')
+            driver.click_Xpath(ele['unswitch_shard_name'])
+            txt = driver.gettxt_Xpanth(ele['unswitch_shard_1'])
+            print(' [%s]' % txt)
+            driver.click_Xpath(ele['unswitch_shard_1'])
+            unswitch_timeout = 10000
+            print('设置 超时时间 [%s]' % unswitch_timeout)
+            driver.clearAndSend_Xpath(ele['unswitch_cluster_timeout_input'], unswitch_timeout)
+            print('点击确认')
+            driver.click_Xpath(ele['unswitch_commit_button'])
+            if consfailover != 0:
+                if consfailover == 1:
+                    res = consfailover_case.kill_metadata_master()
+                if consfailover == 2:
+                    res = consfailover_case.kill_cluster_mgr_master()
+                if consfailover == 3:
+                    res = consfailover_case.restart_xpanel_server()
+                if res == 0:
+                    return [case, res]
+            # 这里做操作
+            sleep(2)
+            txt = driver.gettxt_Xpanth(ele['unswitch_delete_shard'])
+            if txt == '删除 ':
+                print('存在删除免切键，故免切设置成功')
+            else:
+                print('不存在删除免切键，故免切设置失败')
+                return [case, 0]
+            print('开始删除免切设置， 点击删除')
+            driver.click_Xpath(ele['unswitch_delete_shard'])
+            txt = driver.gettxt_Xpanth(ele['unswitch_delete_code_txt'])
+            txt = txt.split('=')[1]
+            print('获取 确认码[%s], 并输入到输入框里' % txt)
+            driver.clearAndSend_Xpath(ele['unswitch_delete_code_input'], txt)
+            print('点击 确认')
+            driver.click_Xpath(ele['unswitch_delete_commit_button'])
+            if consfailover != 0:
+                if consfailover == 1:
+                    res = consfailover_case.kill_metadata_master()
+                if consfailover == 2:
+                    res = consfailover_case.kill_cluster_mgr_master()
+                if consfailover == 3:
+                    res = consfailover_case.restart_xpanel_server()
+                if res == 0:
+                    return [case, res]
+            sleep(1)
+            print('检查是否存在 删除免切键')
+            txt = driver.gettxt_Xpanth(ele['unswitch_delete_shard'])
+            if txt == '删除 ':
+                print('存在删除免切键，故删除免切设置失败')
+                return [case, 0]
+            else:
+                print('不存在删除免切键，故删除免切设置成功')
+            res = 1
+        except Exception as err:
+            print(err)
+            res = 0
+        if res == 1:
+            # 检查所有计算节点都要冒烟成功
+            res = Verify().comps()
+        return [case, res]
+
+    def add_shard(self, consfailover=0):
+        case = '添加(扩容)shard'
+        print('=== 现在测试用例为 %s ===' % case)
+        driver = self.driver
+        ele = self.elements
+        conf = getconf().getXpanelInfo()
+        try:
+            print('点击 集群列表 -- 设置 -- shard列表')
+            driver.click_Xpath(ele['cluster_list'])
+            driver.click_Xpath(ele['cluster_list_setting_button'])
+            driver.click_Xpath(ele['cluster_list_shard_list'])
+            print('点击 添加shard ')
+            driver.click_Xpath(ele['add_shard_button'])
+            print('点击 选择计算机下拉框')
+            driver.click_Xpath(ele['add_shard_choice_server'])
+            print('点击 配置的ip')
+            server_iplist, num = [], 1
+            stor_list = conf['stor_list']
+            while True:
+                try:
+                    eles = ele['add_shard_server_range'] + 'li[%s]/span' % num
+                    txt = driver.gettxt_Xpanth(eles)
+                    assert 'xPaTh' not in txt
+                    server_iplist.append(txt)
+                except:
+                    break
+                num += 1
+            num = 0
+            for i in server_iplist:
+                num += 1
+                if i in stor_list:
+                    driver.click_Xpath(ele['add_shard_server_range'] + 'li[%s]/span' % num)
+                    print(i)
+            print('填写shard个数为[1], 副本数为[2]')
+            driver.clearAndSend_Xpath(ele['add_shard_count_input'], 1)
+            driver.clearAndSend_Xpath(ele['add_shard_nodes_input'], 2)
+            print('点击 确认')
+            driver.click_Xpath(ele['add_shard_commit_button'])
+            if consfailover != 0:
+                if consfailover == 1:
+                    res = consfailover_case.kill_metadata_master()
+                if consfailover == 2:
+                    res = consfailover_case.kill_cluster_mgr_master()
+                if consfailover == 3:
+                    res = consfailover_case.restart_xpanel_server()
+                if res == 1:
+                    res = self.get_opt_history_result(case)
+                return [case, res]
+            res = self.get_opt_history_result('添加shard')
+            print('检查结果')
+            # txt = driver.gettxt_Xpanth(ele['add_shard_result_txt'])
+            # while txt == '正在添加shard':
+            #     sleep(1)
+            #     txt = driver.gettxt_Xpanth(ele['add_shard_result_txt'])
+            # print(txt)
+            # if txt == '添加shard成功':
+            #     res = 1
+            #     print('等待30s后检查计算节点')
+            #     sleep(30)
+            # else:
+            #     res = 0
+            if res == 1:
+                # 检查所有计算节点都要冒烟成功
+                res = Verify().comps()
+        except Exception as err:
+            print(err)
+            res = 0
+        return [case, res]
+
+    def del_shard(self, consfailover=0):
+        case = '删除(缩容)shard'
+        print('=== 现在测试用例为 %s ===' % case)
+        driver = self.driver
+        ele = self.elements
+        try:
+            print('点击 集群列表 -- 设置 -- shard列表')
+            driver.click_Xpath(ele['cluster_list'])
+            driver.click_Xpath(ele['cluster_list_setting_button'])
+            driver.click_Xpath(ele['cluster_list_shard_list'])
+            print('点击 删除')
+            driver.click_Xpath(ele['delete_shard_button'])
+            txt = driver.gettxt_Xpanth(ele['delete_shard_code_txt']).split('=')[1]
+            # txt = driver.gettxt_Xpanth(ele['delete_shard_code_txt'])
+            print(txt)
+            print('获取确认code[%s]并填入输入框' % txt)
+            driver.clearAndSend_Xpath(ele['delete_shard_code_input'], txt)
+            print('点击 确认')
+            driver.click_Xpath(ele['delete_shard_commit_button'])
+            if consfailover != 0:
+                if consfailover == 1:
+                    res = consfailover_case.kill_metadata_master()
+                if consfailover == 2:
+                    res = consfailover_case.kill_cluster_mgr_master()
+                if consfailover == 3:
+                    res = consfailover_case.restart_xpanel_server()
+                if res == 1:
+                    res = self.get_opt_history_result(case)
+                return [case, res]
+            print('检查结果')
+            res = self.get_opt_history_result('删除shard')
+            # txt = driver.gettxt_Xpanth(ele['delete_shard_result_txt'])
+            # while txt == '正在删除shard':
+            #     sleep(1)
+            #     txt = driver.gettxt_Xpanth(ele['delete_shard_result_txt'])
+            # print(txt)
+            # if txt == '删除shard成功':
+            #     res = 1
+            # else:
+            #     res = 0
+            if res == 1:
+                # 检查所有计算节点都要冒烟成功
+                res = Verify().comps()
+        except Exception as err:
+            print(err)
+            res = 0
+        return [case, res]
+
+    def manual_backup(self, consfailover=0):
+        case = '物理(全量)备份'
+        print('=== 现在测试用例为 %s ===' % case)
+        driver = self.driver
+        ele = self.elements
+        try:
+            print('开始创建1个集群')
+            res = self.add_new_cluster(db_shard_num=1, db_shard_node_num=2, pg_select_node=1, dont_check_status=1)
+            driver.reflush()
+            if res[1] == 0:
+                return [case, res[1]]
+            comp = Meta_Info().all_comps()[-1]
+            sleep(5)
+            Verify().load_worker(comp_info=comp, threads=1)
+            print('点击 集群列表 -- 设置 -- 备份恢复')
+            driver.click_Xpath(ele['cluster_list'])
+            driver.click_Xpath(ele['cluster_list_setting_button'])
+            driver.click_Xpath(ele['backup_restore_button'])
+            print('点击 全量备份 -- 发起全量备份')
+            driver.click_Xpath(ele['manual_backup_button'])
+            driver.click_Xpath(ele['send_manualbackup_api_button'])
+            print('点击 确定')
+            driver.click_Xpath(ele['manual_backup_commit_button'])
+            if consfailover != 0:
+                if consfailover == 1:
+                    res = consfailover_case.kill_metadata_master()
+                if consfailover == 2:
+                    res = consfailover_case.kill_cluster_mgr_master()
+                if consfailover == 3:
+                    res = consfailover_case.restart_xpanel_server()
+                if res == 0:
+                    return [case, res]
+            print('检查结果\nsleep 30s后点击全量备份记录')
+            sleep(30)
+            driver.click_Xpath(ele['manual_backup_history'])
+            print('查看每个任务的状态')
+            res_list = []
+            # 先把所有的任务状态给到一个列表里面
+            while res_list == []:
+                num = 0
+                while True:
+                    num += 1
+                    try:
+                        driver.click_Xpath(ele['manual_backup_reset'])
+                        eles = ele['manual_backup_status_range'] + 'tr[%s]/td[7]/div/span' % num
+                        txt = driver.gettxt_Xpanth(eles)
+                        assert 'xPaTh FaIl' not in txt
+                        print(txt)
+                        res_list.append(txt)
+                    except Exception as err:
+                        print(err)
+                        break
+                sleep(5)
+            print(res_list)
+            # 当这个列表里面有 ongoing 的时候，则会不断获取对应的xpath文本
+            while 'ongoing' in res_list:
+                num = 0
+                driver.click_Xpath(ele['manual_backup_reset'])
+                for i in res_list:
+                    num += 1
+                    if i == 'ongoing':
+                        eles = ele['manual_backup_status_range'] + 'tr[%s]/td[7]/div/span' % num
+                        txt = driver.gettxt_Xpanth(eles)
+                        list_index = num - 1
+                        res_list[list_index] = txt
+                print(res_list)
+                sleep(5)
+            print(res_list)
+            err_times = 0
+            # 统计这个列表里面有几个非'done'的元素
+            # 有1个以上则代表任务起码有1个失败了，所以就不用进行后面的结果检查了，直接认为失败
+            for i in res_list:
+                if i != 'done':
+                    err_times += 1
+            if err_times == 0:
+                res = 1
+            else:
+                res = 0
+        except Exception as err:
+            print(err)
+            res = 0
+        return [case, res]
+
+    def manual_restron(self, consfailover=0):
+        case = '物理恢复(回档)'
+        print('=== 现在测试用例为 %s ===' % case)
+        driver = self.driver
+        ele = self.elements
+        conf = getconf().getXpanelInfo()
+        try:
+            print('开始创建另一个集群')
+            res = self.add_new_cluster(db_shard_num=1, db_shard_node_num=2, pg_select_node=1, dont_delete_clsuter=1, dont_check_status=1)
+            driver.reflush()
+            if res[1] == 0:
+                return [case, res[1]]
+            print('点击 集群列表 -- 设置 -- 备份恢复')
+            driver.click_Xpath(ele['cluster_list'])
+            sleep(1)
+            driver.click_Xpath(ele['cluster_list_setting_button'])
+            sleep(1)
+            driver.click_Xpath(ele['backup_restore_button'])
+            sleep(1)
+            print('点击 全量回档')
+            driver.click_Xpath(ele['cluster_restore_button'])
+            sleep(1)
+            print('点击 原集群名称下拉框')
+            driver.click_Xpath(ele['cluster_restore_cluster_name'])
+            sleep(1)
+            txt = driver.gettxt_Xpanth(ele['cluster_restore_first_opt_name'])
+            sleep(1)
+            print('点击 第一个选项 [%s]' % txt)
+            driver.click_Xpath(ele['cluster_restore_first_opt_name'])
+            sleep(1)
+            print('点击 回档时间')
+            driver.click_Xpath(ele['cluster_restore_time'])
+            sleep(1)
+            print('点击 此刻')
+            driver.click_Xpath(ele['cluster_restore_current_time'])
+            sleep(1)
+            print('点击 回档')
+            driver.click_Xpath(ele['cluster_restore_commit_button'])
+            sleep(1)
+            print('点击 确定')
+            driver.click_Xpath(ele['cluster_restore_commit2_button'])
+            if consfailover != 0:
+                if consfailover == 1:
+                    res = consfailover_case.kill_metadata_master()
+                if consfailover == 2:
+                    res = consfailover_case.kill_cluster_mgr_master()
+                if consfailover == 3:
+                    res = consfailover_case.restart_xpanel_server()
+                if res == 0:
+                    return [case, res]
+            sleep(1)
+            print('检查结果')
+            # txt = driver.gettxt_Xpanth(ele['cluster_restore_result_txt'])
+            # print(txt)
+            # while txt == ' 正在回档集群... ':
+            #     sleep(1)
+            #     txt = driver.gettxt_Xpanth(ele['cluster_restore_result_txt'])
+            res = self.get_opt_history_result(opt_name='回档集群')
+            if res == 1:
+                res = Verify().comps()
+        except Exception as err:
+            print(err)
+            res = 0
+        return [case, res]
+
+    def logic_backup(self, consfailover=0):
+        case = '逻辑备份'
+        print('=== 现在测试用例为 %s ===' % case)
+        driver = self.driver
+        ele = self.elements
+        conf = getconf().getXpanelInfo()
+        try:
+            print('开始创建1个集群')
+            res = self.add_new_cluster(db_shard_num=1, db_shard_node_num=2, pg_select_node=1, dont_check_status=1, show_case=0, close_page=0)
+            driver.reflush()
+            if res[1] == 0:
+                return [case, res[1]]
+            comp = Meta_Info().all_comps()[-1]
+            print(comp)
+            sleep(5)
+            try:
+                Verify().load_worker(comp_info=comp, threads=1)
+            except Exception as err:
+                print(err)
+            print('点击 集群列表 -- 设置 -- 备份恢复')
+            driver.click_Xpath(ele['cluster_list'])
+            driver.click_Xpath(ele['cluster_list_setting_button'])
+            driver.click_Xpath(ele['backup_restore_button'])
+            print('点击 逻辑备份')
+            driver.click_Xpath(ele['logic_backup_button'])
+            sleep(3)
+            print('点击 备份对象下拉框 并选择 库 -- schema -- 表')
+            driver.click_Xpath(ele['logic_backup_object'])
+            ele_list = ['logic_backup_object_db', 'logic_backup_object_schema', "logic_backup_object_table"]
+            for i in ele_list:
+                txt = driver.gettxt_Xpanth(ele[i])
+                print('    选择 [%s]' % txt)
+                driver.click_Xpath(ele[i])
+            print('选择 逻辑备份时间')
+            driver.click_Xpath(ele['logic_backup_time_start'])
+            start_time = driver.gettxt_Xpanth(ele['logic_backup_time_start_opt1'])
+            print('start_time = %s' % start_time)
+            sleep(3)
+            driver.click_Xpath(ele['logic_backup_time_start_opt1'])
+            driver.click_Xpath(ele['logic_backup_time_end'])
+            end_time = driver.gettxt_Xpanth(ele['logic_backup_time_end_opt1'])
+            print('end_time = %s' % end_time)
+            sleep(3)
+            driver.click_Xpath(ele['logic_backup_time_end_opt1'])
+            print('点击 保存 并/home/charles/daily_smoke/daily_conf/cluster_mgr_api_test等待30s后检查')
+            driver.click_Xpath(ele['logic_backup_save_button'])
+            if consfailover != 0:
+                if consfailover == 1:
+                    res = consfailover_case.kill_metadata_master()
+                if consfailover == 2:
+                    res = consfailover_case.kill_cluster_mgr_master()
+                if consfailover == 3:
+                    res = consfailover_case.restart_xpanel_server()
+                if res == 0:
+                    return [case, res]
+            sleep(30)
+            res = self.get_opt_history_result(opt_name=case)
+        except Exception as err:
+            print(err)
+            res = 0
+        return [case, res]
+
+    def logic_restore(self, consfailover=0):
+        case = '逻辑恢复'
+        print('=== 现在测试用例为 %s ===' % case)
+        driver = self.driver
+        ele = self.elements
+        conf = getconf().getXpanelInfo()
+        print('开始创建另一个集群')
+        try:
+            res = self.add_new_cluster(db_shard_num=1, db_shard_node_num=2, pg_select_node=1, dont_delete_clsuter=1, dont_check_status=1,
+                                       show_case=0, close_page=0)
+            driver.reflush()
+            if res[1] == 0:
+                return [case, res[1]]
+            print('等待600s后每1分钟检查一次冷备节点')
+            sleep(600)
+            res = Meta_Info().wait_backup_node()
+            if res == 0:
+                return [case, 0]
+            sleep(30)
+            print('点击 集群列表 -- 设置 -- 备份恢复')
+            driver.click_Xpath(ele['cluster_list'])
+            sleep(1)
+            driver.click_Xpath(ele['cluster_list_setting_button'])
+            sleep(1)
+            driver.click_Xpath(ele['backup_restore_button'])
+            sleep(1)
+            comps = Meta_Info().all_comps()
+            print('点击 逻辑恢复')
+            driver.click_Xpath(ele['logic_restore_button'])
+            print('点击 原集群名称 下拉框, ', end='')
+            driver.click_Xpath(ele['logic_restore_res_cluster_name'])
+            txt = driver.gettxt_Xpanth(ele['logic_restore_res_cluster_name_opt1'])
+            print('点击 第一个选项[%s]' % txt)
+            driver.click_Xpath(ele['logic_restore_res_cluster_name_opt1'])
+            print('点击 备份记录, ', end='')
+            driver.click_Xpath(ele['logic_restore_backup_history'])
+            txt = driver.gettxt_Xpanth(ele['logic_restore_backup_history_opt1'])
+            print('点击 第一个记录[%s]' % txt)
+            driver.click_Xpath(ele['logic_restore_backup_history_opt1'])
+            print('点击 起时时间, ', end='')
+            driver.click_Xpath(ele['logic_restore_start_time'])
+            txt = driver.gettxt_Xpanth(ele['logic_restore_current_time'])
+            print('点击 此刻')
+            sleep(300)
+            try:
+                res = driver.click_Xpath(ele['logic_restore_current_time'])
+                assert res == 1
+            except Exception as err:
+                print(err)
+                print('点击另一个[此刻]按钮元素')
+                driver.click_Xpath(ele['logic_restore_current_time_bak1'])
+                assert res == 1
+            print('点击 保存')
+            driver.click_Xpath(ele['logic_restore_save_button'])
+            if consfailover != 0:
+                if consfailover == 1:
+                    res = consfailover_case.kill_metadata_master()
+                if consfailover == 2:
+                    res = consfailover_case.kill_cluster_mgr_master()
+                if consfailover == 3:
+                    res = consfailover_case.restart_xpanel_server()
+                if res == 0:
+                    return [case, res]
+            print('等待30s后开始检查结果')
+            sleep(30)
+            res = self.get_opt_history_result(opt_name=case)
+            if res == 1:
+                res = Verify().review_worker(res_comp_info=comps[0], dst_comp_info=comps[-1])
+        except Exception as err:
+            print(err)
+            res = 0
+        return [case, res]
+
+    def repartition_table(self):
+        case = '表重分布'
+        driver = self.driver
+        ele = self.elements
+        conf = getconf().getXpanelInfo()
+        # 创建第一个集群
+        res = self.add_new_cluster(db_shard_num=1, db_shard_node_num=2, pg_select_node=1, dont_check_status=1, dont_set_var=1, close_page=0)
+        if res == 0:
+            return [case, 0]
+        driver.reflush()
+        # 创建第二个集群
+        res = self.add_new_cluster(db_shard_num=1, db_shard_node_num=2, pg_select_node=1, dont_check_status=1, dont_delete_clsuter=1, close_page=0)
+        if res == 0:
+            return [case, 0]
+        cluster_ids = Meta_Info().all_cluster_id_name()
+        target_name = cluster_ids[0][1]
+        comp_infos = Meta_Info().all_comps()
+        print('给两个集群的计算节点创建相同结构的表')
+        for i in range(-1, 1):
+            res = load_data.create_table(node_info=comp_infos[i])
+            if res == 0:
+                return [case, 0]
+        print('对源表准备数据')
+        load_data.load_worker(node_info=comp_infos[-1])
+        driver.reflush()
+        print('点击 集群列表 -- 设置 -- 表重分布')
+        driver.click_Xpath(ele['cluster_list'])
+        driver.click_Xpath(ele['cluster_list_setting_button'])
+        driver.click_Xpath(ele['repart_table_button'])
+        print('选择目标表集群为', end='')
+        driver.click_Xpath(ele['repart_table_target_cluster'])
+        txt, tmp_ele, num = '', '', 0
+        while target_name not in txt:
+            num += 1
+            tmp_ele = ele['target_cluster_range'] + 'li[%s]/span' % num
+            txt = driver.gettxt_Xpanth(tmp_ele)
+        print(' [%s]' % txt)
+        driver.click_Xpath(tmp_ele)
+        print('源表 选择为', end='')
+        driver.click_Xpath(ele['repart_table_souce_table'])
+        txt = driver.gettxt_Xpanth(ele['source_table_db_opt1'])
+        print(' [%s] ' % txt, end='')
+        driver.click_Xpath(ele['source_table_db_opt1'])
+        txt = driver.gettxt_Xpanth(ele['source_table_schema_opt1'])
+        print('-- [%s] ' % txt, end='')
+        driver.click_Xpath(ele['source_table_schema_opt1'])
+        txt = driver.gettxt_Xpanth(ele['source_table_table_opt1'])
+        print('-- [%s]' % txt)
+        driver.click_Xpath(ele['source_table_table_opt1'])
+        print('目标表选择为', end='')
+        driver.click_Xpath(ele['repart_table_target_table'])
+        txt = driver.gettxt_Xpanth(ele['target_table_db_opt1'])
+        print(' [%s] ' % txt, end='')
+        driver.click_Xpath(ele['target_table_db_opt1'])
+        txt = driver.gettxt_Xpanth(ele['target_table_schema_opt1'])
+        print('-- [%s] ' % txt, end='')
+        driver.click_Xpath(ele['target_table_schema_opt1'])
+        txt = driver.gettxt_Xpanth(ele['target_table_table_opt1'])
+        print('-- [%s] ' % txt)
+        driver.click_Xpath(ele['target_table_table_opt1'])
+        print('点击 不替换目标表名')
+        driver.click_Xpath(ele['no_replace_target_tbname'])
+        print('点击 提交')
+        driver.click_Xpath(ele['repart_table_commit'])
+        print('开始检查')
+        res = self.get_opt_history_result(case)
+        if res == 1:
+            res = load_data.diff_tabls(source_node_info=comp_infos[-1], target_node_info=comp_infos[0])
+        return [case, res]

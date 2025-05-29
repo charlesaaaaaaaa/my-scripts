@@ -1,0 +1,9 @@
+MetaPrimaryNode:
+        host: "192.168.0.132"
+        port: "2221"
+user_name: "kunlun"
+cluster_id: "1"
+shard_id: "1"
+iplist:
+        - "192.168.100.100"
+        - "192.168.101.101"

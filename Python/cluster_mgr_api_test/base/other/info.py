@@ -1,3 +1,4 @@
+import json
 import time
 
 from base.other import getconf as conf
@@ -58,9 +59,11 @@ class master():
             res = '不存在'
         wlog = '当前cluster_mgr主节点是: %s' % (str(res))
         if res == '不存在':
-            raise "ERROR： 无法获取cluster_mgr节点，请检查cluster_mgr是否存在"
+            print("ERROR： 无法获取cluster_mgr节点，请检查cluster_mgr是否存在")
+            res = 0
         write_log.w2File().tolog(wlog)
         return res
+
 
 class node_info():
     def __init__(self):
@@ -145,13 +148,17 @@ class node_info():
         res = self.get_res(sql)
         return res
 
-    def show_all_running_shard_id(self):
+    def show_all_running_shard_id(self, cluster_id=None):
         # 获取所在在运行的shard_id
         # 返回一个元组
         # 元组里面多个元组
         #   每个元组里面第0个元素是cluster_id
         #   ((8,),)
-        sql = "select distinct(shard_id) from shard_nodes where status = 'active';"
+        sql = "select distinct(shard_id) from shard_nodes where status = 'active'"
+        if cluster_id:
+            sql += '  and db_cluster_id = %s;' % cluster_id
+        else:
+            sql += ';'
         res = self.get_res(sql)
         return res
 
@@ -167,6 +174,13 @@ class node_info():
         # 获取所有正在支持的shard_id, 带上cluster id
         # 如 ((5, 5,),(5, 6,),) [0]=cluster_id [1] = shard_id
         sql = "select db_cluster_id, id from shards where status = 'inuse';"
+        res = self.get_res(sql)
+        return res
+
+    def show_all_running_shard_id_with_cluster_id(self, cluster_id):
+        # 获取所有正在支持的shard_id, 带上cluster id
+        # 如 ((5, 5,),(5, 6,),) [0]=cluster_id [1] = shard_id
+        sql = "select id from shards where status = 'inuse' and db_cluster_id = '%s';" % cluster_id
         res = self.get_res(sql)
         return res
 
@@ -213,6 +227,23 @@ class node_info():
         # 示例 ((ip, host, user, pass)[, (...), ...])
         sql = "select hostaddr, port, user_name, passwd from proxysql_nodes where status = 'active';"
         res = self.get_res(sql)
+        return res
+
+    def show_rcr_comps_infos(self, rcr_role='master'):
+        # 返回 {'master_master_host': '192.168.0.14:56661', 'master_shard_id': 1,
+        # 'master_sync_host': '192.168.0.136:56661', 'slave_shard_id': 2} <class 'dict'>
+        sql = "select shard_maps from cluster_rcr_infos where status = 'running';"
+        res = self.get_res(sql)[0][0].replace('[', '').replace(']', '').split('},{')
+        master = json.loads(res[0] + '}')
+        slave = json.loads('{' + res[1])
+        if rcr_role == 'master':
+            res = master
+        elif rcr_role == 'slave':
+            res = slave
+        elif rcr_role == 'both':
+            pass
+        else:
+            print("rcr_role请指定['master']|['slave']|['both']")
         return res
 
     def compare_shard_master_and_standby(self, dbname):

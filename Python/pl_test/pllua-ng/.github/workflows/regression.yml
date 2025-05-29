@@ -1,0 +1,105 @@
+name: Build
+
+on:
+  push:
+    branches:
+    - master
+    tags:
+    - REL_*
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: sh
+    strategy:
+      matrix:
+        lua: [ 5.3.6, 5.4.4, 5.4.6, LuaJIT-8bbd58e53 ]
+        pg: [ 9.5, 9.6, 10, 11, 12, 13, 14, 15, 16 ]
+        include:
+          - pgrepo: ""
+          - pg: 16
+            pgrepo: "-pgdg-snapshot"
+    env:
+      PG:       ${{ matrix.pg }}
+      PGREPO:   ${{ matrix.pgrepo }}
+      LUAV:     ${{ matrix.lua }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: cleanup pg
+      run: |
+        sudo apt-get -y --purge --no-upgrade remove postgresql libpq-dev libpq5 postgresql-client-common postgresql-common
+        curl https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+        sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" >/etc/apt/sources.list.d/pgdg.list'
+        sudo sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg-snapshot main 16" >/etc/apt/sources.list.d/pgdg-snap.list'
+        sudo apt-get update
+        sudo rm -rf /var/lib/postgresql
+    - name: install pg
+      run: |
+        sudo apt-get -y \
+               -o Dpkg::Options::=--force-confdef \
+               -o Dpkg::Options::=--force-confnew \
+               ${PGREPO:+-t "$(lsb_release -cs)$PGREPO"} \
+               install postgresql-${PG:?} postgresql-contrib-${PG:?} postgresql-server-dev-${PG:?}
+    - name: lua environment
+      run: |
+        (case "$LUAV" in
+           *-rc*) echo LUA_URL="http://www.lua.org/work/lua-$LUAV.tar.gz";;
+               *) echo LUA_URL="http://www.lua.org/ftp/lua-$LUAV.tar.gz";;
+         esac
+         echo LUA="$PWD/work-lua/src/lua"
+         echo LUAC="$PWD/work-lua/src/luac"
+         echo LUA_INCDIR="$PWD/work-lua/src"
+         echo LUALIB="-L$PWD/work-lua -lmylua"
+         echo lua_osver="$(lsb_release -rs)"
+        ) >>$GITHUB_ENV
+    - name: luajit environment
+      if: contains(env.LUAV, 'LuaJIT')
+      run: |
+        (echo LUAJIT="$PWD/work-lua/src/luajit"
+         echo LUAJITC="cp"
+        ) >>$GITHUB_ENV
+    - name: get cached lua build
+      id: cache-lua
+      uses: actions/cache@v3
+      with:
+        path: work-lua
+        key: ${{ runner.os }}-${{ env.lua_osver }}-000002-work-lua-${{ env.LUAV }}
+    - name: lua install
+      if: ${{ steps.cache-lua.outputs.cache-hit != 'true' && ! contains(env.LUAV, 'LuaJIT') }}
+      run: |
+        mkdir work-lua
+        wget -O- "${LUA_URL}" | tar -zxf - --strip-components=1 -C work-lua
+        make -C work-lua/src \
+          SYSCFLAGS="-DLUA_USE_POSIX -DLUA_USE_DLOPEN -ULUA_COMPAT_5_2" \
+          SYSLIBS="-Wl,-E -ldl" \
+          MYCFLAGS="-fPIC" liblua.a lua luac
+        ln -s src/liblua.a work-lua/libmylua.a
+    - name: luajit install
+      if: ${{ steps.cache-lua.outputs.cache-hit != 'true' && contains(env.LUAV, 'LuaJIT') }}
+      run: |
+        mkdir work-lua
+        wget -O- https://github.com/LuaJIT/LuaJIT/archive/"${LUAV#LuaJIT-}".tar.gz \
+          | tar -zxf - --strip-components=1 -C work-lua
+        make -C work-lua/src \
+          XCFLAGS="-DLUAJIT_ENABLE_GC64 -DLUAJIT_ENABLE_LUA52COMPAT" \
+          CFLAGS="-fPIC -O3" libluajit.a luajit
+        ln -s src/libluajit.a work-lua/libmylua.a
+    - name: pg user
+      run: |
+        sudo -u postgres createuser -s "$USER"
+    - name: build and test
+      run: |
+        make && sudo -E make install && time make installcheck
+    - name: build and test hstore
+      run: |
+        make -C hstore && sudo -E make -C hstore install && time make -C hstore installcheck
+    - name: show output
+      if: always()
+      run: |
+        cat regression.diffs || true
+        cat hstore/regression.diffs || true

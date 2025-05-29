@@ -1,4 +1,5 @@
 * 该脚本是用来发送cluster_mgr的接口请求的
+* 除了install_cluster.py,其它的都是用在青云上的
 == 详细说明
 * 有两个文件：
   * 一个是config.yaml

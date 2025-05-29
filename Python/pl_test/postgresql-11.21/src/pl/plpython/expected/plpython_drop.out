@@ -1,0 +1,9 @@
+--
+-- For paranoia's sake, don't leave an untrusted language sitting around
+--
+SET client_min_messages = WARNING;
+SET
+DROP EXTENSION plpython3u CASCADE;
+DROP EXTENSION
+DROP EXTENSION IF EXISTS plpython2u CASCADE;
+DROP EXTENSION

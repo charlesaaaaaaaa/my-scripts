@@ -1,6 +1,251 @@
+import multiprocessing
 from base.other.connect import *
 from base.other.info import *
 from base.other.sys_opt import *
+from base.other import getconf
+import time
+import threading
+
+
+class TranSfer:
+    def __init__(self, comp_list):
+        # comp_list = info.node_info().show_all_running_computer() 这个方法里面的任意二级列表，也就是要指定运行的计算节点信息
+        self.comp_list = comp_list
+        self.func_location = './case/util/transfer_function.sql'
+        self.create_location = './case/util/transfer_create.sql'
+
+    def prepare(self, partition_shards_list=None, only_create_table=None, partition_num=0):
+        # partition_shards_list = info.node_info().show_all_running_shard_id()
+        # only_create_table 指定任意数都会只创建表，不指定参数则会创建1000条用户数据
+        comp = self.comp_list
+        func_location = self.func_location
+        create_location = self.create_location
+        show_topic('创建db/表/函数', 2)
+        sql1 = 'drop database if exists test;'
+        sql = 'create database test;'
+        con = Pg(host=comp[0], port=comp[1], user=comp[2], pwd=comp[3], db='postgres')
+        con.ddl_sql(sql=sql1)
+        con.ddl_sql(sql=sql)
+        con.close()
+        if not partition_shards_list and partition_num == 0:
+            create_comm = 'psql postgres://%s:%s@%s:%s/test -f %s' % (comp[2], comp[3], comp[0], comp[1], create_location)
+            print('%s\n%s' % (sql, create_comm))
+            subprocess.run(create_comm, shell=True)
+        else:
+            if partition_shards_list:
+                partition_num = 2 * len(partition_shards_list)
+            type_sql_list = ["create type res_t as enum('0', '1');",
+                             "create type status_t as enum('using', 'delete', 'freeze', 'unfreeze', 'create', 'notexist');"]
+            create_list = [['CREATE TABLE history(id bigserial primary key, tsf_id int not null, b_tsf_id int not null, amount int not null, '
+                            'res res_t not null, opt_date timestamp not null, tips text) partition by hash (id);', 'history'],
+                           ["create table test_user(id serial primary key, name text not null, password text not null, status status_t not null, "
+                            "update_times int not null) partition by hash (id);", "test_user"],
+                           ["create table amount(id serial primary key, u_id int not null, u_amount int not null) partition by hash (id);", "amount"],
+                           ["create table opt_history(id serial primary key, u_id int not null, opt text not null, opt_date timestamp not null, "
+                            "opt_res res_t not null) partition by hash (id);", "opt_history"]]
+            insert_list = ["insert into test_user(name, password, status, update_times) value('root', 'root', 'using', 0);",
+                           "insert into opt_history(u_id, opt, opt_date, opt_res) value(1, 'create', current_timestamp(), '1');"]
+            con = Pg(host=comp[0], port=comp[1], user=comp[2], pwd=comp[3], db='test')
+            show_topic('创建type')
+            for i in type_sql_list:
+                print(i)
+                con.ddl_sql(sql=i)
+            show_topic('创建分区表')
+            for i in create_list:
+                print(i[0])
+                con.ddl_sql(sql=i[0])
+                part_num = 0
+                for shard_id in partition_shards_list:
+                    for num in range(2):
+                        sql = 'create table %s_%s partition of %s for values with (MODULUS %s, REMAINDER %s) with (shard = %s);' \
+                              '' % (i[1], part_num, i[1], partition_num, part_num, shard_id[0])
+                        print(sql)
+                        part_num += 1
+                        con.ddl_sql(sql=sql)
+            for i in insert_list:
+                print(i)
+                con.ddl_sql(sql=i)
+        function_comm = 'psql postgres://%s:%s@%s:%s/test -f %s' % (comp[2], comp[3], comp[0], comp[1], func_location)
+        print(function_comm)
+        subprocess.run(function_comm, shell=True)
+
+        if only_create_table == None:
+            show_topic('增加1000用户数', 2)
+
+            for i in range(2, 1001):
+                sql = "select * from change_user_status(%s, 'using')" % i
+                con = Pg(host=comp[0], port=comp[1], user=comp[2], pwd=comp[3], db='test')
+                # print('\r增加用户%s' % i, end='')
+                try:
+                    res = con.sql_with_result(sql=sql)
+                    if res == 0:
+                        print('user[%s]创建失败' % i)
+                except Exception as err:
+                    print(err)
+                    con.sql_with_result(sql=sql)
+
+    def loadwork(self, threads_num, sleep_time=-1, work_times=0):
+        # sleep_time 就是每个sql语句的之前的休眠时间，不指定就0到30s之间随机选择，指定为0则不休眠
+        # work_times 就是连续执行多少个sql才进行sleep, 默认为0， 为0时则在0到1000之间随机选择，每次休眠时都会随机选择一次
+        comp = self.comp_list
+        write_log.w2File().print_log('开始[%s]进程转账负载' % threads_num)
+        # 这个文件可以认为是一个标志位，存在则继续灌，不存在则该方法停止
+        loadword_flag = './log/tmp_loadwork.log'
+        with open(loadword_flag, mode='w') as f:
+            f.write('running...')
+            f.close()
+
+        def run_case():
+            w_times = 0
+            w_work_times = work_times
+            con = Pg(host=comp[0], port=comp[1], user=comp[2], pwd=comp[3], db='test')
+            while True:
+                start_flag = os.path.exists(loadword_flag)
+                if str(start_flag) == 'False':
+                    break
+                if work_times == 0:
+                    if w_times == 0:
+                        w_work_times = random.randint(1, 1000)
+                w_times += 1
+                # 本次测试主要是有两种情况，[0]是用户修改，目前权重是千分之一；其它值是转账操作
+                random1 = random.randint(1, 1002)
+                # 当前操作的用户id从2开始到1020，实际上只到1000，多出的20个id如果不是创建用户的话则结果必定是失败的
+                user1 = random.randint(1, 1110)
+                if user1 > 1010:
+                    user1 = 1
+                try:
+                    if random1 > 1000 and user1 != 1:
+                        # 修改用户状态操作
+                        random_list = ['using', 'delete', 'freeze', 'unfreeze']
+                        weight = [0.75, 0.05, 0.1, 0.1]
+                        status = random.choices(population=random_list, weights=weight, k=1)
+                        sql = "select * from change_user_status(%s, '%s')" % (user1, status[0])
+                        # print(sql)
+                        con.ddl_sql(sql=sql)
+                    else:
+                        # 用户转账操作
+                        user2 = random.randint(2, 1001)
+                        if user1 == 1:
+                            amount = random.randint(1000000, 100000000)
+                        else:
+                            amount = random.randint(1, 9999)
+                        while user2 == user1:
+                            user2 = random.randint(2, 1001)
+                        sql = 'CALL transfer_case(%s, %s, %s)' % (user1, amount, user2)
+                        con.ddl_sql(sql=sql)
+                except Exception as err:
+                    amount = random.randint(1000, 10000)
+                    # 如果错误是钱不够导致则有80%的概率充值任意金额
+                    if err == '转账者钱不够':
+                        random3 = random.randint(1, 100)
+                        if random3 < 20:
+                            sql = 'CALL transfer_case(%s, %s, %s)' % (0, amount, user1)
+                            con.ddl_sql(sql=sql)
+
+                def sleep_act():
+                    if sleep_time == -1:
+                        slt = random.randint(0, 30)
+                        if slt != 0:
+                            time.sleep(slt)
+                    elif sleep_time > 0:
+                        time.sleep(sleep_time)
+
+                if w_times == w_work_times:
+                    sleep_act()
+
+        for i in range(threads_num):
+            p = multiprocessing.Process(target=run_case)
+            p.start()
+
+    def diff_res(self, comp_list_slave, tb_history=None, tb_test_user=None, tb_amount=None, tb_opt_history=None):
+        # 这里要指定一个备计算节点
+        # 另外四个参数默认是None，每个表在该备计算节点里面对应的db和表名， 如tb_history=['test': 'history_a']
+        # # 不指定的情况下则代表这个备和主的表和db都是相同未改变的
+        comp1 = self.comp_list
+        comp2 = comp_list_slave
+        show_topic('检查一致性', 2)
+
+        def get_tmpres(comp_list, db, sql):
+            pg = connect.Pg(host=comp_list[0], port=comp_list[1], user=comp_list[2], pwd=comp_list[3], db=db)
+            res = pg.sql_with_result(sql=sql)
+            return res
+
+        def check_rows(tb_name, slave_info):
+            try:
+                tmp_res1 = 1
+                print('对比主节点[test.%s]表， 备节点[%s.%s]表' % (tb_name, slave_info[0], slave_info[1]), end='')
+                # 不是test_user的表只检查备表的[id=1到最大id值]这个范围里面的行是否一致
+                if tb_name != 'test_user':
+                    sql = 'select max(id) from %s;' % slave_info[1]
+                    max_id = get_tmpres(comp_list=comp2, db=slave_info[0], sql=sql)[0][0]
+                    print(', max_id = %s' % max_id)
+                    sql = 'select * from %s where id <= %s order by id;' % (slave_info[1], max_id)
+                    master_res = get_tmpres(comp_list=comp1, db='test', sql=sql)
+                    slave_res = get_tmpres(comp_list=comp2, db=slave_info[0], sql=sql)
+                    master_cur_index, slave_cur_index = 0, 0
+                    # 开始对里面的值一个个的对比
+                    for i in range(len(master_res)):
+                        master_cur_res = master_res[master_cur_index]
+                        slave_cur_res = slave_res[slave_cur_index]
+                        if int(master_cur_res[0]) > int(slave_cur_res[0]):
+                            show_topic('当前主节点[%s]表缺少id=%s的数据' % (tb_name, slave_cur_res[0]), 3)
+                            slave_cur_index += 1
+                            continue
+                        elif int(master_cur_res[0]) < int(slave_cur_res[0]):
+                            show_topic('当前备节点[%s]表缺少id=%s的数据' % (tb_name, master_cur_res[0]), 3)
+                            master_cur_index += 1
+                            continue
+                        else:
+                            # 这边就直接对比结果了，没什么好说的
+                            if master_cur_res != slave_cur_res:
+                                show_topic('当前主备的[%s]表id=%s的行结果不一致' % (tb_name, id), 3)
+                                tmp_res1 = 0
+                        master_cur_index += 1
+                        slave_cur_index += 1
+                else:
+                    sql = 'select id from %s;' % slave_info[1]
+                    id_tuple = get_tmpres(comp_list=comp2, db=slave_info[0], sql=sql)
+                    diff_list = []
+                    print('%s, %s' % (tb_name, slave_info))
+                    for uid in id_tuple:
+                        tmp_res_list = []
+                        for tmp_info in ['test', tb_name], slave_info:
+                            sql = 'select * from %s where id = %s' % (tmp_info[1], uid[0])
+                            tmp_res = get_tmpres(comp_list=comp1, db=tmp_info[0], sql=sql)[0]
+                            tmp_res_list.append(tmp_res)
+                        if tmp_res_list[0][-1] == tmp_res_list[1][-1]:
+                            if tmp_res_list[0] != tmp_res_list[1]:
+                                diff_list.append(tmp_res_list[0][0])
+                    if diff_list:
+                        show_topic('当前主备的[test_user]表有以下行与预期结果不一致' % diff_list, 3)
+                        tmp_res1 = 0
+                    else:
+                        show_topic('本次检查表[%s]数据一致' % tb_name)
+            except Exception as err:
+                print(str(err))
+                return 0
+            return tmp_res1
+
+        if not tb_amount:
+            tb_amount = ['test', 'amount']
+        if not tb_history:
+            tb_history = ['test', 'history']
+        if not tb_test_user:
+            tb_test_user = ['test', 'test_user']
+        if not tb_opt_history:
+            tb_opt_history = ['test', 'opt_history']
+        table_info_list = [['amount', tb_amount], ['history', tb_history], ['test_user', tb_test_user], ['opt_history', tb_opt_history]]
+        real_res = 1
+        for tb_info in table_info_list:
+            try:
+                tmp_res2 = check_rows(tb_info[0], tb_info[1])
+                if tmp_res2 == 0:
+                    real_res = 0
+            except Exception as err:
+                print(err)
+                return 0
+        return real_res
+
 
 class StorageState:
 
@@ -216,9 +461,8 @@ class ServerState:
 
         def select_act():
             select_sql = 'select sum(money) as moneytotal from %s;' % tb_name
-            print(select_sql)
+            print('%s:%s: %s' % (server_list[0], server_list[1], select_sql))
             res = pg.sql_with_result(select_sql)[0][0]
-            print(res)
             right_res = days * 100000
             if res != right_res and steps != 'select':
                 print("结果不正确，测试失败", 2)
@@ -227,13 +471,13 @@ class ServerState:
                 return res
 
         try:
-            res = set_timeout()
-            if res == 0:
-                return res
-
-            sql = 'drop table if exists %s;' % tb_name
-            print(sql)
-            pg.ddl_sql(sql)
+            if steps != 'select':
+                res = set_timeout()
+                if res == 0:
+                    return res
+                sql = 'drop table if exists %s;' % tb_name
+                print(sql)
+                pg.ddl_sql(sql)
 
             if steps == 'only_create_table' or steps == 'table_all':
                 show_topic('创建一个常规表%s' % tb_name, 3)

@@ -1,0 +1,112 @@
+--
+\set VERBOSITY terse
+--
+-- test procedures, non-atomic DO-blocks, and spi.commit/rollback
+-- (all pg11 new features)
+create table xatst2 (a integer);
+CREATE TABLE
+create procedure pg_temp.tp1(a text)
+  language pllua
+  as $$
+  print("hello world", a)
+  print(spi.is_atomic() and "atomic context" or "non-atomic context")
+$$;
+CREATE PROCEDURE
+call pg_temp.tp1('foo');
+INFO:  hello world foo
+INFO:  non-atomic context
+CALL
+begin; call pg_temp.tp1('foo'); commit;
+BEGIN
+INFO:  hello world foo
+INFO:  atomic context
+CALL
+COMMIT
+do language pllua $$
+  print(spi.is_atomic() and "atomic context" or "non-atomic context")
+$$;
+INFO:  non-atomic context
+DO
+begin;
+BEGIN
+do language pllua $$
+  print(spi.is_atomic() and "atomic context" or "non-atomic context")
+$$;
+INFO:  atomic context
+DO
+commit;
+COMMIT
+create procedure pg_temp.tp2()
+  language pllua
+  as $$
+  local stmt = spi.prepare([[ insert into xatst2 values ($1) ]]);
+  stmt:execute(1);
+  spi.commit();
+  stmt:execute(2);
+  spi.rollback();
+  stmt:execute(3);
+  spi.commit();
+  stmt:execute(4);
+$$;
+CREATE PROCEDURE
+call pg_temp.tp2();
+CALL
+-- should now be three different xids in xatst2, and 3 rows
+select count(*), count(distinct age(xmin)) from xatst2;
+ERROR:  column "xmin" does not exist at character 37
+-- proper handling of open cursors
+create procedure pg_temp.tp3()
+  language pllua
+  as $$
+  local stmt = spi.prepare([[ select i from generate_series(1,10) i ]]);
+  for r in stmt:rows() do
+    print(r.i)
+    spi.commit();
+  end
+$$;
+CREATE PROCEDURE
+call pg_temp.tp3();
+INFO:  1
+ERROR:  pllua: [string "tp3"]:3: cannot iterate a closed cursor
+create procedure pg_temp.tp4()
+  language pllua
+  as $$
+  local stmt = spi.prepare([[ select i from generate_series(1,10) i ]], {}, { hold = true });
+  for r in stmt:rows() do
+    print(r.i)
+    spi.commit();
+  end
+$$;
+CREATE PROCEDURE
+call pg_temp.tp4();
+INFO:  1
+INFO:  2
+INFO:  3
+INFO:  4
+INFO:  5
+INFO:  6
+INFO:  7
+INFO:  8
+INFO:  9
+INFO:  10
+CALL
+-- no commit inside subxact
+truncate table xatst2;
+TRUNCATE TABLE
+do language pllua $$
+  local stmt = spi.prepare([[ insert into xatst2 values ($1) ]]);
+  stmt:execute(1);
+  spi.commit();
+  stmt:execute(2);
+  print(pcall(function() stmt:execute(3) spi.commit() end))
+  -- the commit threw a lua error and the subxact was rolled back,
+  -- so we should be in the same xact as row 2
+  stmt:execute(4);
+  spi.commit();
+$$;
+INFO:  false [string "DO-block"]:6: cannot commit or rollback from inside a subtransaction
+DO
+-- should now be two different xids in xatst2, and 3 rows
+select count(*), count(distinct age(xmin)) from xatst2;
+ERROR:  column "xmin" does not exist at character 37
+--end

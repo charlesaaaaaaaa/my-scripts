@@ -148,12 +148,30 @@ class configure_server():
         variables = self.variables
 
         print('\n## setting server node ...')
-        for host in Path:
+
+        def set_signal_server(host, num):
             OF = getFile(host)
             for info in Path[host]:
-                print('### setting server %s:%s' % (host, info[1]))
+                print('### thread_%s: setting server %s:%s' % (num, host, info[1]))
                 for key in variables:
                     OF.replaceTxtRow(info[1], key, variables[key])
+
+        th_list, num = [], 0
+        # 这里开始多线程修改pg配置文件
+        for host in Path:
+            th = threading.Thread(target=set_signal_server, args=(host, num, ))
+            th_list.append(th)
+            th.start()
+            num += 1
+        for th in th_list:
+            th.join()
+
+        # for host in Path:
+        #     OF = getFile(host)
+        #     for info in Path[host]:
+        #         print('### setting server %s:%s' % (host, info[1]))
+        #         for key in variables:
+        #             OF.replaceTxtRow(info[1], key, variables[key])
 
     def restart(self):
         Path = self.Path
@@ -173,5 +191,5 @@ class configure_server():
         for i in l:
             i.join()
 
-        print('sleep 3s ...\n')
-        sleep(3)
+        print('sleep 30s ...\n')
+        sleep(30)

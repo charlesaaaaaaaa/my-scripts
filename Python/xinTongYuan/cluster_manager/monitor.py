@@ -1,48 +1,16 @@
 import time
 from selenium import webdriver
 from time import sleep
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver import ChromeOptions
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
 import argparse
-
-def InfoMation(Str): #这个就是动态展示正在做什么用的而已，去掉影响也不大，需要用到多进程
-    Values = '%s中...' % (Str)
-    Count = 1
-    while True:
-        Values = '%s' % (Values)
-        if Count <= 3:
-            print('\r%s' % (Values), end='')
-            Count = Count + 1
-            sleep(1)
-        elif Count > 3 and Count < 10 :
-            Values = '%s%s' % (Values, '.')
-            print('\r%s' % (Values), end='')
-            Count = Count + 1
-            sleep(1)
-        else :
-            Values = '%s中...         ' % (Str)
-            print('\r%s' % (Values), end='')
-            Values = '%s中...' % (Str)
-            print('\r%s' % (Values), end='')
-            Count = 0;
-            sleep(1)
 
 def open(host, port):
     global driver
     options = ChromeOptions()
     options.add_experimental_option('excludeSwitches', ['enable-automation'])
-    options.add_experimental_option('useAutomationExtension', False)
-    #这部分是linux的无头模式
-    s=Service('./chromedriver')
-    ch_options = Options()
-    #ch_options.add_argument("--headless")
-    ch_options.add_argument('--no-sandbox')
-    ch_options.add_argument('--disable-gpu')
-    ch_options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Chrome(options=ch_options)
+    driver = webdriver.Chrome(executable_path='D:\python3\chromedriver.exe')
     driver.implicitly_wait(30)
     url = 'http://%s:%d/KunlunXPanel/' % (host, port)
     driver.get(url)
@@ -60,31 +28,28 @@ def dSend(link, strs):
     driver.find_element(By.XPATH, link).send_keys(strs)
 
 def enter_shard_list():
-    dClick('/html/body/div[1]/div/div[1]/div/div[1]/div/ul/div[1]/li/ul/div[1]/a/li/span')  # 集群列表
+    #dClick('/html/body/div[1]/div/div[1]/div/div[1]/div/ul/div[1]/li/ul/div[1]/a/li/span')  # 集群列表
     dClick('/html/body/div[1]/div/div[2]/section/div/div/div[1]/div/div/div/div[1]')  # 集群列表信息
     dClick(
-        '/html/body/div/div/div[2]/section/div/div/div[2]/div[1]/div/div[2]/div[4]/div[2]/table/tbody/tr/td[7]/div/button[4]')  # 点击设置
+        '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[1]/div/div[2]/div[4]/div[2]/table/tbody/tr/td[6]/div/button[4]/span')  # 点击设置
     sleep(1)
     dClick('/html/body/div/div/div[2]/section/div/div/div[2]/div[4]/div/div[1]/div/ul/li[10]/span')  # 计算节点列表
     dClick('/html/body/div/div/div[2]/section/div/div/div[2]/div[4]/div/div[1]/div/ul/li[9]/span')  # shard列表
 
 def show_monitor():
     enter_shard_list()
-    shard1_node2 = ''
-    nodeNum = 0
-    #for nodeNum in range(1,4): #这一步就是在选择备节点的机器的禁用button
-    while shard1_node2 == '':
-        nodeNum += 1
-        try:
-            shard1_node2 = '/html/body/div/div/div[2]/section/div/div/div[2]/div[4]/div/div[2]/div/div[2]/div[3]/table/tbody/tr[2]/td/div/div[3]/table/tbody/tr[%s]/td[10]/div/button[3]/span' % (nodeNum)
-            testText = driver.find_element(By.XPATH, shard1_node2).text
-            print('node_%s: %s' % (nodeNum, testText))
-            if testText == '禁用':
-                break
-            else :
-                shard1_node2 = ''
-        except:
-            pass
+    sleep(60)
+    for nodeNum in range(1,3): #这一步就是在选择备节点的机器的禁用button
+        shard1_node2 = '/html/body/div/div/div[2]/section/div/div/div[2]/div[4]/div/div[2]/div/div[2]/div[3]/table/tbody/tr[2]/td/div/div[3]/table/tbody/tr[%d]/td[10]/div/button[3]/span' % (nodeNum)
+        testText = driver.find_element(By.XPATH, shard1_node2).text
+        print('node_%s: %s' % (nodeNum, testText))
+        if testText == '禁用':
+            break
+        else :
+            shard1_node2 = ''
+    if shard1_node2 == '':
+        print('当前禁用按钮变量为空，失败')
+        exit(1)
     print('开始禁用备节点：node_%s...' % (nodeNum))
     dClick(shard1_node2)#点击备节点的禁用button
     warnText = driver.find_element(By.XPATH, '/html/body/div[2]/div/div[2]/div[1]/div[2]/p').get_attribute('innerHTML')#这里在获取弹窗的提示语
@@ -102,21 +67,17 @@ def show_monitor():
             assert txt == ' 禁用成功 '
             break
         except:
-            try:
-                if txt == ' 禁用失败':
-                    print(Alerts)
-                    exit(1)
-                else:
-                    sleep(1)
-            except:
-                pass
+            if txt == ' 禁用失败':
+                print(Alerts)
+                exit(1)
+            else:
+                sleep(1)
 
     dClick('/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[4]/div/div[2]/div/div[6]/div/div[1]/button/i')#点击x
     driver.refresh() #刷新当前页面
     sleep(2)
     enter_shard_list()
-               #'/html/body/div/div/div[2]/section/div/div/div[2]/div[4]/div/div[2]/div/div[2]/div[3]/table/tbody/tr[2]/td/div/div[3]/table/tbody/tr[2]/td[7]/div/span'
-    nodeAttr = '/html/body/div/div/div[2]/section/div/div/div[2]/div[4]/div/div[2]/div/div[2]/div[3]/table/tbody/tr[2]/td/div/div[3]/table/tbody/tr[%d]/td[7]/div/span' % (nodeNum)
+    nodeAttr = '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[4]/div/div[2]/div/div[2]/div[3]/table/tbody/tr[2]/td/div/div[3]/table/tbody/tr[%d]/td[7]/div/span' % (nodeNum)
     nodeAttr_text = driver.find_element(By.XPATH, nodeAttr).text #找到被禁用的节点状态
     times = 0
     print('检查node_%s状态：%s' % (nodeNum, nodeAttr_text))
@@ -131,7 +92,7 @@ def show_monitor():
 
     sleep(3)
     print('开始启动备节点：node_%s...'% (nodeNum))
-    start_button = '/html/body/div[1]/div/div[2]/section/div/div/div[2]/div[4]/div/div[2]/div/div[2]/div[3]/table/tbody/tr[2]/td/div/div[3]/table/tbody/tr[%s]/td[10]/div/button[1]/span' % (nodeNum)
+    start_button = '/html/body/div/div/div[2]/section/div/div/div[2]/div[4]/div/div[2]/div/div[2]/div[3]/table/tbody/tr[2]/td/div/div[3]/table/tbody/tr[%d]/td[10]/div/button[1]' % (nodeNum)
     dClick(start_button) #点击刚刚禁用的机器
     start_text = driver.find_element(By.XPATH, '/html/body/div[2]/div/div[2]/div[1]/div[2]/p').get_attribute('innerHTML')# 找到提示语句
     start_text = start_text.split('=', -1)#把提示语句以‘=’号分割，-1就是分割成最大份

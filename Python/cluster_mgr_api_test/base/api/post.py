@@ -1,5 +1,5 @@
 from base.other import info
-from base.other import write_log, getconf, info, connect
+from base.other import write_log, getconf, info, connect, sys_opt
 from base.api import get
 import requests
 import time
@@ -108,7 +108,7 @@ class cluster_setting():
         res_dict = json.loads(res.text)
         job_id = res_dict['job_id']
         write_log.w2File().tolog(res_dict)
-        print(res_dict)
+        # print(res_dict)
         # 检查job status
         job_status = self.get_status(job_id)
         if job_status == 'done':
@@ -129,7 +129,7 @@ class cluster_setting():
         res = requests.post(self.url, json_data)
         res_dict = json.loads(res.text)
         write_log.w2File().tolog(res_dict)
-        print(res_dict)
+        # print(res_dict)
         if "$job_id" in sql:
             job_id = res_dict['job_id']
             print(job_id)
@@ -216,6 +216,7 @@ class cluster_setting():
                 "paras": para
             }, indent=4
         )
+        write_log.w2File().tolog(json_data)
         print(json_data)
         res = requests.post(url, data=json_data)
         if res.status_code == 200:
@@ -225,19 +226,17 @@ class cluster_setting():
         write_log.w2File().tolog(post_res)
         print(post_res)
         job_id = int(post_res['job_id'])
-        print('api发送完毕，开始检查任务状态')
+        write_log.w2File().print_log('api发送完毕，开始检查任务状态')
         # 检查job status
         time.sleep(5)
         job_status = self.get_status(job_id)
         if job_status == 'done':
-            write_log.w2File().tolog('创建集群成功')
-            print('创建集群成功')
+            write_log.w2File().print_log('创建集群成功')
             job_status = get.status().job_status(job_id)
             result = [job_status['status'], job_status['attachment']]
         elif job_status == 'failed':
-            write_log.w2File().tolog('创建集群失败')
-            print('创建集群失败')
-            result = 1
+            write_log.w2File().print_log('创建集群失败')
+            result = 0
         return result
 
     def add_shards(self, cluster_id, shards, nodes):
@@ -540,7 +539,6 @@ class cluster_setting():
         # 去元数据集群上查结果
         # sql = 'select status from restore_log  where general_log_id = $job_id order by id desc limit 1;'
         # res = self.send_api_and_return_metares(json_data=json_data, sql=sql, tmp_info=tmp_info, sleep_time=30)
-
         # 使用 get_status 查结果
         res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
         return res
@@ -598,7 +596,8 @@ class cluster_setting():
                         "meta_db": "%s" % meta_info,
                         "cluster_id": "%s" % src_cluster_id
                     },
-                   "cluster_id": "%s" % dst_cluster_id
+                   "cluster_id": "%s" % dst_cluster_id,
+                   "skip_sync_roles": "jenkins,agent,kunlun"
                 }
             }, indent=4
         )
@@ -714,7 +713,8 @@ class cluster_setting():
         for shard_info in all_shard_info:
             self.set_noswitch(shard_info[0], shard_info[1], timeout_second)
 
-    def rebuild_node(self, shard_id, cluster_id, node_host, node_port, need_backup=0, hdfs_host='hdfs', pv_limit=10, allow_pull_from_master=1, allow_replica_delay=15):
+    def rebuild_node(self, shard_id, cluster_id, node_host, node_port, need_backup=0, hdfs_host='hdfs', pv_limit=10, allow_pull_from_master=1,
+                     allow_replica_delay=15):
         # 重建存储节点
         time_stamp = int(time.time())
         json_data = json.dumps(
@@ -762,9 +762,10 @@ class cluster_setting():
             }, indent=4
         )
         tmp_info = 'manual backup cluster_id[%s]' % cluster_id
-        meta_sql = "select status from cluster_general_job_log where " \
-                   "job_type='shard_coldbackup' order by id desc limit 1"
-        res = self.send_api_and_return_metares(json_data=json_data, sql=meta_sql, tmp_info=tmp_info)
+        #meta_sql = "select status from cluster_general_job_log where " \
+        #           "job_type='shard_coldbackup' order by id desc limit 1"
+        #res = self.send_api_and_return_metares(json_data=json_data, sql=meta_sql, tmp_info=tmp_info)
+        res = self.send_api_and_return_res(json_data=json_data, tmp_info=tmp_info)
         return res
 
     def expand_cluster(self, cluster_id, src_shard_id, dst_shard_id, table_list):

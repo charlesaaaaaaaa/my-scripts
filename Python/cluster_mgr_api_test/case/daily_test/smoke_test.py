@@ -1,3 +1,4 @@
+import datetime
 from base.api.post import *
 from base.other.getconf import *
 from base.other import info, connect
@@ -193,10 +194,17 @@ class TestCase:
             return [case, 0]
         return [case, 1]
 
-    def cluster_backup_restore(self):
+    def cluster_backup_restore(self, test_partition=0):
+        # test_partition: 默认为0时不会创建分区表，为1时会根据shard数进行分区
         case = 'cluster_backup_restore'
         show_topic("正在测试 [%s] ..." % case)
         show_topic("删除可能存在的集群", 2)
+
+        def stop_loading():
+            # 一个文件，类似于标志点，不存在时会停掉后台的灌数据子进程
+            loadword_flag = './log/tmp_loadwork.log'
+            show_topic('停止负载', level=2)
+            os.remove(loadword_flag)
         try:
             res = cluster_setting(0).delete_cluster_all()
             if res == 0:
@@ -205,68 +213,71 @@ class TestCase:
             res = cluster_setting(0).create_cluster(shard=2, nodes=self.nodes, comps=1)
             if res == 0:
                 return [case, res]
-            res = StorageState().show_cluster_general_job_log()
-            if res == 0:
-                return [case, res]
+            # res = StorageState().show_cluster_general_job_log()
+            # if res == 0:
+            #     return [case, res]
             res = info.node_info().show_all_running_shard_id()
             print('当前shard_id: [%s]' % str(res))
-            show_topic('对新集群计算节点创建分区表并且灌数据', 2)
-            server = info.node_info().show_all_running_computer()[0]
-            old_storage_node_id = info.node_info().show_all_running_shard_id()
-            src_shard_id, dst_shard_id = old_storage_node_id[0][0], old_storage_node_id[1][0]
-            res = ServerState().server_partition_table(server_list=server, src_shard_id=src_shard_id, dst_shard_id=dst_shard_id)
-            if res == 0:
-                return [case, 0]
-            show_topic('sleep 600s', 2)
-            time.sleep(600)
-            show_topic("手动备份集群", 2)
-            src_cluster_id = info.node_info().show_all_running_cluster_id()[0][0]
-            res = cluster_setting(0).manual_backup_cluster(cluster_id=src_cluster_id)
-            if res == 0:
-                return [case, res]
-            res = StorageState().show_cluster_general_job_log()
-            if res == 0:
-                return [case, res]
-
-            def show_total_momey():
-                sql = 'select sum(money) as moneytotal from transfer_account;'
-                pg_info = info.node_info().show_all_running_computer()[-1]
-                pg = connect.Pg(host=pg_info[0], port=pg_info[1], user=pg_info[2], pwd=pg_info[3], db='postgres')
-                res = pg.sql_with_result(sql)[0][0]
-                print('%s: [%s]' % (sql, res))
-                return res
-            res1 = show_total_momey()
             show_topic("新建另一个2 shards的集群", 2)
             res = cluster_setting(0).create_cluster(shard=2, nodes=self.nodes, comps=2)
             if res == 0:
                 return [case, res]
+            comp_list = info.node_info().show_all_running_computer()
+            ts = TranSfer(comp_list=comp_list[0])
+            if test_partition == 1:
+                master_cluster_id = info.node_info().show_all_running_cluster_id()[0]
+                partition_shards_list = info.node_info().show_all_running_shard_id_with_cluster_id(cluster_id=master_cluster_id)
+                ts.prepare(partition_shards_list=partition_shards_list)
+            elif test_partition == 0:
+                ts.prepare()
+            print('')
+            ts.loadwork(threads_num=10)
+            show_topic('sleep 600s', 2)
+            time.sleep(600)
+            show_topic("手动备份集群", 2)
+            src_cluster_id = info.node_info().show_all_running_cluster_id()[0][0]
+            # backup_starttime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            backup_starttime = datetime.datetime.now()
+            backup_after_30s = backup_starttime + datetime.timedelta(seconds=30)
+            res = cluster_setting(60).manual_backup_cluster(cluster_id=src_cluster_id)
+            if res == 0:
+                stop_loading()
+                return [case, res]
             res = StorageState().show_cluster_general_job_log()
             if res == 0:
+                stop_loading()
                 return [case, res]
-            show_topic("发起cluster_restore", 2)
-            time.sleep(2)
             dst_cluster_id = info.node_info().show_all_running_cluster_id()[-1][0]
-            current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            # current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            now = datetime.datetime.now()
+            past_120s = now - datetime.timedelta(seconds=120)
             res = cluster_setting(0).cluster_restore(src_cluster_id=src_cluster_id, dst_cluster_id=dst_cluster_id,
-                                                     restore_time=current_time)
+                                                     restore_time=backup_after_30s)
             if res == 0:
+                stop_loading()
                 return [case, res]
-            show_topic("对新集群进行ddl操作", 2)
-            server = info.node_info().show_all_running_computer()[-1]
+            stop_loading()
+            show_topic("对主集群进行ddl操作", 2)
+            server = info.node_info().show_all_running_computer()[0]
             res = ServerState().server_ddl_test1(server)
             if res == 0:
                 return [case, res]
-            res2 = show_total_momey()
-            if res1 != res2:
-                print('两个集群结果不同：[%s] [%s]' % (res1, res2))
+            show_topic("对备集群进行ddl操作，当前版本该操作备集群需失败", 2)
+            server = info.node_info().show_all_running_computer()[-1]
+            res = ServerState().server_ddl_test1(server)
+            if res != 0:
                 return [case, 0]
-        except:
-            return [case, 0]
+            res = ts.diff_res(comp_list_slave=comp_list[-1])
+            if res == 0:
+                return [case, 0]
+        except Exception as err:
+            print(err)
+            stop_loading()
         return [case, 1]
 
     def cluster_table_repartition(self):
         case = 'cluster_table_repartition'
-        show_topic("正在测试 [%s] ..." % case)
+        show_topic("正在测试 [%s] ..." % case) 
         show_topic("删除可能存在的集群", 2)
         try:
             res = cluster_setting(0).delete_cluster_all()
@@ -311,15 +322,11 @@ class TestCase:
             if res == 0:
                 return [case, res]
             time.sleep(30)
-            show_topic('展示计算节点%s:%s的transfer_account表结构' % (server1[0], server1[1]), 2)
-            # res2 = pg_show_table(signal_server_list=server2, table_name='transfer_account')
-            pg_show_table(signal_server_list=server1, table_name='transfer_account')
-            show_topic('展示计算节点%s:%s的t1表结构' % (server2[0], server2[1]), 2)
-            # res3 = pg_show_table(signal_server_list=server3, table_name='t1')
-            pg_show_table(signal_server_list=server2, table_name='t1')
-            show_topic('展示计算节点%s:%s的t1表结构' % (server3[0], server3[1]), 2)
-            # res4 = pg_show_table(signal_server_list=server4, table_name='t1')
-            pg_show_table(signal_server_list=server3, table_name='t1')
+            tb_name = 'transfer_account'
+            for i in servers:
+                show_topic('展示计算节点%s:%s的%s表结构' % (i[0], i[1], tb_name), 2)
+                pg_show_table(signal_server_list=server1, table_name=tb_name)
+                tb_name = 't1'
             time.sleep(30)
             # print('%s\n%s' % (res2, res3))
             show_topic('发送 【repartition_tables】 api', 2)
@@ -331,11 +338,15 @@ class TestCase:
             if res == 0:
                 return [case, res]
             time.sleep(120)
-            s1_res = ServerState().server_partition_table(server_list=server1, steps='select')
-            s2_res = ServerState().server_partition_table(server_list=server2, steps='select', tb_name='t1')
-            s3_res = ServerState().server_partition_table(server_list=server3, steps='select', tb_name='t1')
-            if s1_res == s2_res == s3_res:
-                show_topic("当前三个计算节点表结果都为%s" % s1_res, 2)
+            # tb_name = 'transfer_account'
+            # res_list = []
+            # for i in servers:
+            #     res = ServerState().server_partition_table(server_list=i, steps='select', tb_name=tb_name)
+            #     show_topic(res)
+            #     res_list.append(res)
+            #     tb_name = 't1'
+            # if res_list[0] == res_list[1] == res_list[2]:
+            #     show_topic("当前三个计算节点表结果都为%s" % res_list[0], 2)
             show_topic("对新计算节点进行ddl操作", 2)
             server = info.node_info().show_all_running_computer()[-1]
             res = ServerState().server_ddl_test1(server)
@@ -407,7 +418,7 @@ class TestCase:
             if res == 0:
                 return [case, res]
             show_topic("发送 [expand_cluster] api", 2)
-            table_list = ["postgres.public.student","postgres.public.ss","postgres.public.test1","postgres.public.transfer_account_01"]
+            table_list = ["postgres.public.student", "postgres.public.ss", "postgres.public.test1", "postgres.public.transfer_account_01"]
             res = cluster_setting(0).expand_cluster(cluster_id=the_latest_cluster_ids, src_shard_id=src_shard_id,
                                                     dst_shard_id=dst_shard_id, table_list=table_list)
             if res == 0:
@@ -476,9 +487,14 @@ class TestCase:
             if res == 0:
                 return [case, res]
             show_topic("发起逻辑备份api", 2)
-            backup_list = [{"db_table": "postgres_$$_public.transfer_account", "backup_time": "03:30:00-08:30:00"},
-                           {"db_table": "postgres_$$_public.test1", "backup_time": "12:30:00-14:00:00"},
-                           {"db_table": "postgres_$$_public.test2", "backup_time": "19:30:00-20:30:00"}]
+            current_time = datetime.datetime.now() + datetime.timedelta(seconds=30)
+            five_hour_later = current_time + datetime.timedelta(hours=12)
+            current_time = current_time.strftime("%H:%M:%S")
+            five_hour_later = five_hour_later.strftime("%H:%M:%S")
+            backup_time = '%s-%s' % (current_time, five_hour_later)
+            backup_list = [{"db_table": "postgres_$$_public.transfer_account", "backup_time": backup_time},
+                           {"db_table": "postgres_$$_public.test1", "backup_time": backup_time},
+                           {"db_table": "postgres_$$_public.test2", "backup_time": backup_time}]
             src_cluster_id = info.node_info().show_all_running_cluster_id()[0][-1]
             res = cluster_setting(0).logical_backup(cluster_id=src_cluster_id, backup_type="table",
                                                     backup_info=backup_list)
@@ -508,16 +524,23 @@ class TestCase:
                       '' % (py_loc, meta_host, src_cluster_id)
             subprocess.run(command, shell=True)
             show_topic("sleep 100s 并发起 逻辑恢复 api", 2)
-            time.sleep(100)
-            current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            time.sleep(130)
+            # 获取当时时间点 再 往后延长30，并以该延长后的时间为恢复api的时间
+            # current_time = datetime.datetime.now() + datetime.timedelta(seconds=15)
+            # time_30s_later = current_time + datetime.timedelta(seconds=30)
+            # api_time = time_30s_later.strftime("%Y-%m-%d %H:%M:%S")
+            # show_topic('开始第 [%s] 次发送恢复api' % i)
+            # current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            current_time = datetime.datetime.now() + datetime.timedelta(seconds=15)
+            current_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
+            show_topic('当前时间： %s ' % current_time, 3)
             restore_list = [{"db_table": "postgres_$$_public.transfer_account",
                              "new_db_table": "postgres_$$_public1.transfer_account", "restore_time": "%s" % current_time},
                             {"db_table": "postgres_$$_public.test1", "new_db_table": "postgres_$$_public1.test1",
                              "restore_time": "%s" % current_time},
                             {"db_table": "postgres_$$_public.test2", "new_db_table": "postgres_$$_public1.test2",
                              "restore_time": "%s" % current_time}]
-            time.sleep(30)
-            res = cluster_setting(0).logical_restore(src_cluster_id=src_cluster_id, dst_cluster_id=dst_clsuter_id,
+            res = cluster_setting(30).logical_restore(src_cluster_id=src_cluster_id, dst_cluster_id=dst_clsuter_id,
                                                      restore_type="table", restore_info=restore_list)
             if res == 0:
                 return [case, res]
@@ -600,6 +623,48 @@ class TestCase:
     def rcr_smoke(self):
         case = 'rcr_smoke'
 
+        def get_cur_rcr(rcr_role='master', return_info='host'):
+            # rcr_role = 'master' | 'slave'
+            # return type默认为host，返回rcr主备的计算节点信息，为shard_id则rcr主备返回shard ids
+            # 先通过rcr元数据表获取把rcr主的shard主节点
+            rcr_master_info = info.node_info().show_rcr_comps_infos(rcr_role=rcr_role)
+            if rcr_role == 'slave':
+                slave_shard_id = rcr_master_info['slave_shard_id']
+                rcr_slave_sql = "select hostaddr, port from shard_nodes where status = 'active' and shard_id = %s" % slave_shard_id
+                rcr_info = info.node_info().get_res(sql=rcr_slave_sql)[0]
+            elif rcr_role == 'master':
+                rcr_host = rcr_master_info['master_master_host']
+                rcr_info = rcr_host.split(':')
+            rcr_stor_host, rcr_stor_port = rcr_info[0], rcr_info[1]
+            # 再通过shard主节点找到cluster_id
+            sql = "select db_cluster_id from shard_nodes where hostaddr = '%s' and port = '%s' and status = 'active';" % (
+                rcr_stor_host, rcr_stor_port)
+            tmp_cluster_id = info.node_info().get_res(sql=sql)[0][0]
+            # 当要返回的是shard_id时
+            if return_info == 'shard_id':
+                shard_ids_list = []
+                shard_ids = info.node_info().show_all_running_shard_id(cluster_id=tmp_cluster_id)
+                for id in shard_ids:
+                    shard_id = id[0]
+                    shard_ids_list.append(shard_id)
+                print('当前rcr[%s]shard_id为：[%s]' % (rcr_role, shard_ids_list))
+                return shard_ids_list
+            elif return_info == 'host':
+                # 再通过cluster_id找到计算节点信息
+                sql = "select hostaddr, port, user_name, passwd, mysql_port from comp_nodes where db_cluster_id = %s;" % tmp_cluster_id
+                res = info.node_info().get_res(sql=sql)[0]
+                if rcr_role == 'master':
+                    print('当前rcr主是[%s:%s]' % (res[0], res[1]))
+                elif rcr_role == 'slave':
+                    print('当前rcr备是[%s:%s]' % (res[0], res[1]))
+                return res
+
+        def stop_loading():
+            # 一个文件，类似于标志点，不存在时会停掉后台的灌数据子进程
+            loadword_flag = './log/tmp_loadwork.log'
+            show_topic('停止负载', level=2)
+            os.remove(loadword_flag)
+
         def show_meta_info():
             show_topic("查看元数据信息是否更新", 2)
             meta = info.master().metadata()
@@ -612,41 +677,189 @@ class TestCase:
         show_topic("1. create_rcr   |\n| 2. manualsw_rcr |\n| 3. del_rcr     ", 3)
         show_topic("删除可能存在的集群", 2)
         try:
-            res = cluster_setting(0).delete_cluster_all()
+            # res = cluster_setting(0).delete_cluster_all()
+            # if res == 0:
+            #     return [case, res]
+            # shard_num = 2
+            # show_topic("新建两个%s个shard且1个comps的集群" % shard_num, 2)
+            # for i in range(2):
+            #     res = cluster_setting(0).create_cluster(shard=shard_num, nodes=self.nodes, comps=1)
+            #     if res == 0:
+            #         return [case, res]
+            # show_topic('检查shard主备状态(read_only && super_read_only)', 2)
+            # res = StorageState().show_read_only()
+            # if res == 0:
+            #     return [case, res]
+            # # res = set_timeout(18000)
+            # run_set_variables()
+            # if res == 0:
+            #     return [case, res]
+            # show_topic("发送 [create_rcr] api", 2)
+            # res = cluster_setting(0).create_rcr_with_thelatest_clusters()
+            # if res == 0:
+            #     return [case, res]
+            # show_topic('检查shard主备状态(read_only && super_read_only)', 2)
+            # cluster_ids = node_info().show_all_running_cluster_id()
+            # res = StorageState().show_read_only(enable_write_cluster_list=[cluster_ids[0][0]])
+            # if res == 0:
+            #     return [case, res]
+            # show_topic("对两个集群计算节点进行简单smoke测试, 其中备节点不能成功", 2)
+            # show_topic("当前测试主节点")
+            # res = ServerState().server_smoke_test(serial_num=0)
+            # if res == 0:
+            #     return [case, res]
+            # show_topic("当前测试备节点")
+            # res = ServerState().server_smoke_test(serial_num=1)
+            # if res != 0:
+            #     return [case, res]
+            # show_meta_info()
+
+            def run_rcr_sql():
+                master_shard_ids = get_cur_rcr(return_info='shard_id', rcr_role='master')
+                sql_list = [
+                    'create table t32(a serial primary key, b int);'
+                    'create table t33(a serial primary key, b int) partition by hash(a) partitions 8;',
+                    'create table t34(a int) partition by hash(a);',
+                    'create table t34_0 partition of t34 for values with(modulus 2, remainder 0);',
+                    'create table t34_1 partition of t34 for values with(modulus 2, remainder 1);'
+                    'create table t35(id serial primary key, v float);',
+                    'alter table  t34_0 set(shard = %s);' % (random.choice(master_shard_ids)),
+                    "drop database if exists db2shards;",
+                    "create database db2shards shards='%s';" % (master_shard_ids[0]),
+                    "alter database db2shards shards='%s';" % (master_shard_ids[1]),
+                    "create sequence seq37;",
+                    "alter sequence seq37 shard %s;" % (random.choice(master_shard_ids)),
+                    "create materialized view t10n with(shard=%s) AS select b from t33;" % master_shard_ids[0],
+                    "alter  MATERIALIZED VIEW t10n set(shard=%s);" % master_shard_ids[1]
+                    ]
+                # tablegroup语法的列表，因为这个sql比较多所以单独放在一个列表里面
+                tablegroup_list = [
+                    "CREATE TABLEGROUP tg1 WITH (SHARD=%s);" % master_shard_ids[0],
+                    "CREATE TABLE t1(a int) WITH(TABLEGROUP=tg1);",
+                    "create table t2(a int) with (shard=%s);" % master_shard_ids[0],
+                    "ALTER TABLE t2 SET (TABLEGROUP=tg1);",
+                    "create table t3(a int) with(shard=%s, tablegroup=tg1);" % master_shard_ids[1],
+                    "show create table t1;",
+                    "CREATE TABLEGROUP tg2 WITH (SHARD=%s);" % master_shard_ids[0],
+                    "select * From pg_tablegroup ;",
+                    "select * from information_schema.tablegroup;",
+                    "ALTER TABLE t1 SET (TABLEGROUP=tg2);",
+                    "show create table t1;",
+                    "select * From pg_tablegroup;",
+                    "ALTER TABLEGROUP tg2 SET(SHARD=%s);" % master_shard_ids[1],
+                    "select * From pg_tablegroup ;",
+                    "show create table t1;",
+                    "ALTER TABLE t1 RESET(TABLEGROUP);",
+                    "show create table t1;",
+                    "ALTER TABLE t2 SET (TABLEGROUP=tg1);",
+                    "select * From pg_tablegroup ;",
+                    "show create table t2;",
+                    "DROP TABLEGROUP tg1;",
+                    "show create table t2;"
+                ]
+                # tablegroup预期结果的列表
+                exp_list = [
+                    [('t1', "CREATE TABLE t1 (\n a integer\n) WITH (tablegroup=tg1, engine=innodb, shard='%s')" % master_shard_ids[0])],
+                    [('tg1', 16385, 0, 0, ['shard=%s' % master_shard_ids[0]]), ('tg2', 16385, 0, 0, ['shard=%s' % master_shard_ids[0]])],
+                    [(2200, 't1', master_shard_ids[0], 'tg1'), (2200, 't2', master_shard_ids[0], 'tg1')],
+                    [('t1', "CREATE TABLE t1 (\n a integer\n) WITH (engine=innodb, shard='%s', tablegroup=tg2)" % master_shard_ids[0])],
+                    [('tg1', 16385, 0, 0, ['shard=%s' % master_shard_ids[0]]), ('tg2', 16385, 0, 0, ['shard=%s' % master_shard_ids[0]])],
+                    [('tg1', 16385, 0, 0, ['shard=%s' % master_shard_ids[0]]), ('tg2', 16385, 0, 0, ['shard=%s' % master_shard_ids[1]])],
+                    [('t1', "CREATE TABLE t1 (\n a integer\n) WITH (engine=innodb, shard='%s', tablegroup=tg2)" % master_shard_ids[1])],
+                    [('t1', "CREATE TABLE t1 (\n a integer\n) WITH (engine=innodb, shard='%s')" % master_shard_ids[1])],
+                    [('tg1', 16385, 0, 0, ['shard=4']), ('tg2', 16385, 0, 0, ['shard=%s'% master_shard_ids[1]])],
+                    [('t2', "CREATE TABLE t2 (\n a integer\n) WITH (engine=innodb, shard='%s', tablegroup=tg1)" % master_shard_ids[0])],
+                    [('t2', "CREATE TABLE t2 (\n a integer\n) WITH (engine=innodb, shard='%s')" % master_shard_ids[0])],
+                ]
+                comps = get_cur_rcr(rcr_role='master', return_info='host')
+                conn = connect.Pg(db='postgres', host=comps[0], port=comps[1], user=comps[2], pwd=comps[3])
+                drop_create_db = ['drop database if exists test;', 'create database if not exists test;']
+                for i in drop_create_db:
+                    print(i)
+                    conn.ddl_sql(i)
+                conn.close()
+                conn = connect.Pg(db='test', host=comps[0], port=comps[1], user=comps[2], pwd=comps[3])
+                print('开始测试rcr常规sql')
+                err_times, show_select_times = 0, 0
+                for sql in sql_list:
+                    print('++ test sql: %-100s ++' % sql)
+                    try:
+                        conn.ddl_sql(sql=sql)
+                    except Exception as err:
+                        print('ERROR: %s, 第%s次' % (err, show_select_times))
+                        err_times += 1
+                print('\n开始测试rcr下的tablegroup语法')
+                for sql in tablegroup_list:
+                    print('++ test sql: %-100s ++' % sql)
+                    try:
+                        # 当为show或者select语句时，会和exp_list的内容进行对比，一样就是成功，反之失败
+                        # 然后每触发一次就会使show_select_time自增1，这个变量是用来指定exp_list索引值的
+                        if 'show' in sql or 'select' in sql:
+                            tmp_result = conn.sql_with_result(sql=sql)
+                            for tr in tmp_result:
+                                print('== 结果输出: %-100s ==' % str(tr))
+                            if tmp_result == exp_list[show_select_times]:
+                                print('与预期一致')
+                            else:
+                                print('与预期不一致，失败')
+                                # print('%s: [%s]' % (show_select_times, tmp_result))
+                                err_times += 1
+                            show_select_times += 1
+                            conn = connect.Pg(db='test', host=comps[0], port=comps[1], user=comps[2], pwd=comps[3])
+                        else:
+                            conn.ddl_sql(sql=sql)
+                    except Exception as err:
+                        print('ERROR: %-100s' % err)
+                        if sql == tablegroup_list[4]:
+                            if 'Specified shard not matched with the tablegroup.' in str(err):
+                                print('该错误为预期结果')
+                            else:
+                                print('该错误为非预期结果，失败')
+                                err_times += 1
+                        conn.close()
+                        conn = connect.Pg(db='test', host=comps[0], port=comps[1], user=comps[2], pwd=comps[3])
+                        err_times += 1
+                if err_times == 1:
+                    print('预期失败1次，实际失败%s次, 故成功\n' % err_times)
+                    return 1
+                else:
+                    print('预期失败1次，实际失败%s次, 故失败\n' % err_times)
+                    return 0
+            # 跑上面的rcr测试要的sql
+            res = run_rcr_sql()
             if res == 0:
                 return [case, res]
-            show_topic("新建2个 [1 shards, 1 comps] 的集群", 2)
-            for i in range(2):
-                res = cluster_setting(0).create_cluster(shard=1, nodes=self.nodes, comps=1)
+
+            def run_load():
+                # 获取下rcr主的计算节点信息
+                rcr_master_info = get_cur_rcr()
+                master_cluster_id = info.node_info().show_all_running_cluster_id()[0][0]
+                shard_list = info.node_info().show_all_running_shard_id(cluster_id=master_cluster_id)
+                # 获取下rcr备的计算节点信息
+                rcr_slave_info = get_cur_rcr(rcr_role='slave')
+                ts = TranSfer(comp_list=rcr_master_info)
+                # 创建表和函数、存储过程
+                ts.prepare(partition_shards_list=shard_list)
+                # 开始负载
+                ts.loadwork(threads_num=10)
+                print('600s后开始检查数据一致性')
+                time.sleep(600)
+                print('时间到，暂停负载并在60s后开始检查数据一致性')
+                stop_loading()
+                time.sleep(60)
+                res = ts.diff_res(comp_list_slave=rcr_slave_info)
                 if res == 0:
-                    return [case, res]
-            show_topic('检查shard主备状态(read_only && super_read_only)', 2)
-            res = StorageState().show_read_only()
+                    print('一致性检查测试失败')
+                    return 0
+                else:
+                    print('一致性检查测试成功')
+                    return 1
+            # 开始写入负载并检查数据一致性
+            res = run_load()
             if res == 0:
                 return [case, res]
-            # res = set_timeout(18000)
-            run_set_variables()
-            if res == 0:
-                return [case, res]
-            show_topic("发送 [create_rcr] api", 2)
-            res = cluster_setting(0).create_rcr_with_thelatest_clusters()
-            if res == 0:
-                return [case, res]
-            show_topic('检查shard主备状态(read_only && super_read_only)', 2)
-            cluster_ids = node_info().show_all_running_cluster_id()
-            res = StorageState().show_read_only(enable_write_cluster_list=[cluster_ids[0][0]])
-            if res == 0:
-                return [case, res]
-            show_topic("对两个集群计算节点进行简单smoke测试, 其中备节点不能成功", 2)
-            show_topic("当前测试主节点")
-            res = ServerState().server_smoke_test(serial_num=0)
-            if res == 0:
-                return [case, res]
-            show_topic("当前测试备节点")
-            res = ServerState().server_smoke_test(serial_num=1)
-            if res != 0:
-                return [case, res]
-            show_meta_info()
+
+            # 开始切换rcr主备了
             show_topic("sleep 30s 并发送 [manualsw_rcr] api", 2)
             time.sleep(30)
             cluster_ids = info.node_info().show_all_running_cluster_id()
@@ -680,13 +893,18 @@ class TestCase:
             res = ServerState().server_smoke_test()
             if res == 0:
                 return [case, res]
+            # 开始写入负载并检查数据一致性
+            res = run_load()
+            if res == 0:
+                return [case, res]
             show_meta_info()
         except Exception as err:
-            print(err)
+            print(str(err))
             cluster_setting(0).delete_rcr(1)
             return [case, 0]
         finally:
             cluster_setting(0).delete_rcr(1)
+            # pass
         return [case, 1]
 
     def expand_tg(self):
@@ -825,11 +1043,21 @@ class TestCase:
                 subprocess.run(run_com, shell=True)
                 res_com = "grep transactions tmp.log | awk '{print $3}' | awk -F'(' '{print $2}'"
                 res_1 = subprocess.Popen(res_com, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                stdout, stderr = res_1.communicate()
+                print(stdout, stderr)
                 res = res_1.stdout.read().decode('utf-8')
                 res = res.replace('\n', '')
-                return float(res)
+                try:
+                    return float(res)
+                except:
+                    print('运行sysbench失败，无法找寻结果，请检查./tmp.log')
+                    print(res_com, res_1)
+                    return -1
 
             res_2cores = prepare_run_sysbench()
+            if res_2cores == -1:
+                show_topic('结果不存在，sysbench测试失败', 3)
+                return [case, 0]
             show_topic("尝试删除所有运行中的cluster", 2)
             res = cluster_setting(0).delete_cluster_all()
             if res == 0:
@@ -840,6 +1068,9 @@ class TestCase:
                 return [case, res]
             run_set_variables()
             res_8cores = prepare_run_sysbench()
+            if res_8cores == -1:
+                show_topic('结果不存在，sysbench测试失败', 3)
+                return [case, 0]
             if res_2cores * 2 <= res_8cores:
                 print('qps: 8_cores=[%s], 2_cores=[%s], 成功' % (res_8cores, res_2cores))
             else:

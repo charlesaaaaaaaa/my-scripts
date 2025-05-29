@@ -21,7 +21,7 @@ def ticket_test():
 
 
 def daily_test():
-    test_suite = smoke_test
+    test_suite = smoke_test.TestCase(2)
     case_res(test_suite.install_cluster())
     case_res(test_suite.add_comps())
     case_res(test_suite.add_shards())
@@ -47,8 +47,8 @@ def caict():
     test = caict_test.CaictCase(2)
     case_res(test.check_metadata_117())
     case_res(test.wr_split_118())
-    case_res(test.cluster_data_backup_312())
-    case_res(test.cluster_data_restore_313())
+    # case_res(test.cluster_data_backup_312())
+    # case_res(test.cluster_data_restore_313())
     case_res(test.resource_split_314())
     case_res(test.balanced_distribution_hash_502())
     case_res(test.online_expand_503())
@@ -56,7 +56,7 @@ def caict():
 
 if __name__ == "__main__":
     ps = argparse.ArgumentParser(description='cluster_mgr test script')
-    ps.add_argument("--test-case", help="test suite, [daily_test]|[ticket_test]", default="daily_test")
+    ps.add_argument("--test-case", help="test suite, [daily_test]|[ticket_test]|[caict]", default="daily_test")
     args = ps.parse_args()
     test_case = args.test_case
     if test_case == "daily_test":

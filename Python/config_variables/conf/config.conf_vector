@@ -1,0 +1,26 @@
+[kunlun]
+user = abc
+pwd = abc
+host = 192.168.0.167
+port = 58881
+# 以上的四个变量是计算节点的信息，其中一个计算节点就ok了
+#version = 1.2.1
+sys_user = kunlun
+# sys_user 是系统的用户，不是集群的
+db_write_file = on
+# 是否要把db的本地配置文件也更新下，还是只更新全局变量, on or off
+db_restart = on
+# 是否要重启db， on or off
+component = server
+# 要操作什么组件， all是pg和db都更新， storage是只更新db， server是只更新pg
+only_show_variables = off
+# 是否只展示变量， on or off
+
+#以下是对应组件的变量设置, 以下的只是示例，可以根据自己的需求增加或者删除
+
+[server_settings]
+remote_rel.optimistically_execute_ddl = on
+
+[storage_settings]
+long_query_time = 1
+log_slow_extra = on
